@@ -7,13 +7,13 @@ CRUD:
 
 1. POST /api/add - add new realestate
 2. GET /api/real-estates - view all realestates
-3. PUT /api/real-estates/{propertyId} - Update realestate object
-4. DELETE /api/delete/{propertyId} - Delete a realestate
+3. PUT /api/real-estates/{propertyId} - update realestate object
+4. DELETE /api/delete/{propertyId} - delete a realestate
 
 
 Authentication:
 POST /api/authenticate – for user login (JWT token generation).
-POST /api/register – for new user registration.
+POST /api/users/register – for new user registration.
 
 
 Listings:
