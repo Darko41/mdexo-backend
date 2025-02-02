@@ -1,5 +1,6 @@
 package com.doublez.backend.dto;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class UserDetailsDTO {
@@ -14,7 +15,7 @@ public class UserDetailsDTO {
 
 	public UserDetailsDTO(String username, List<String> roles, String password) {
 		this.username = username;
-		this.roles = roles;
+		this.roles = roles != null ? roles : new ArrayList<>();
 		this.password = password;
 	}
 	

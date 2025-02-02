@@ -12,9 +12,10 @@ import org.springframework.stereotype.Service;
 import com.doublez.backend.dto.UserDetailsDTO;
 import com.doublez.backend.entity.Role;
 import com.doublez.backend.entity.User;
+import com.doublez.backend.repository.RoleRepository;
 import com.doublez.backend.repository.UserRepository;
 
-import jakarta.transaction.Transactional;
+import jakarta.transaction.Transactional;	// TODO check if another package is required
 
 // This class is for registration (encoding passwords, saving users)
 
@@ -25,21 +26,43 @@ public class UserService {
 	private UserRepository userRepository;
 	@Autowired
 	private PasswordEncoder passwordEncoder;
+	@Autowired
+	private RoleRepository roleRepository;
 	
 	@Transactional
-	public String registerUser(User user) {
+	public String registerUser(UserDetailsDTO userDetailsDTO) {
 		
-		if (userRepository.findByUsername(user.getUsername()).isPresent()) {
+		if (userRepository.findByUsername(userDetailsDTO.getUsername()).isPresent()) {
 			return "User already exists";
 		}
 		
 		// Encode the password
-		String hashedPassword = passwordEncoder.encode(user.getPassword());
+		String hashedPassword = passwordEncoder.encode(userDetailsDTO.getPassword());
+		// Create the User entity
+		User user = new User();
+		user.setUsername(userDetailsDTO.getUsername());
 		user.setPassword(hashedPassword);
 		
-		Role defaultRole = new Role();
-		defaultRole.setName("ROLE_USER");
-		user.setRoles(Collections.singletonList(defaultRole));
+		// If no roles are provided, set a default role
+		if (userDetailsDTO.getRoles() == null || userDetailsDTO.getRoles().isEmpty()) {
+			return "Role cannot be empty";
+		}
+		
+		// Fetch roles from the provided DTO using roleRepository
+		List<Role> roles = userDetailsDTO.getRoles().stream()
+	            .map(roleName -> {
+	            	// If the role does not exist, create it
+	            	Role role = roleRepository.findByName(roleName).orElseGet(() -> {
+	            		Role newRole = new Role();
+	            		newRole.setName(roleName);
+	            		return roleRepository.save(newRole);
+	            	});
+	            	return role;
+	            })
+	            .collect(Collectors.toList());
+		
+		
+		user.setRoles(roles);
 		
 		userRepository.save(user);
 		
@@ -73,6 +96,49 @@ public class UserService {
 		
 		userRepository.save(user);
 			
+		return true;
+	}
+	
+	public List<UserDetailsDTO> getAllUsers() {
+		List<User> users = userRepository.findAll();
+		return users.stream()
+				.map(user -> new UserDetailsDTO(user.getUsername(), user.getRoles().stream()
+						.map(Role::getName).collect(Collectors.toList())))
+				.collect(Collectors.toList());
+	}
+
+	@Transactional
+	public String addUser(UserDetailsDTO userDetailsDTO) {
+		if (userRepository.findByUsername(userDetailsDTO.getUsername()).isPresent()) {
+			throw new RuntimeException("User already exists");
+		}
+		
+		// Create the user object
+		User user = new User();
+		user.setUsername(userDetailsDTO.getUsername());
+		// Encode the password
+		user.setPassword(passwordEncoder.encode(userDetailsDTO.getPassword()));
+		
+		// Fetch roles from the database based on the role names in the request
+		List<Role> roles = roleRepository.findByNameIn(userDetailsDTO.getRoles());
+		
+		if (roles.isEmpty()) {
+			throw new RuntimeException("Invalid poles provided.");
+		}
+		 
+		// Assign the roles to the user
+		user.setRoles(roles);
+		
+		userRepository.save(user);
+		return "User added and registered succesfully!";
+	}
+
+	@Transactional
+	public boolean deleteUser(String username) {
+		User user = userRepository.findByUsername(username)
+				.orElseThrow(() -> new RuntimeException("User not found with username " + username));
+		
+		userRepository.delete(user);
 		return true;
 	}
 	

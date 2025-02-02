@@ -47,7 +47,7 @@ public class SecurityConfig {
 					// Define public URLs (no authentication required)
 					.requestMatchers("/api/users/**", "/api/authenticate", "/api/add").permitAll()
 					// Define URLs that require ADMIN role
-					//.requestMatchers("/admin/**").hasRole("ADMIN")
+					.requestMatchers("/admin/**", "/api/users/delete").hasRole("ADMIN")
 					// Any other request must be authenticated
 					.anyRequest().authenticated()
 					)
