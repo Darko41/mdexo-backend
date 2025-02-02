@@ -1,11 +1,15 @@
 package com.doublez.backend.service;
 
 import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.doublez.backend.dto.UserDetailsDTO;
 import com.doublez.backend.entity.Role;
 import com.doublez.backend.entity.User;
 import com.doublez.backend.repository.UserRepository;
@@ -40,6 +44,36 @@ public class UserService {
 		userRepository.save(user);
 		
 		return "User registered successfully!";
+	}
+
+	public UserDetailsDTO getUserProfile(String username) {
+		User user = userRepository.findByUsername(username)
+				.orElseThrow(() -> new UsernameNotFoundException("User not found"));
+		
+		List<String> roles = user.getRoles().stream()
+				.map(Role::getName)
+				.collect(Collectors.toList());
+		
+		return new UserDetailsDTO(user.getUsername(), roles);
+	}
+
+	public boolean updateProfile(String username, UserDetailsDTO userDetailsDTO) {
+		User user = userRepository.findByUsername(username)
+				.orElseThrow(() -> new UsernameNotFoundException("User not found"));
+		
+		// Update user details
+		if (userDetailsDTO.getUsername() != null && !userDetailsDTO.getUsername().isEmpty()) {
+			user.setUsername(userDetailsDTO.getUsername());
+		}
+		
+		if (userDetailsDTO.getPassword() != null && !userDetailsDTO.getPassword().isEmpty()) {
+			String encodedPassword = passwordEncoder.encode(userDetailsDTO.getPassword());
+			user.setPassword(encodedPassword);
+		}
+		
+		userRepository.save(user);
+			
+		return true;
 	}
 	
 }

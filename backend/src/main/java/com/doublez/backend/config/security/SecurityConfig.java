@@ -45,7 +45,7 @@ public class SecurityConfig {
 		http
 			.authorizeHttpRequests((authz) -> authz
 					// Define public URLs (no authentication required)
-					.requestMatchers("/api/register", "/api/authenticate", "/api/add").permitAll()
+					.requestMatchers("/api/users/**", "/api/authenticate", "/api/add").permitAll()
 					// Define URLs that require ADMIN role
 					//.requestMatchers("/admin/**").hasRole("ADMIN")
 					// Any other request must be authenticated
