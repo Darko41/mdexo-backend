@@ -1,6 +1,5 @@
 package com.doublez.backend.service;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -141,5 +140,5 @@ public class UserService {
 		userRepository.delete(user);
 		return true;
 	}
-	
+
 }

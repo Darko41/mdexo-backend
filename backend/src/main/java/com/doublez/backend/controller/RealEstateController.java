@@ -2,7 +2,10 @@ package com.doublez.backend.controller;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,24 +22,33 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.doublez.backend.config.security.SecurityConfig;
 import com.doublez.backend.entity.RealEstate;
 import com.doublez.backend.repository.RealEstateRepository;
 import com.doublez.backend.specification.RealEstateSpecifications;
 
+import jakarta.validation.Valid;
+
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/real-estates")
 public class RealEstateController {
 	
 	@Autowired
 	private RealEstateRepository realEstateRepository;
+	
+	private static final Logger logger = LoggerFactory.getLogger(RealEstateController.class);
 
-	@GetMapping("/real-estates")	// The Pageable object is automatically populated with
+	@GetMapping("/")	// The Pageable object is automatically populated with
 									// query parameters like page, size, and sort
 									// (e.g., /real-estates?page=0&size=10&sort=createdAt,desc)
 	public ResponseEntity<?> getRealEstates(
 			@RequestParam(value = "priceMin", required = false) BigDecimal priceMin,
 			@RequestParam(value = "priceMax", required = false) BigDecimal priceMax,
-			@RequestParam(value = "priceMax", required = false) String propertyType,
+			@RequestParam(value = "propertyType", required = false) String propertyType,
+			@RequestParam(value = "features", required = false) List<String> features,
+			@RequestParam(value = "city", required = false) String city,
+			@RequestParam(value = "state", required = false) String state,
+			@RequestParam(value = "zipCode", required = false) String zipCode,
 			Pageable pageable) {	
 		
 		try {
@@ -51,6 +63,12 @@ public class RealEstateController {
 			if (propertyType != null) {
 				spec = spec.and(RealEstateSpecifications.hasPropertyType(propertyType));
 			}
+			if (features != null && features.isEmpty()) {
+				spec = spec.and(RealEstateSpecifications.hasFeatures(features));
+			}
+			if (city != null || state != null || zipCode != null) {
+				spec = spec.and(RealEstateSpecifications.hasLocation(city, state, zipCode));
+			}
 			
 			Page<RealEstate> realEstates = realEstateRepository.findAll(spec, pageable);
 			return ResponseEntity.ok(realEstates);
@@ -61,7 +79,7 @@ public class RealEstateController {
 	}
 
 	@PostMapping("/add")
-	public ResponseEntity<RealEstate> createRealEstate(@RequestBody RealEstate realEstate) {
+	public ResponseEntity<RealEstate> createRealEstate(@Valid @RequestBody RealEstate realEstate) {
 		RealEstate savedRealEstate = realEstateRepository.save(realEstate);
 		return ResponseEntity.status(HttpStatus.CREATED).body(savedRealEstate);
 	}
@@ -76,7 +94,7 @@ public class RealEstateController {
 		}
 	}
 	
-	@PutMapping("/real-estates/{propertyId}")
+	@PutMapping("/update/{propertyId}")			// TODO FIX THIS - doesn't work
 	public ResponseEntity<RealEstate> updateRealEstate(
 			@PathVariable Long propertyId,
 			@RequestBody RealEstate realEstateDetails) {
@@ -112,6 +130,9 @@ public class RealEstateController {
 			if (realEstateDetails.getSizeInSqMt() != null) {
 			realEstate.setSizeInSqMt(realEstateDetails.getSizeInSqMt());
 			}
+			if (realEstateDetails.getFeatures() != null) {
+				realEstate.setFeatures(realEstateDetails.getFeatures());
+			}
 			
 			realEstate.setUpdatedAt(LocalDate.now());
 			
@@ -120,6 +141,7 @@ public class RealEstateController {
 			return ResponseEntity.ok(updatedRealEstate);
 			
 		} catch (Exception e) {
+			logger.error("Error updating real estate", e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
 		}
 		

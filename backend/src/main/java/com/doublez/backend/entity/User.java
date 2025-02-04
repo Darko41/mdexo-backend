@@ -1,6 +1,7 @@
 package com.doublez.backend.entity;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
@@ -97,4 +98,5 @@ public class User {
 	public void preUpdate() {
 		this.updatedAt = LocalDate.now();
 	}
+
 }

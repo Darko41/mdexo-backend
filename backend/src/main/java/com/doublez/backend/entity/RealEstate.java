@@ -2,23 +2,31 @@ package com.doublez.backend.entity;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 
 enum PropertyType {
 	HOUSE,
 	APARTMENT,
 	CONDO,
-	LAND
+	LAND,
+	GARRAGE
 }
 
 @Entity
@@ -31,6 +39,8 @@ public class RealEstate {
 	private Long propertyId;
 	
 	@Column(name = "title", nullable = false)
+	@NotNull
+	@Size(min = 1)
 	private String title;
 	
 	@Column(name = "description", length = 1000)
@@ -57,6 +67,11 @@ public class RealEstate {
 	
 	@Column(name = "size_in_sqmt")
 	private String sizeInSqMt;
+	
+	@ElementCollection
+	@CollectionTable(name = "real-estate-features", joinColumns = @JoinColumn(name = "property_id"))
+	@Column(name = "features")
+	private List<String> features = new ArrayList<>();
 	
 	@Column(name = "created_at", nullable = false)
 	private LocalDate createdAt;
@@ -169,6 +184,13 @@ public class RealEstate {
 	public void setUpdatedAt(LocalDate updatedAt) {
 		this.updatedAt = updatedAt;
 	}
-	
+
+	public List<String> getFeatures() {
+		return features;
+	}
+
+	public void setFeatures(List<String> features) {
+		this.features = features;
+	}
 	
 }

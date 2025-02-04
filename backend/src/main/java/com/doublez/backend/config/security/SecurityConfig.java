@@ -16,6 +16,9 @@ import com.doublez.backend.service.CustomUserDetailsService;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -23,6 +26,8 @@ public class SecurityConfig {
 	private final JwtTokenUtil jwtTokenUtil;
 	private final JwtAuthenticationFilter jwtAuthenticationFilter;
 	private final CustomUserDetailsService userDetailsService;
+	
+	private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
 	
 	public SecurityConfig(JwtTokenUtil jwtTokenUtil, JwtAuthenticationFilter jwtAuthenticationFilter, CustomUserDetailsService userDetailsService) {
         this.jwtTokenUtil = jwtTokenUtil;
@@ -45,15 +50,21 @@ public class SecurityConfig {
 		http
 			.authorizeHttpRequests((authz) -> authz
 					// Define public URLs (no authentication required)
-					.requestMatchers("/api/users/**", "/api/authenticate", "/api/add").permitAll()
+					.requestMatchers("/api/authenticate", "/api/real-estates/**").permitAll()
+					
+					// Define URLs that require authentication
+					.requestMatchers("/api/users/**").authenticated()
+					
 					// Define URLs that require ADMIN role
-					.requestMatchers("/admin/**", "/api/users/delete").hasRole("ADMIN")
+					.requestMatchers("/admin/**").hasRole("ADMIN")
+					
 					// Any other request must be authenticated
 					.anyRequest().authenticated()
 					)
-					.httpBasic(withDefaults())
 					.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 					.csrf(csrf -> csrf.disable());
+		
+		logger.debug("Security filter chain configured");
 		
 		return http.build();
 	}
