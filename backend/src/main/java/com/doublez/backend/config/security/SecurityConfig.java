@@ -10,6 +10,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import com.doublez.backend.service.CustomUserDetailsService;
 
@@ -52,10 +54,10 @@ public class SecurityConfig {
 							"/swagger-ui/**",
 							"/v3/api-docs/**",
 							"/swagger-resources/**",
-							"/webjars/**"
-							//"/api/authenticate",
-							//"/api/real-estates/**",
-							//"/api/email/send-email"
+							"/webjars/**",
+							"/api/authenticate",
+							"/api/real-estates/",
+							"/api/email/send-email"
 							).permitAll()
 					
 					// Define URLs that require authentication
@@ -73,6 +75,19 @@ public class SecurityConfig {
 		logger.debug("Security filter chain configured");
 		
 		return http.build();
+	}
+	
+	@Bean
+	WebMvcConfigurer corsConfigurer() {
+		return new WebMvcConfigurer() {
+			@Override
+			public void addCorsMappings(CorsRegistry registry) {
+				registry.addMapping("/api/**") // Allow CORS for /api endpoints
+					.allowedOrigins("http://localhost:5173") // Frontendt URL
+					.allowedMethods("GET", "POST", "PUT", "DELETE") // Allow these HTTP methods
+					.allowedHeaders("*"); // Allow all headers
+			}
+		};
 	}
 
 }
