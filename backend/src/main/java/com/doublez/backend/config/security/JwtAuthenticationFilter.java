@@ -1,6 +1,8 @@
 package com.doublez.backend.config.security;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +26,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
 	private final UserDetailsService userDetailsService;
 	
 	private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+	
+	private static final List<String> EXCLUDED_PATHS = Arrays.asList(
+			"/swagger-ui/.*",
+			"/v3/api-docs/.*",
+			"/swagger-resources/.*",
+			"/webjars/.*");
 
 	public JwtAuthenticationFilter(JwtTokenUtil jwtTokenUtil, UserDetailsService userDetailsService) {
 		this.jwtTokenUtil = jwtTokenUtil;
@@ -33,6 +41,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 			throws ServletException, IOException {
+		
+		if (shouldSkip(request)) {
+			filterChain.doFilter(request, response);
+			return;
+		}
 		
 		// Extract token from request header
 		String token = getJwtFromRequest(request);
@@ -84,6 +97,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
 		filterChain.doFilter(request, response);
 	}
 	
+	// Helper method to check if the request URI should be skipped for JWT validation
+		private boolean shouldSkip(HttpServletRequest request) {
+			String requestURI = request.getRequestURI();
+			logger.debug("Checking if should skip path: {}", requestURI);
+			
+			return EXCLUDED_PATHS.stream().anyMatch(requestURI::matches);
+		}
+	
 	// Helper method to extract username from the token
 	private String extractUsernameFromToken(String token) {
 		return jwtTokenUtil.extractUsername(token);
@@ -98,5 +119,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
 		}
 		return null;
 	}
+	
+	
 
 }

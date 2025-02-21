@@ -6,7 +6,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -14,7 +13,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 import com.doublez.backend.service.CustomUserDetailsService;
 
-import static org.springframework.security.config.Customizer.withDefaults;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,7 +48,15 @@ public class SecurityConfig {
 		http
 			.authorizeHttpRequests((authz) -> authz
 					// Define public URLs (no authentication required)
-					.requestMatchers("/api/authenticate", "/api/real-estates/**", "/api/email/send-email").permitAll()
+					.requestMatchers(
+							"/swagger-ui/**",
+							"/v3/api-docs/**",
+							"/swagger-resources/**",
+							"/webjars/**"
+							//"/api/authenticate",
+							//"/api/real-estates/**",
+							//"/api/email/send-email"
+							).permitAll()
 					
 					// Define URLs that require authentication
 					.requestMatchers("/api/users/**").authenticated()
