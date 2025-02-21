@@ -79,7 +79,7 @@ public class RealEstateController {
 	}
 
 	@PostMapping("/add")
-	public ResponseEntity<RealEstate> createRealEstate(@Valid @RequestBody RealEstate realEstate) {
+	public ResponseEntity<RealEstate> createRealEstate(@RequestBody RealEstate realEstate) {
 		RealEstate savedRealEstate = realEstateRepository.save(realEstate);
 		return ResponseEntity.status(HttpStatus.CREATED).body(savedRealEstate);
 	}
