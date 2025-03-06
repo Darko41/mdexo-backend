@@ -35,20 +35,18 @@ public class UserService {
 			return "User already exists";
 		}
 		
-		// Encode the password
-		String hashedPassword = passwordEncoder.encode(userDetailsDTO.getPassword());
-		// Create the User entity
-		User user = new User();
-		user.setUsername(userDetailsDTO.getUsername());
-		user.setPassword(hashedPassword);
-		
-		// If no roles are provided, set a default role
-		if (userDetailsDTO.getRoles() == null || userDetailsDTO.getRoles().isEmpty()) {
-			return "Role cannot be empty";
+		if (userDetailsDTO.getPassword() == null || userDetailsDTO.getPassword().isEmpty()) {
+			return "Password cannot be empty";
 		}
 		
+		// If no roles are provided, assign a default role
+		List<String> roles = userDetailsDTO.getRoles(); 
+		if (roles == null || roles.isEmpty()) {
+			roles = List.of("USER");
+		}
+				
 		// Fetch roles from the provided DTO using roleRepository
-		List<Role> roles = userDetailsDTO.getRoles().stream()
+		List<Role> roleEntites = roles.stream()
 	            .map(roleName -> {
 	            	// If the role does not exist, create it
 	            	Role role = roleRepository.findByName(roleName).orElseGet(() -> {
@@ -60,8 +58,13 @@ public class UserService {
 	            })
 	            .collect(Collectors.toList());
 		
-		
-		user.setRoles(roles);
+		// Encode the password
+		String hashedPassword = passwordEncoder.encode(userDetailsDTO.getPassword());
+		// Create the User entity
+		User user = new User();
+		user.setUsername(userDetailsDTO.getUsername());
+		user.setPassword(hashedPassword);
+		user.setRoles(roleEntites);
 		
 		userRepository.save(user);
 		
