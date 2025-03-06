@@ -51,7 +51,7 @@ public class SecurityConfig {
 			.authorizeHttpRequests((authz) -> authz
 					// Define public URLs (no authentication required)
 					.requestMatchers(
-							"/swagger-ui/**",
+							"/swagger-ui/**",						// http://localhost:8080/swagger-ui/index.html
 							"/v3/api-docs/**",
 							"/swagger-resources/**",
 							"/webjars/**",
