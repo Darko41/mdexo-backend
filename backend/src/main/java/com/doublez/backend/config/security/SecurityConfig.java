@@ -11,6 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import com.doublez.backend.service.CustomUserDetailsService;
@@ -29,7 +30,9 @@ public class SecurityConfig {
 	
 	private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
 	
-	public SecurityConfig(JwtTokenUtil jwtTokenUtil, JwtAuthenticationFilter jwtAuthenticationFilter, CustomUserDetailsService userDetailsService) {
+	public SecurityConfig(JwtTokenUtil jwtTokenUtil,
+			JwtAuthenticationFilter jwtAuthenticationFilter,
+			CustomUserDetailsService userDetailsService) {
         this.jwtTokenUtil = jwtTokenUtil;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.userDetailsService = userDetailsService;
@@ -57,18 +60,26 @@ public class SecurityConfig {
 							"/webjars/**",
 							"/api/authenticate",
 							"/api/real-estates/",
-							"/api/email/send-email"
+							"/api/email/send-email",
+							"/admin/**",
+							"/dist/**",
+							"/pages/**",
+							"/plugins/**",
+							"/static/**",
+							"/admin/**"
 							).permitAll()
+					
+					// Define URLs that require specific role
+//					.requestMatchers("/admin/**").hasRole("ADMIN")
+					.requestMatchers("/agent/**").hasRole("AGENT")	// TODO Complete Role creation - AGENT
 					
 					// Define URLs that require authentication
 					.requestMatchers("/api/users/**").authenticated()
 					
-					// Define URLs that require ADMIN role
-					.requestMatchers("/api/admin/**").hasRole("ADMIN")
-					
 					// Any other request must be authenticated
 					.anyRequest().authenticated()
 					)
+			
 					.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 					.csrf(csrf -> csrf.disable());
 		
@@ -91,3 +102,19 @@ public class SecurityConfig {
 	}
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

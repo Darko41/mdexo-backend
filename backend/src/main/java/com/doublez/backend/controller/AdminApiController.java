@@ -23,7 +23,7 @@ import com.doublez.backend.entity.RealEstate;
 
 @RestController
 @RequestMapping("/api/admin")
-public class AdminController {
+public class AdminApiController {
 	
 	@Autowired
 	private RealEstateController realEstateController;
@@ -31,7 +31,7 @@ public class AdminController {
 	@Autowired
 	private UserController userController;
 	
-	private static final Logger logger = LoggerFactory.getLogger(AdminController.class);
+	private static final Logger logger = LoggerFactory.getLogger(AdminApiController.class);
 
 	
 	@PostMapping("/real-estates/add")
