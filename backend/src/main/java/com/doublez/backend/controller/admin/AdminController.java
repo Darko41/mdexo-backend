@@ -1,0 +1,37 @@
+package com.doublez.backend.controller.admin;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import com.doublez.backend.service.RealEstateService;
+import com.doublez.backend.service.UserService;
+
+
+@Controller
+@RequestMapping("/admin")
+public class AdminController {
+	
+	@Autowired
+	private RealEstateService realEstateService;
+	@Autowired
+	private UserService userService;
+	
+	@GetMapping("/dashboard")
+	public String showAdminDashboard(Model model) {
+		
+		long realEstateCount = realEstateService.getRealEstateCount();
+		model.addAttribute("realEstateCount", realEstateCount);
+		
+		long userCount = userService.getUserCount();
+		model.addAttribute("userCount", userCount);
+		
+		long agentCount = userService.getAgentCount();
+		model.addAttribute("agentCount", agentCount);
+		
+		return "admin/dashboard";
+	}
+	
+}

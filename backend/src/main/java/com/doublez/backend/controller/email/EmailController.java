@@ -1,4 +1,4 @@
-package com.doublez.backend.controller;
+package com.doublez.backend.controller.email;
 
 import java.util.HashMap;
 import java.util.Map;

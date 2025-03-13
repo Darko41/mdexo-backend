@@ -1,4 +1,4 @@
-package com.doublez.backend.controller;
+package com.doublez.backend.controller.realestate;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -33,12 +33,12 @@ import jakarta.validation.Valid;
 @RestController
 @CrossOrigin(origins = "http://localhost:5173")
 @RequestMapping("/api/real-estates")
-public class RealEstateController {
+public class RealEstateApiController {
 	
 	@Autowired
 	private RealEstateRepository realEstateRepository;
 	
-	private static final Logger logger = LoggerFactory.getLogger(RealEstateController.class);
+	private static final Logger logger = LoggerFactory.getLogger(RealEstateApiController.class);
 
 	@GetMapping("/")	// The Pageable object is automatically populated with
 									// query parameters like page, size, and sort
@@ -148,4 +148,5 @@ public class RealEstateController {
 		}
 		
 	}
+
 }

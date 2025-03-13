@@ -1,4 +1,4 @@
-package com.doublez.backend.controller;
+package com.doublez.backend.controller.user;
 
 import java.util.Collections;
 import java.util.List;
@@ -92,5 +92,7 @@ public class UserController {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error deleting user");
 		}
 	}
+	
+	
 	
 }

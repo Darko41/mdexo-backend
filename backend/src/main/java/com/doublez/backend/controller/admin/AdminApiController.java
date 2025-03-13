@@ -1,4 +1,4 @@
-package com.doublez.backend.controller;
+package com.doublez.backend.controller.admin;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.doublez.backend.controller.realestate.RealEstateApiController;
+import com.doublez.backend.controller.user.UserController;
 import com.doublez.backend.dto.UserDetailsDTO;
 import com.doublez.backend.entity.RealEstate;
 
@@ -26,7 +28,7 @@ import com.doublez.backend.entity.RealEstate;
 public class AdminApiController {
 	
 	@Autowired
-	private RealEstateController realEstateController;
+	private RealEstateApiController realEstateController;
 
 	@Autowired
 	private UserController userController;

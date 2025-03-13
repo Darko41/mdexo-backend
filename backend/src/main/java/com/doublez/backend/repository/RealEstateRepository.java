@@ -8,5 +8,7 @@ import com.doublez.backend.entity.RealEstate;
 
 @Repository
 public interface RealEstateRepository extends JpaRepository<RealEstate, Long>, JpaSpecificationExecutor<RealEstate>{
+	
+	long count();
 
 }

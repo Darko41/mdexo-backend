@@ -143,5 +143,14 @@ public class UserService {
 		userRepository.delete(user);
 		return true;
 	}
+	
+	
+	public long getUserCount() {
+		return userRepository.count();
+	}
+	
+	public long getAgentCount() {
+		return userRepository.countUsersByRole("ROLE_AGENT");
+	}
 
 }
