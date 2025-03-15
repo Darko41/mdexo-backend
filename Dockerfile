@@ -1,5 +1,5 @@
 # Step 1: Use the official OpenJDK 21 JDK image to build the Java application
-FROM openjdk:21-jdk-slim as build
+FROM eclipse-temurin:21-alpine as build
 
 # Step 2: Set the working directory inside the container for the build stage
 WORKDIR /app
@@ -19,7 +19,7 @@ COPY src ./src
 RUN ./mvnw clean package -DskipTests
 
 # Step 7: Use a smaller image with only the JRE (Java Runtime Environment) for runtime
-FROM openjdk:21-jre
+FROM eclipse-temurin:21-jre-alpine
 
 # Set the working directory for the runtime container
 WORKDIR /app
