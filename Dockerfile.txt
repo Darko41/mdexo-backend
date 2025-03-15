@@ -25,10 +25,10 @@ FROM openjdk:21-jre-slim
 WORKDIR /app
 
 # Copy the JAR file from the build stage into the runtime image
-COPY --from=build /app/backend/target/mdexo-backend-0.0.1-SNAPSHOT /app/mdexo-backend-0.0.1-SNAPSHOT
+COPY --from=build /app/target/mdexo-backend-0.0.1-SNAPSHOT.jar /app/mdexo-backend-0.0.1-SNAPSHOT.jar
 
 # Step 8: Expose the port your application will run on (default is 8080 for Spring Boot)
 EXPOSE 8080
 
 # Step 9: Define the entry point for your Spring Boot application
-ENTRYPOINT ["java", "-jar", "/app/mdexo-backend-0.0.1-SNAPSHOT"]
+ENTRYPOINT ["java", "-jar", "/app/mdexo-backend-0.0.1-SNAPSHOT.jar"]
