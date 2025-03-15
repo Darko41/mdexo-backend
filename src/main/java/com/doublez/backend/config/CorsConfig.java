@@ -12,7 +12,7 @@ public class CorsConfig {
 	@Bean
 	CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration corsConfiguration = new CorsConfiguration();
-		corsConfiguration.addAllowedOrigin("*"); // Frontend URL
+		corsConfiguration.addAllowedOrigin("*"); // Frontend URL	TODO THIS WAS "http://localhost:5173". Change it accordingly.
 		corsConfiguration.addAllowedMethod("*"); // Allow all methods
 		corsConfiguration.addAllowedHeader("*"); // Allow all headers
 		
