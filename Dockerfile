@@ -19,7 +19,7 @@ COPY src ./src
 RUN ./mvnw clean package -DskipTests
 
 # Step 7: Use a smaller image with only the JAR file and JRE (Java Runtime Environment)
-FROM openjdk:21-jre-slim
+FROM openjdk:21-jdk-slim
 
 # Set the working directory for the runtime container
 WORKDIR /app
