@@ -1,4 +1,4 @@
-# Step 1: Use the official OpenJDK 21 image to build the Java application
+# Step 1: Use the official OpenJDK 21 JDK image to build the Java application
 FROM openjdk:21-jdk-slim as build
 
 # Step 2: Set the working directory inside the container for the build stage
@@ -9,8 +9,8 @@ COPY mvnw .
 COPY .mvn .mvn
 COPY pom.xml .
 
-# Step 4: Download dependencies (this will cache dependencies unless the pom.xml changes)
-RUN ./mvnw dependency:go-offline
+# Step 4: Make the mvnw file executable
+RUN chmod +x mvnw
 
 # Step 5: Copy the rest of your project files into the container
 COPY src ./src
@@ -18,8 +18,8 @@ COPY src ./src
 # Step 6: Package the Spring Boot application (create the JAR file)
 RUN ./mvnw clean package -DskipTests
 
-# Step 7: Use a smaller image with only the JAR file and JRE (Java Runtime Environment)
-FROM openjdk:21-jdk-slim
+# Step 7: Use a smaller image with only the JRE (Java Runtime Environment) for runtime
+FROM openjdk:21-jre-slim
 
 # Set the working directory for the runtime container
 WORKDIR /app
