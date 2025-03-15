@@ -9,9 +9,9 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.doublez</groupId>
-	<artifactId>backend</artifactId>
+	<artifactId>mdexo-backend</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>backend</name>
+	<name>mdexo-backend</name>
 	<description>Web presentation for home adaptation business and real estate advertisement.</description>
 	<url/>
 	<licenses>
