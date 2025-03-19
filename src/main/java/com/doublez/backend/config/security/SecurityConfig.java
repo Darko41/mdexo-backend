@@ -94,8 +94,8 @@ public class SecurityConfig {
 			@Override
 			public void addCorsMappings(CorsRegistry registry) {
 				registry.addMapping("/api/**") // Allow CORS for /api endpoints
-					.allowedOrigins("http://localhost:5173") // Frontendt URL
-					.allowedMethods("GET", "POST", "PUT", "DELETE") // Allow these HTTP methods
+					.allowedOrigins("https://mdexo-frontend.onrender.com", "http://localhost:5173") // Frontendt URL
+					.allowedMethods("*") // Allow these HTTP methods
 					.allowedHeaders("*"); // Allow all headers
 			}
 		};
