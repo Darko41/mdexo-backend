@@ -12,9 +12,11 @@ public class CorsConfig {
 	@Bean
 	CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration corsConfiguration = new CorsConfiguration();
-		corsConfiguration.addAllowedOrigin("*"); // Frontend URL	TODO THIS WAS "http://localhost:5173". Change it accordingly.
+		corsConfiguration.addAllowedOrigin("https://mdexo.onrender.com");
+		corsConfiguration.addAllowedOrigin("http://localhost:5173");
 		corsConfiguration.addAllowedMethod("*"); // Allow all methods
 		corsConfiguration.addAllowedHeader("*"); // Allow all headers
+//		corsConfiguration.addAllowedOriginPattern("https://*.onrender.com");
 		
 		// Create a source for CORS configuration
 		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
