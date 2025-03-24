@@ -61,6 +61,7 @@ public class SecurityConfig {
 							"/api/authenticate",
 							"/api/real-estates/",
 							"/api/email/send-email",
+							"/api/db-status",
 							"/admin/**",
 							"/dist/**",
 							"/pages/**",
