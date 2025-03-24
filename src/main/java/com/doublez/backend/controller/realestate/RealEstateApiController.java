@@ -31,7 +31,7 @@ import com.doublez.backend.specification.RealEstateSpecifications;
 import jakarta.validation.Valid;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "https://mdexo-frontend.onrender.com")	// was "http://localhost:5173"
 @RequestMapping("/api/real-estates")
 public class RealEstateApiController {
 	
