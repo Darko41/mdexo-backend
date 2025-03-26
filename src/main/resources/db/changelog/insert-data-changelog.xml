@@ -7,183 +7,18 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
 
     <!-- Insert data into real-estate-features table -->
-    <changeSet author="darko" id="1" dbms="postgresql">
-        <insert tableName="real-estate-features">
-            <column name="property_id" value="3"/>
-            <column name="feature" value="balcony"/>
-        </insert>
-        <insert tableName="real-estate-features">
-            <column name="property_id" value="3"/>
-            <column name="feature" value="cellar"/>
-        </insert>
-        <insert tableName="real-estate-features">
-            <column name="property_id" value="3"/>
-            <column name="feature" value="basement"/>
-        </insert>
-    </changeSet>
+    
 
     <!-- Insert data into real_estate table -->
-    <changeSet author="darko" id="2" dbms="postgresql">
-        <insert tableName="real_estate">
-            <column name="property_id" value="1"/>
-            <column name="address" value="Dositejeva"/>
-            <column name="city" value="Stockholm"/>
-            <column name="created_at" value="2025-02-02"/>
-            <column name="description" value="Kuca pored mora"/>
-            <column name="price" value="70000.00"/>
-            <column name="property_type" value="APARTMENT"/>
-            <column name="size_in_sq_mt" value="50"/>
-            <column name="state" value="France"/>
-            <column name="title" value="Stan polovan"/>
-            <column name="updated_at" value="2025-03-04"/>
-            <column name="zip_code" value="44532"/>
-        </insert>
-    </changeSet>
-
-    <changeSet author="darko" id="3" dbms="postgresql">
-        <insert tableName="real_estate">
-            <column name="property_id" value="2"/>
-            <column name="address" value="Karadjordjeva"/>
-            <column name="city" value="Paris"/>
-            <column name="created_at" value="2025-02-02"/>
-            <column name="description" value="Nov, glanc da, da"/>
-            <column name="price" value="80000.00"/>
-            <column name="property_type" value="CONDO"/>
-            <column name="size_in_sq_mt" value="150"/>
-            <column name="state" value="China"/>
-            <column name="title" value="Stan nov"/>
-            <column name="updated_at" value="2025-02-03"/>
-            <column name="zip_code" value="22334"/>
-        </insert>
-    </changeSet>
-
-    <changeSet author="darko" id="4" dbms="postgresql">
-        <insert tableName="real_estate">
-            <column name="property_id" value="3"/>
-            <column name="address" value="Mracna"/>
-            <column name="city" value="Lilestrom"/>
-            <column name="created_at" value="2025-02-04"/>
-            <column name="description" value="Na dva sprata"/>
-            <column name="price" value="180000.00"/>
-            <column name="property_type" value="HOUSE"/>
-            <column name="size_in_sq_mt" value="350"/>
-            <column name="state" value="Norway"/>
-            <column name="title" value="Kuca polovna"/>
-            <column name="updated_at" value="2025-02-04"/>
-            <column name="zip_code" value="22344"/>
-        </insert>
-    </changeSet>
-
-    <changeSet author="darko" id="5" dbms="postgresql">
-        <insert tableName="real_estate">
-            <column name="property_id" value="5"/>
-            <column name="address" value="Zmaj Jovina 33"/>
-            <column name="city" value="Belgrade"/>
-            <column name="created_at" value="2025-03-13"/>
-            <column name="description" value="Nov, luksuzan stan"/>
-            <column name="price" value="225000.00"/>
-            <column name="property_type" value="APARTMENT"/>
-            <column name="size_in_sq_mt" value="94"/>
-            <column name="state" value="Serbia"/>
-            <column name="title" value="Stan na Dorcolu"/>
-            <column name="updated_at" value="2025-03-13"/>
-            <column name="zip_code" value="11000"/>
-        </insert>
-    </changeSet>
+    
 
     <!-- Insert data into role table -->
-    <changeSet author="darko" id="6" dbms="postgresql">
-        <insert tableName="role">
-            <column name="id" value="1"/>
-            <column name="name" value="ROLE_USER"/>
-        </insert>
-        <insert tableName="role">
-            <column name="id" value="2"/>
-            <column name="name" value="ROLE_ADMIN"/>
-        </insert>
-        <insert tableName="role">
-            <column name="id" value="3"/>
-            <column name="name" value="ROLE_AGENT"/>
-        </insert>
-    </changeSet>
+    
 
     <!-- Insert data into user_roles table (for many-to-many relationship) -->
-    <changeSet author="darko" id="7" dbms="postgresql">
-        <insert tableName="user_roles">
-            <column name="user_id" value="3"/>
-            <column name="role_id" value="2"/>
-        </insert>
-        <insert tableName="user_roles">
-            <column name="user_id" value="4"/>
-            <column name="role_id" value="2"/>
-        </insert>
-        <insert tableName="user_roles">
-            <column name="user_id" value="4"/>
-            <column name="role_id" value="3"/>
-        </insert>
-        <insert tableName="user_roles">
-            <column name="user_id" value="6"/>
-            <column name="role_id" value="2"/>
-        </insert>
-        <insert tableName="user_roles">
-            <column name="user_id" value="8"/>
-            <column name="role_id" value="3"/>
-        </insert>
-        <insert tableName="user_roles">
-            <column name="user_id" value="9"/>
-            <column name="role_id" value="3"/>
-        </insert>
-    </changeSet>
+    
 
     <!-- Insert data into users table -->
-    <changeSet author="darko" id="8" dbms="postgresql">
-        <insert tableName="users">
-            <column name="id" value="3"/>
-            <column name="created_at" value="2025-02-02"/>
-            <column name="password" value="$2a$10$JbogjxXzrLjs9YF2.NBkKu7XqK1t.zYpmUZThFWUG/fWHto7jsYxC"/>
-            <column name="updated_at" value="NULL"/>
-            <column name="username" value="darko"/>
-        </insert>
-    </changeSet>
-
-    <changeSet author="darko" id="9" dbms="postgresql">
-        <insert tableName="users">
-            <column name="id" value="4"/>
-            <column name="created_at" value="2025-02-02"/>
-            <column name="password" value="$2a$10$G7QrscqAiPQAAPpOfQJB9.oRE.nfX43O7jkOClm3a./zNfkHgZolK"/>
-            <column name="updated_at" value="NULL"/>
-            <column name="username" value="zezi"/>
-        </insert>
-    </changeSet>
-
-    <changeSet author="darko" id="10" dbms="postgresql">
-        <insert tableName="users">
-            <column name="id" value="6"/>
-            <column name="created_at" value="2025-02-02"/>
-            <column name="password" value="$2a$10$QZleFvlnrhPgLyXsei4BLuxzVCaazazE3bx9551uerxvySgknx5sa"/>
-            <column name="updated_at" value="NULL"/>
-            <column name="username" value="lazar"/>
-        </insert>
-    </changeSet>
-
-    <changeSet author="darko" id="11" dbms="postgresql">
-        <insert tableName="users">
-            <column name="id" value="7"/>
-            <column name="created_at" value="2025-02-02"/>
-            <column name="password" value="$2a$10$OYwQo3kYCnenDSU9t81JZex3KHk7F15qZsXQE/vtJCWhjQWhcfyMy"/>
-            <column name="updated_at" value="NULL"/>
-            <column name="username" value="testuser"/>
-        </insert>
-    </changeSet>
-
-    <changeSet author="darko" id="12" dbms="postgresql">
-        <insert tableName="users">
-            <column name="id" value="8"/>
-            <column name="created_at" value="2025-02-04"/>
-            <column name="password" value="$2a$10$cPXBAnlEV6i4C3CEXIOHoOdacOJGLQ9KvaV.QCy5GQzAF6T8jUuCu"/>
-            <column name="updated_at" value="NULL"/>
-            <column name="username" value="agent007"/>
-        </insert>
-    </changeSet>
+    
 
 </databaseChangeLog>

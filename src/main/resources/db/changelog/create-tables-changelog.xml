@@ -4,6 +4,27 @@
     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
 
+
+	<!-- Create real_estate table -->
+    <changeSet author="darko" id="2" dbms="postgresql">
+        <createTable tableName="real_estate">
+            <column name="property_id" type="bigint">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="address" type="varchar(255)"/>
+            <column name="city" type="varchar(255)"/>
+            <column name="created_at" type="date"/>
+            <column name="description" type="varchar(1000)"/>
+            <column name="price" type="numeric(38,2)"/>
+            <column name="property_type" type="varchar(255)"/>
+            <column name="size_in_sqmt" type="varchar(255)"/>
+            <column name="state" type="varchar(255)"/>
+            <column name="title" type="varchar(255)"/>
+            <column name="updated_at" type="date"/>
+            <column name="zip_code" type="varchar(255)"/>
+        </createTable>
+    </changeSet>
+
     <!-- Create real-estate-features table (ElementCollection) -->
     <changeSet author="darko" id="1" dbms="postgresql">
         <createTable tableName="real-estate-features">
@@ -28,25 +49,7 @@
             initiallyDeferred="false"/>
     </changeSet>
     
-    <!-- Create real_estate table -->
-    <changeSet author="darko" id="2" dbms="postgresql">
-        <createTable tableName="real_estate">
-            <column name="property_id" type="bigint">
-                <constraints primaryKey="true" nullable="false"/>
-            </column>
-            <column name="address" type="varchar(255)"/>
-            <column name="city" type="varchar(255)"/>
-            <column name="created_at" type="date"/>
-            <column name="description" type="varchar(1000)"/>
-            <column name="price" type="numeric(38,2)"/>
-            <column name="property_type" type="varchar(255)"/>
-            <column name="size_in_sqmt" type="varchar(255)"/>
-            <column name="state" type="varchar(255)"/>
-            <column name="title" type="varchar(255)"/>
-            <column name="updated_at" type="date"/>
-            <column name="zip_code" type="varchar(255)"/>
-        </createTable>
-    </changeSet>
+    
 
     <!-- Create role table -->
     <changeSet author="darko" id="3" dbms="postgresql">
