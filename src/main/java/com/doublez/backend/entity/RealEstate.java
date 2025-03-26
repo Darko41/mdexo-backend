@@ -30,7 +30,7 @@ enum PropertyType {
 }
 
 @Entity
-@Table(name = "real_estate")
+@Table(name = "real_estates")
 public class RealEstate {
 	
 	@Id
