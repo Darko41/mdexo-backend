@@ -102,7 +102,7 @@
 	    <addForeignKeyConstraint
 	        baseTableName="user_roles"
 	        baseColumnNames="role_id"
-	        referencedTableName="roles"  <!-- Fixed table name here -->
+	        referencedTableName="roles"
 	        referencedColumnNames="id"
 	        constraintName="fk_user_roles_role_id"
 	        deferrable="false"
