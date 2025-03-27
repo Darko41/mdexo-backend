@@ -51,4 +51,26 @@
 	</changeSet>
 
 
+
+	<changeSet author="darko" id="7" dbms="postgresql">
+        <createSequence sequenceName="role_id_seq" startValue="1" incrementBy="1"/>
+    </changeSet>
+    
+    <changeSet author="darko" id="8" dbms="postgresql">
+        <sql>
+            <![CDATA[
+            ALTER TABLE roles
+            ALTER COLUMN id SET DEFAULT nextval('role_id_seq');
+            ]]>
+        </sql>
+    </changeSet>
+    
+    <changeSet author="darko" id="9">
+    	<sql>
+        	<![CDATA[
+        	SELECT setval('role_id_seq', (SELECT MAX(id) FROM roles));
+        	]]>
+	    </sql>
+	</changeSet>
+
 </databaseChangeLog>
