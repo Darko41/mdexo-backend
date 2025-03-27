@@ -67,15 +67,17 @@ public class SecurityConfig {
 							"/pages/**",
 							"/plugins/**",
 							"/static/**",
-							"/admin/**"
+							"/admin/**",
+							"/api/users/**",
+							"/api/real-estates/**"
 							).permitAll()
 					
 					// Define URLs that require specific role
 //					.requestMatchers("/admin/**").hasRole("ADMIN")
-					.requestMatchers("/agent/**").hasRole("AGENT")	// TODO Complete Role creation - AGENT
+//					.requestMatchers("/agent/**").hasRole("AGENT")	// TODO Complete Role creation - AGENT
 					
 					// Define URLs that require authentication
-					.requestMatchers("/api/users/**").authenticated()
+//					.requestMatchers("/api/users/**").authenticated()
 					
 					// Any other request must be authenticated
 					.anyRequest().authenticated()

@@ -9,10 +9,10 @@
     <!-- Insert data into real-estate-features table -->
     
 
-    <!-- Insert data into real_estate table -->
+    <!-- Insert data into real_estates table -->
     
 
-    <!-- Insert data into role table -->
+    <!-- Insert data into roles table -->
     
 
     <!-- Insert data into user_roles table (for many-to-many relationship) -->
