@@ -6,7 +6,49 @@
     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
 
-    <!-- Add column to real_estates table -->
+    <!-- Add sequences for ids autoincrement -->
+    <changeSet author="darko" id="1" dbms="postgresql">
+        <createSequence sequenceName="real_estates_property_id_seq" startValue="1" incrementBy="1"/>
+    </changeSet>
     
+    <changeSet author="darko" id="2" dbms="postgresql">
+        <sql>
+            <![CDATA[
+            ALTER TABLE real_estates
+            ALTER COLUMN property_id SET DEFAULT nextval('real_estates_property_id_seq');
+            ]]>
+        </sql>
+    </changeSet>
+    
+    <changeSet author="darko" id="3">
+    	<sql>
+        	<![CDATA[
+        	SELECT setval('real_estates_property_id_seq', (SELECT MAX(property_id) FROM real_estates));
+        	]]>
+	    </sql>
+	</changeSet>
+	
+    
+    <changeSet author="darko" id="4" dbms="postgresql">
+        <createSequence sequenceName="user_id_seq" startValue="1" incrementBy="1"/>
+    </changeSet>
+    
+    <changeSet author="darko" id="5" dbms="postgresql">
+        <sql>
+            <![CDATA[
+            ALTER TABLE users
+            ALTER COLUMN id SET DEFAULT nextval('user_id_seq');
+            ]]>
+        </sql>
+    </changeSet>
+    
+    <changeSet author="darko" id="6">
+    	<sql>
+        	<![CDATA[
+        	SELECT setval('user_id_seq', (SELECT MAX(id) FROM users));
+        	]]>
+	    </sql>
+	</changeSet>
+
 
 </databaseChangeLog>
