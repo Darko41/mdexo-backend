@@ -53,24 +53,24 @@ public class SecurityConfig {
 		http
 			.authorizeHttpRequests((authz) -> authz
 					// Define public URLs (no authentication required)
-					.requestMatchers(
-							"/swagger-ui/**",						// http://localhost:8080/swagger-ui/index.html
-							"/v3/api-docs/**",
-							"/swagger-resources/**",
-							"/webjars/**",
-							"/api/authenticate",
-							"/api/real-estates/",
-							"/api/email/send-email",
-							"/api/db-status",
-							"/admin/**",
-							"/dist/**",
-							"/pages/**",
-							"/plugins/**",
-							"/static/**",
-							"/admin/**",
-							"/api/users/**",
-							"/api/real-estates/**"
-							).permitAll()
+//					.requestMatchers(
+//							"/swagger-ui/**",						// http://localhost:8080/swagger-ui/index.html
+//							"/v3/api-docs/**",
+//							"/swagger-resources/**",
+//							"/webjars/**",
+//							"/api/authenticate",
+//							"/api/real-estates/",
+//							"/api/email/send-email",
+//							"/api/db-status",
+//							"/admin/**",
+//							"/dist/**",
+//							"/pages/**",
+//							"/plugins/**",
+//							"/static/**",
+//							"/admin/**",
+//							"/api/users/**",
+//							"/api/real-estates/**"
+//							).permitAll()
 					
 					// Define URLs that require specific role
 //					.requestMatchers("/admin/**").hasRole("ADMIN")
@@ -80,7 +80,8 @@ public class SecurityConfig {
 //					.requestMatchers("/api/users/**").authenticated()
 					
 					// Any other request must be authenticated
-					.anyRequest().authenticated()
+//					.anyRequest().authenticated()
+					.anyRequest().permitAll()
 					)
 			
 					.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
