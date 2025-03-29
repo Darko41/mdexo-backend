@@ -11,7 +11,8 @@ import com.doublez.backend.entity.User;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long>{
-	Optional<User> findByUsername(String username);
+	
+	Optional<User> findByEmail(String email);
 	
 	long count();
 	

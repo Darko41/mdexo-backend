@@ -79,7 +79,7 @@ public class AdminApiController {
 	
 	@GetMapping("/users")
     @PreAuthorize("hasRole('ADMIN')")
-	public ResponseEntity<List<UserDetailsDTO>> getAllUsers() {
+	public ResponseEntity<List<UserDetailsDTO>> getAllUsers() {		// TODO Align with new get all users logic
         return userController.getAllUsers();  
     }
 }

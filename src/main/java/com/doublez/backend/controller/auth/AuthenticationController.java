@@ -33,29 +33,27 @@ public class AuthenticationController {
 	
 	@PostMapping("/authenticate")
 	public ResponseEntity<?> authenticateUser(@RequestBody AuthenticationRequest authenticationRequest) {
-		// Authenticate user based on provided credentials
-		
-		try {
-			authenticationManager.authenticate(
-					new UsernamePasswordAuthenticationToken(
-							authenticationRequest.getUsername(),
-							authenticationRequest.getPassword()
-							)
-					);
-		} catch (BadCredentialsException e) {
-			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
-		}
-		
-		// Fetch the user from database
-		User user = userRepository.findByUsername(authenticationRequest.getUsername())
-				.orElseThrow(() -> new UsernameNotFoundException("User not found"));
-		
-		// Generate JWT token for the user
-		final String jwt = jwtTokenUtil.generateToken(user.getUsername());
-		
-		// Return the token to the client
-		return ResponseEntity.ok(new AuthenticationResponse(jwt));
-		
+	    // Authenticate user based on provided credentials (email and password)
+	    try {
+	        authenticationManager.authenticate(
+	                new UsernamePasswordAuthenticationToken(
+	                        authenticationRequest.getEmail(),
+	                        authenticationRequest.getPassword()
+	                )
+	        );
+	    } catch (BadCredentialsException e) {
+	        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");
+	    }
+
+	    // Fetch the user from the database by email (not by username)
+	    User user = userRepository.findByEmail(authenticationRequest.getEmail())
+	            .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+	    // Generate JWT token for the user
+	    final String jwt = jwtTokenUtil.generateToken(user.getEmail());
+
+	    // Return the token to the client
+	    return ResponseEntity.ok(new AuthenticationResponse(jwt));
 	}
 
 }

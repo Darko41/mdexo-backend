@@ -24,7 +24,7 @@ public class User {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 	@Column(unique = true, nullable = false)
-	private String username;
+	private String email;
 	@Column(nullable = false)
 	private String password;
 	
@@ -52,14 +52,6 @@ public class User {
 
 	public void setId(Long id) {
 		this.id = id;
-	}
-
-	public String getUsername() {
-		return username;
-	}
-
-	public void setUsername(String username) {
-		this.username = username;
 	}
 
 	public String getPassword() {
@@ -96,6 +88,14 @@ public class User {
 	
 	public void preUpdate() {
 		this.updatedAt = LocalDate.now();
+	}
+
+	public String getEmail() {
+		return email;
+	}
+
+	public void setEmail(String email) {
+		this.email = email;
 	}
 
 }

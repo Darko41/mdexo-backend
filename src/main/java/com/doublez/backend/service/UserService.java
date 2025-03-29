@@ -31,18 +31,22 @@ public class UserService {
 	@Transactional
 	public String registerUser(UserDetailsDTO userDetailsDTO) {
 		
-		if (userRepository.findByUsername(userDetailsDTO.getUsername()).isPresent()) {
-			return "User already exists";
+		if (userRepository.findByEmail(userDetailsDTO.getEmail()).isPresent()) {
+			return "User already exists with this email";
 		}
 		
 		if (userDetailsDTO.getPassword() == null || userDetailsDTO.getPassword().isEmpty()) {
 			return "Password cannot be empty";
 		}
 		
+		if (userDetailsDTO.getPassword().length() < 6) {
+			return "Password must be at least 6 characters long";
+		}
+		
 		// If no roles are provided, assign a default role
 		List<String> roles = userDetailsDTO.getRoles(); 
 		if (roles == null || roles.isEmpty()) {
-			roles = List.of("USER");
+			roles = List.of("ROLE_USER");
 		}
 				
 		// Fetch roles from the provided DTO using roleRepository
@@ -62,7 +66,7 @@ public class UserService {
 		String hashedPassword = passwordEncoder.encode(userDetailsDTO.getPassword());
 		// Create the User entity
 		User user = new User();
-		user.setUsername(userDetailsDTO.getUsername());
+		user.setEmail(userDetailsDTO.getEmail());
 		user.setPassword(hashedPassword);
 		user.setRoles(roleEntites);
 		
@@ -71,24 +75,24 @@ public class UserService {
 		return "User registered successfully!";
 	}
 
-	public UserDetailsDTO getUserProfile(String username) {
-		User user = userRepository.findByUsername(username)
-				.orElseThrow(() -> new UsernameNotFoundException("User not found"));
+	public UserDetailsDTO getUserProfile(String email) {
+		User user = userRepository.findByEmail(email)
+				.orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
 		
 		List<String> roles = user.getRoles().stream()
 				.map(Role::getName)
 				.collect(Collectors.toList());
 		
-		return new UserDetailsDTO(user.getUsername(), roles);
+		return new UserDetailsDTO(user.getEmail(), roles);
 	}
 
-	public boolean updateProfile(String username, UserDetailsDTO userDetailsDTO) {
-		User user = userRepository.findByUsername(username)
-				.orElseThrow(() -> new UsernameNotFoundException("User not found"));
+	public boolean updateProfile(String email, UserDetailsDTO userDetailsDTO) {
+		User user = userRepository.findByEmail(email)
+				.orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
 		
-		// Update user details
-		if (userDetailsDTO.getUsername() != null && !userDetailsDTO.getUsername().isEmpty()) {
-			user.setUsername(userDetailsDTO.getUsername());
+		// Update email if provided (optional, as you may not allow email updates in some systems)
+		if (userDetailsDTO.getEmail() != null && !userDetailsDTO.getEmail().isEmpty()) {
+			user.setEmail(userDetailsDTO.getEmail());
 		}
 		
 		if (userDetailsDTO.getPassword() != null && !userDetailsDTO.getPassword().isEmpty()) {
@@ -102,22 +106,28 @@ public class UserService {
 	}
 	
 	public List<UserDetailsDTO> getAllUsers() {
-		List<User> users = userRepository.findAll();
-		return users.stream()
-				.map(user -> new UserDetailsDTO(user.getUsername(), user.getRoles().stream()
-						.map(Role::getName).collect(Collectors.toList())))
-				.collect(Collectors.toList());
+	    List<User> users = userRepository.findAll();
+	    return users.stream()
+	            .map(user -> new UserDetailsDTO(
+	                    user.getId(),
+	                    user.getEmail(), 
+	                    user.getRoles().stream()
+	                        .map(Role::getName)
+	                        .collect(Collectors.toList()),
+	                    user.getCreatedAt(),
+	                    user.getUpdatedAt()))
+	            .collect(Collectors.toList());
 	}
 
 	@Transactional
 	public String addUser(UserDetailsDTO userDetailsDTO) {
-		if (userRepository.findByUsername(userDetailsDTO.getUsername()).isPresent()) {
+		if (userRepository.findByEmail(userDetailsDTO.getEmail()).isPresent()) {
 			throw new RuntimeException("User already exists");
 		}
 		
 		// Create the user object
 		User user = new User();
-		user.setUsername(userDetailsDTO.getUsername());
+		user.setEmail(userDetailsDTO.getEmail());
 		// Encode the password
 		user.setPassword(passwordEncoder.encode(userDetailsDTO.getPassword()));
 		
@@ -125,7 +135,7 @@ public class UserService {
 		List<Role> roles = roleRepository.findByNameIn(userDetailsDTO.getRoles());
 		
 		if (roles.isEmpty()) {
-			throw new RuntimeException("Invalid poles provided.");
+			throw new RuntimeException("Invalid roles provided.");
 		}
 		 
 		// Assign the roles to the user
@@ -136,9 +146,9 @@ public class UserService {
 	}
 
 	@Transactional
-	public boolean deleteUser(String username) {
-		User user = userRepository.findByUsername(username)
-				.orElseThrow(() -> new RuntimeException("User not found with username " + username));
+	public boolean deleteUser(Long id) {
+		User user = userRepository.findById(id)
+				.orElseThrow(() -> new RuntimeException("User not found with id " + id));
 		
 		userRepository.delete(user);
 		return true;

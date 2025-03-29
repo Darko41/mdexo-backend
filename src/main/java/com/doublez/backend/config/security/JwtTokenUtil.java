@@ -17,14 +17,14 @@ public class JwtTokenUtil {
 	private static final long EXPIRATION_TIME = 86400000;
 	
 	// Generate JWT Token
-	public String generateToken(String username) {
+	public String generateToken(String email) {
 		SecretKey key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
 		return Jwts.builder()
-				.claim("sub", username)
-				.claim("iat", new Date())
-				.claim("exp", new Date(System.currentTimeMillis() + EXPIRATION_TIME))
-				.signWith(key)
-				.compact();
+				.claim("sub", email)
+				.claim("iat", new Date())	// Issued at time
+				.claim("exp", new Date(System.currentTimeMillis() + EXPIRATION_TIME))	// Expiration time
+				.signWith(key)	// Sign the token with the secret key
+				.compact();	// Return the compact token
 	}
 	
 	public Claims extractClaims(String token) {

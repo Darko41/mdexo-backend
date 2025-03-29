@@ -6,6 +6,7 @@
     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
 
+
     <!-- Add sequences for ids autoincrement -->
     <changeSet author="darko" id="1" dbms="postgresql">
         <createSequence sequenceName="real_estates_property_id_seq" startValue="1" incrementBy="1"/>
@@ -72,5 +73,11 @@
         	]]>
 	    </sql>
 	</changeSet>
+
+    <changeSet id="10" author="darko" dbms="postgresql">
+    	<dropColumn tableName="users" columnName="username"/>
+    	<addColumn ableName="users" columnName="email" type="varchar(255)"/>
+    </changeSet>
+
 
 </databaseChangeLog>
