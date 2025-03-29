@@ -386,29 +386,29 @@
               </li>
             </ul>
           </li>
-          <li class="nav-item has-treeview menu-open">
-            <a href="#" class="nav-link active">
+          <li class="nav-item has-treeview">
+            <a href="#" class="nav-link">
               <i class="nav-icon fas fa-table"></i>
               <p>
-                Tables
+                Data
                 <i class="fas fa-angle-left right"></i>
               </p>
             </a>
             <ul class="nav nav-treeview">
               <li class="nav-item">
-                <a href="../tables/simple.html" class="nav-link">
+                <a th:href="@{/admin/real-estates}" class="nav-link">
                   <i class="far fa-circle nav-icon"></i>
-                  <p>Simple Tables</p>
+                  <p>Real Estates data</p>
                 </a>
               </li>
               <li class="nav-item">
-                <a href="../tables/data.html" class="nav-link active">
+                <a th:href="@{/admin/users}" class="nav-link">
                   <i class="far fa-circle nav-icon"></i>
-                  <p>DataTables</p>
+                  <p>Users data</p>
                 </a>
               </li>
               <li class="nav-item">
-                <a href="../tables/jsgrid.html" class="nav-link">
+                <a th:href="@{/pages/tables/jsgrid.html}" class="nav-link">
                   <i class="far fa-circle nav-icon"></i>
                   <p>jsGrid</p>
                 </a>
@@ -709,12 +709,12 @@
       <div class="container-fluid">
         <div class="row mb-2">
           <div class="col-sm-6">
-            <h1>DataTables</h1>
+            <h1>Users data</h1>
           </div>
           <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
               <li class="breadcrumb-item"><a href="#">Home</a></li>
-              <li class="breadcrumb-item active">DataTables</li>
+              <li class="breadcrumb-item active">Users data</li>
             </ol>
           </div>
         </div>
@@ -727,40 +727,55 @@
         <div class="col-12">
           <div class="card">
             <div class="card-header">
-              <h3 class="card-title">DataTable with minimal features & hover style</h3>
+              <h3 class="card-title">All users in the system</h3>
             </div>
             <!-- /.card-header -->
             <div class="card-body">
               <table id="example2" class="table table-bordered table-hover">
                 <thead>
                 <tr>
-                  <th>Id</th>
-                  <th>Email</th>
-                  <th>Roles</th>
-                  <th>Created at</th>
-                  <th>Updated at</th>
+                  <th>Title</th>
+                  <th>Description</th>
+                  <th>Property Type</th>
+                  <th>Price</th>
+                  <th>Address</th>
+                  <th>City</th>
+                  <th>State</th>
+                  <th>Zip Code</th>
+                  <th>Size (in SqMt)</th>
+                  <th>Created At</th>
+                  <th>Updated At</th>
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="user : ${users}">
-                  <td th:text="${user.id}"></td>
-                  <td th:text="${user.email}"></td>
-                  <td>
-   					 <ul>
-        				<li th:each="role : ${user.roles}" th:text="${role}"></li>
-    				</ul>
-                  </td>
-                  <td th:text="${user.createdAt}"></td>
-                  <td th:text="${user.updatedAt}"></td>
+                <tr th:each="realEstate : ${realEstates}">
+                  <td th:text="${realEstate.title}"></td>
+                  <td th:text="${realEstate.description}"></td>
+                  <td th:text="${realEstate.propertyType}"></td>
+                  <td th:text="${realEstate.price}"></td>
+                  <td th:text="${realEstate.address}"></td>
+                  <td th:text="${realEstate.city}"></td>
+                  <td th:text="${realEstate.state}"></td>
+                  <td th:text="${realEstate.zipCode}"></td>
+                  <td th:text="${realEstate.sizeInSqMt}"></td>
+                  <td th:text="${realEstate.price}"></td>
+                  <td th:text="${realEstate.createdAt}"></td>
+                  <td th:text="${realEstate.updatedAt}"></td>
                 </tr>
                 </tbody>
                 <tfoot>
                 <tr>
-                  <<th>Id</th>
-                  <th>Email</th>
-                  <th>Roles</th>
-                  <th>Created at</th>
-                  <th>Updated at</th>
+                  <th>Title</th>
+                  <th>Description</th>
+                  <th>Property Type</th>
+                  <th>Price</th>
+                  <th>Address</th>
+                  <th>City</th>
+                  <th>State</th>
+                  <th>Zip Code</th>
+                  <th>Size (in SqMt)</th>
+                  <th>Created At</th>
+                  <th>Updated At</th>
                 </tr>
                 </tfoot>
               </table>

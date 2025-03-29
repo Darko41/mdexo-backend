@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import com.doublez.backend.dto.UserDetailsDTO;
+import com.doublez.backend.entity.RealEstate;
 import com.doublez.backend.entity.User;
 import com.doublez.backend.service.RealEstateService;
 import com.doublez.backend.service.UserService;
@@ -42,7 +43,14 @@ public class AdminController {
 	public String showUserData(Model model) {
 		List<UserDetailsDTO> users = userService.getAllUsers();
 		model.addAttribute("users", users);
-		return "admin/data";
+		return "admin/userdata";
+	}
+	
+	@GetMapping("/real-estates")
+	public String showRealEstatesData(Model model) {
+		List<RealEstate> realEstates = realEstateService.getAllRealEstates();
+		model.addAttribute("realEstates", realEstates);
+		return "admin/realestatedata";
 	}
 	
 }

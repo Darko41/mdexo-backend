@@ -15,6 +15,8 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotNull;
 
 @Entity
 @Table(name = "users")
@@ -23,8 +25,11 @@ public class User {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
+	@NotNull(message = "Email cannot be null")
+	@Email(message = "Please provide a valid email address")
 	@Column(unique = true, nullable = false)
 	private String email;
+	@NotNull(message = "Password cannot be null")
 	@Column(nullable = false)
 	private String password;
 	
