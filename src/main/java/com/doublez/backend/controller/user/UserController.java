@@ -60,7 +60,7 @@ public class UserController {
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
 	}
 	
-	@PutMapping("/{username}")
+	@PutMapping("/update/{username}")
 	public ResponseEntity<String> updateUserProfile(@PathVariable String username, @RequestBody UserDetailsDTO userDetailsDTO) {
 		boolean isUpdated = userService.updateProfile(username, userDetailsDTO);
 		if (isUpdated) {
@@ -80,10 +80,10 @@ public class UserController {
 		
 	}
 	
-	@DeleteMapping("/{username}")
-	public ResponseEntity<String> deleteUser(@PathVariable String username) {
+	@DeleteMapping("/delete/{id}")
+	public ResponseEntity<String> deleteUser(@PathVariable Long id) {
 		try {
-			boolean isDeleted = userService.deleteUser(username);
+			boolean isDeleted = userService.deleteUser(id);
 			if (isDeleted) {
 				return ResponseEntity.ok("User deleted successfully!");
 			}

@@ -29,20 +29,20 @@ public class CustomUserDetailsService implements UserDetailsService{
 
 	@Override
 	@Transactional
-	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+	public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
 		// Fetch the user entity from the database
-		com.doublez.backend.entity.User user = userRepository.findByUsername(username)
-				.orElseThrow(() -> new UsernameNotFoundException("User not found"));
+		com.doublez.backend.entity.User user = userRepository.findByEmail(email)
+				.orElseThrow(() -> new UsernameNotFoundException("User not found with this email: " + email));
 		 
 		// Convert the user to a UserDetailsDTO
-		UserDetailsDTO userDTO = new UserDetailsDTO(user.getUsername(), user.getRoles().stream()
+		UserDetailsDTO userDTO = new UserDetailsDTO(user.getEmail(), user.getRoles().stream()
 				.map(Role::getName)
 				.collect(Collectors.toList()));
 		
 		// Map roles from DTO
 		Collection<? extends GrantedAuthority> authorities = getAuthorities(userDTO);
 		
-		return new User(userDTO.getUsername(), user.getPassword(), authorities);
+		return new User(userDTO.getEmail(), user.getPassword(), authorities);
 	}
 
 	private Collection<? extends GrantedAuthority> getAuthorities(UserDetailsDTO userDTO) {

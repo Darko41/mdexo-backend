@@ -1,35 +1,33 @@
 package com.doublez.backend.dto;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 public class UserDetailsDTO {
 	
-	private String username;
+	private Long id;
 	private List<String> roles;
 	private String password;
+	private String email;
+	private LocalDate createdAt;
+	private LocalDate updatedAt;
 	
 	public UserDetailsDTO() {
 		super();
 	}
 
-	public UserDetailsDTO(String username, List<String> roles, String password) {
-		this.username = username;
+	public UserDetailsDTO(Long id, String email, List<String> roles, LocalDate createdAt, LocalDate updatedAt) {
+		this.id = id;
+		this.email = email;
 		this.roles = roles != null ? roles : new ArrayList<>();
-		this.password = password;
+		this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
 	}
 	
-	public UserDetailsDTO(String username, List<String> roles) {
-		this.username = username;
-		this.roles = roles;
-	}
-
-	public String getUsername() {
-		return username;
-	}
-
-	public void setUsername(String username) {
-		this.username = username;
+	public UserDetailsDTO(String email, List<String> roles) {
+		this.email = email;
+		this.roles = roles != null ? roles : new ArrayList<>();
 	}
 
 	public List<String> getRoles() {
@@ -47,5 +45,37 @@ public class UserDetailsDTO {
 	public void setPassword(String password) {
 		this.password = password;
 	}
+
+	public String getEmail() {
+		return email;
+	}
+
+	public void setEmail(String email) {
+		this.email = email;
+	}
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	public LocalDate getCreatedAt() {
+		return createdAt;
+	}
+
+	public void setCreatedAt(LocalDate createdAt) {
+		this.createdAt = createdAt;
+	}
+
+	public LocalDate getUpdatedAt() {
+		return updatedAt;
+	}
+
+	public void setUpdatedAt(LocalDate updatedAt) {
+		this.updatedAt = updatedAt;
+	} 
 
 }

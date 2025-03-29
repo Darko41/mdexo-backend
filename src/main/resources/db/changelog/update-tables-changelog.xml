@@ -6,7 +6,9 @@
     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
 
-    <!-- Add column to real_estates table -->
-    
+    <changeSet id="1" author="darko" dbms="postgresql">
+    	<dropColumn tableName="users" columnName="username"/>
+    	<addColumn ableName="users" columnName="email" type="varchar(255)"/>
+    </changeSet>
 
 </databaseChangeLog>
