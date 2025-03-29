@@ -410,7 +410,7 @@
               <li class="nav-item">
                 <a th:href="@{/pages/tables/jsgrid.html}" class="nav-link">
                   <i class="far fa-circle nav-icon"></i>
-                  <p>jsGrid</p>
+                  <p>Example - jsGrid</p>
                 </a>
               </li>
             </ul>
@@ -727,7 +727,7 @@
         <div class="col-12">
           <div class="card">
             <div class="card-header">
-              <h3 class="card-title">All users in the system</h3>
+              <h3 class="card-title">All real estates in the database</h3>
             </div>
             <!-- /.card-header -->
             <div class="card-body">
@@ -758,7 +758,6 @@
                   <td th:text="${realEstate.state}"></td>
                   <td th:text="${realEstate.zipCode}"></td>
                   <td th:text="${realEstate.sizeInSqMt}"></td>
-                  <td th:text="${realEstate.price}"></td>
                   <td th:text="${realEstate.createdAt}"></td>
                   <td th:text="${realEstate.updatedAt}"></td>
                 </tr>

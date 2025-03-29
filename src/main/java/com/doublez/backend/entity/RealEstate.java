@@ -5,6 +5,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.format.annotation.NumberFormat;
+
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -50,6 +52,7 @@ public class RealEstate {
 	@Column(name = "property_type", nullable = false)
 	private PropertyType propertyType;
 	
+	@NumberFormat(pattern = "#.###,00")
 	@Column(name = "price", nullable = false)
 	private BigDecimal price;
 	
