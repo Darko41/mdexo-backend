@@ -76,7 +76,7 @@
 
     <changeSet id="10" author="darko" dbms="postgresql">
     	<dropColumn tableName="users" columnName="username"/>
-    	<addColumn ableName="users" columnName="email" type="varchar(255)"/>
+    	<addColumn tableName="users" columnName="email" type="varchar(255)"/>
     </changeSet>
 
 

@@ -735,7 +735,6 @@
                 <thead>
                 <tr>
                   <th>Id</th>
-                  <th>Username</th>
                   <th>Email</th>
                   <th>Roles</th>
                   <th>Created at</th>
@@ -745,7 +744,6 @@
                 <tbody>
                 <tr th:each="user : ${users}">
                   <td th:text="${user.id}"></td>
-                  <td th:text="${user.username}"></td>
                   <td th:text="${user.email}"></td>
                   <td>
    					 <ul>
@@ -758,11 +756,11 @@
                 </tbody>
                 <tfoot>
                 <tr>
-                  <th>Id</th>
-                  <th>Username</th>
-                  <th>email</th>
-                  <th>created at</th>
-                  <th>updated at</th>
+                  <<th>Id</th>
+                  <th>Email</th>
+                  <th>Roles</th>
+                  <th>Created at</th>
+                  <th>Updated at</th>
                 </tr>
                 </tfoot>
               </table>
