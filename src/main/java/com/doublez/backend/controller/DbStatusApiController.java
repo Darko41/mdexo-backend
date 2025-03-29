@@ -1,4 +1,4 @@
-package com.doublez.backend.controller.db;
+package com.doublez.backend.controller;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

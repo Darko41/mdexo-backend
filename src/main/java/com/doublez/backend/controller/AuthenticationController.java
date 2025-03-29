@@ -1,4 +1,4 @@
-package com.doublez.backend.controller.auth;
+package com.doublez.backend.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

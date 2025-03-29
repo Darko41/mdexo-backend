@@ -1,4 +1,4 @@
-package com.doublez.backend.controller.realestate;
+package com.doublez.backend.controller;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;

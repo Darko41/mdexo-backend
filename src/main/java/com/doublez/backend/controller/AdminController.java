@@ -1,4 +1,4 @@
-package com.doublez.backend.controller.admin;
+package com.doublez.backend.controller;
 
 import java.util.List;
 

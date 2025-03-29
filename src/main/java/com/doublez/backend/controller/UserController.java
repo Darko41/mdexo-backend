@@ -1,4 +1,4 @@
-package com.doublez.backend.controller.user;
+package com.doublez.backend.controller;
 
 import java.util.Collections;
 import java.util.List;
