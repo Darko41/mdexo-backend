@@ -159,10 +159,11 @@ public class UserServiceTest {
 	
 	@Test
 	void testUpdateProfile_Success() {
-		String email = "johndoe@gmail.com";
-		User existinUser = new User();
-		existinUser.setEmail(email);
-		existinUser.setPassword("oldEncodedPassword");
+		Long userId = 1L;
+		User existingUser = new User();
+		existingUser.setId(userId);
+		existingUser.setEmail("johndoe@gmail.com");
+		existingUser.setPassword("oldEncodedPassword");
 		
 		// New user details to update
 		String newEmail = "johndoeupdated@gmail.com";
@@ -170,33 +171,33 @@ public class UserServiceTest {
 		UserDetailsDTO userDetailsDTO = new UserDetailsDTO(newEmail, new ArrayList<>());
 		userDetailsDTO.setPassword(newPassword);
 		
-		when(userRepository.findByEmail(email)).thenReturn(Optional.of(existinUser));
+		when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
 		when(passwordEncoder.encode(newPassword)).thenReturn("newEncodedPassword123");
 		when(userRepository.save(any(User.class))).thenAnswer(
 				invocation -> invocation.getArgument(0)); // Return the updated user
 		
-		boolean result = userService.updateProfile(email, userDetailsDTO);
+		boolean result = userService.updateProfile(userId, userDetailsDTO);
 		
 		assertTrue(result); // Ensure the result is true
-		assertEquals(newEmail, existinUser.getEmail()); // Ensure email is updated
-		assertEquals("newEncodedPassword123", existinUser.getPassword()); // Ensure password is encoded and updated
+		assertEquals(newEmail, existingUser.getEmail()); // Ensure email is updated
+		assertEquals("newEncodedPassword123", existingUser.getPassword()); // Ensure password is encoded and updated
 		
-		verify(userRepository).save(existinUser); // Ensure the save method is called with updated user
+		verify(userRepository).save(existingUser); // Ensure the save method is called with updated user
 	}
 	
 	@Test
 	void testUpdateProfile_UserNotFOund() {
-		String email = "nonexistingemail@gmail.com";
+		Long userId = 1L;
 		UserDetailsDTO userDetailsDTO = new UserDetailsDTO("newemail@gmail.com", null);
 		userDetailsDTO.setPassword("newPassword123");
 		
-		when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
+		when(userRepository.findById(userId)).thenReturn(Optional.empty());
 		
 		Exception exception = assertThrows(UsernameNotFoundException.class, () -> {
-			userService.updateProfile(email, userDetailsDTO);
+			userService.updateProfile(userId, userDetailsDTO);
 		});
 		
-		assertEquals("User not found with email: " + email, exception.getMessage()); // Ensure exception is thrown with correct message
+		assertEquals("User not found with ID: " + userId, exception.getMessage()); // Ensure exception is thrown with correct message
 		verify(userRepository, never()).save(any(User.class)); // Ensure save method is not called
 	}
 	
