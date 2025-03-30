@@ -98,7 +98,7 @@ public class SecurityConfig {
 		return new WebMvcConfigurer() {
 			@Override
 			public void addCorsMappings(CorsRegistry registry) {
-				registry.addMapping("/api/**") // Allow CORS for /api endpoints
+				registry.addMapping("*") // Allow CORS for /api endpoints
 					.allowedOrigins("https://mdexo-frontend.onrender.com", "http://localhost:5173") // Frontendt URL
 					.allowedMethods("*") // Allow these HTTP methods
 					.allowedHeaders("*"); // Allow all headers
