@@ -1,6 +1,7 @@
 package com.doublez.backend.config.security;
 
 import java.util.Date;
+import java.util.List;
 
 import javax.crypto.SecretKey;
 
@@ -17,10 +18,11 @@ public class JwtTokenUtil {
 	private static final long EXPIRATION_TIME = 86400000;
 	
 	// Generate JWT Token
-	public String generateToken(String email) {
+	public String generateToken(String email, List<String> roles) {
 		SecretKey key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
 		return Jwts.builder()
 				.claim("sub", email)
+				.claim("roles", roles)
 				.claim("iat", new Date())	// Issued at time
 				.claim("exp", new Date(System.currentTimeMillis() + EXPIRATION_TIME))	// Expiration time
 				.signWith(key)	// Sign the token with the secret key
@@ -36,9 +38,14 @@ public class JwtTokenUtil {
 				.getPayload();
 	}
 	
-	// Extract Username from Token
-	public String extractUsername(String token) {
+	// Extract Email from Token
+	public String extractEmail(String token) {
 		return extractClaims(token).getSubject();
+	}
+	
+	// Extract roles from the token
+	public List<String> extractRoles(String token) {
+		return (List<String>) extractClaims(token).get("roles");
 	}
 	
 	// Check if Token is Expired
@@ -52,8 +59,8 @@ public class JwtTokenUtil {
 	}
 
 	// Validate Token
-	public boolean validateToken(String token, String username) {
-		return (username.equals(extractUsername(token)) && !isTokenExpired(token));
+	public boolean validateToken(String token, String email) {
+		return (email.equals(extractEmail(token)) && !isTokenExpired(token));
 	}
 
 }

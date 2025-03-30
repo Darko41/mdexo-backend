@@ -99,7 +99,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
 
 	// Helper method to extract username from the token
 	private String extractUsernameFromToken(String token) {
-		return jwtTokenUtil.extractUsername(token);
+		return jwtTokenUtil.extractEmail(token);
 	}
 
 	// Helper method to extract the JWT token from the request's Authorization

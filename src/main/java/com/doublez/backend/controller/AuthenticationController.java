@@ -1,5 +1,8 @@
 package com.doublez.backend.controller;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -48,12 +51,18 @@ public class AuthenticationController {
 	    // Fetch the user from the database by email (not by username)
 	    User user = userRepository.findByEmail(authenticationRequest.getEmail())
 	            .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+	    
+	    List<String> roles = user.getRoles().stream()
+	    		.map(role -> role.getName())
+	    		.collect(Collectors.toList());
 
 	    // Generate JWT token for the user
-	    final String jwt = jwtTokenUtil.generateToken(user.getEmail());
-
+	    final String jwt = jwtTokenUtil.generateToken(user.getEmail(), roles);
+	    
 	    // Return the token to the client
-	    return ResponseEntity.ok(new AuthenticationResponse(jwt));
+	    return ResponseEntity.ok(new AuthenticationResponse(jwt, roles));
+	    
+	   
 	}
 
 }

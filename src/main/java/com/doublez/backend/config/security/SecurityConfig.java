@@ -75,7 +75,7 @@ public class SecurityConfig {
 					
 					// Define URLs that require specific role		
 					.requestMatchers("/swagger-ui/**", "/v3/api-docs/**").hasRole("DEV")
-//					.requestMatchers("/agent/**").hasRole("ROLE_AGENT")
+					.requestMatchers("/admin/**").hasRole("ADMIN")
 					
 					// Define URLs that require authentication
 //					.requestMatchers("/api/users/**").authenticated()
