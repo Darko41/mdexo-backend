@@ -28,11 +28,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
 	private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 	
 	private static final List<String> EXCLUDED_PATHS = Arrays.asList(
-			"/swagger-ui/.*",
-			"/v3/api-docs/.*",
-			"/swagger-resources/.*",
-			"/webjars/.*",
-			"/api/authenticate");
+	        "/api/authenticate"
+	);
 
 	public JwtAuthenticationFilter(JwtTokenUtil jwtTokenUtil, UserDetailsService userDetailsService) {
 		this.jwtTokenUtil = jwtTokenUtil;
@@ -47,25 +44,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
 			filterChain.doFilter(request, response);
 			return;
 		}
-		
+
 		// Extract token from request header
 		String token = getJwtFromRequest(request);
-		
-		if (token == null) {
-			logger.warn("No token found in request headers.");
-		} else {
-			logger.info("JWT Token found in request headers.");
-		}
-		
+
 		if (token != null) {
-			// Extract username from token
+			// Extract username from the token
 			String username = extractUsernameFromToken(token);
 			logger.info("Extracted username from token: {}", username);
 
+			// Validate the token
 			if (jwtTokenUtil.validateToken(token, username)) {
 				logger.info("Token validated successfully for user: {}", username);
 
-				// Fetch user details without password
+				// Fetch user details based on username (without password)
 				UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
 				if (userDetails != null) {
@@ -74,44 +66,44 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
 					// Create an authentication object
 					UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
 							userDetails, null, userDetails.getAuthorities());
-					logger.debug("Authentication ceontext after setting: {}", authentication);
 
-					// Set details
+					// Set details in the authentication object
 					authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-					// Set authentication in the SecurityContext
+					// Set the authentication object into the security context
 					SecurityContextHolder.getContext().setAuthentication(authentication);
 					logger.info("Authentication successfully set for user: {}", username);
 				} else {
 					logger.warn("User details not found for username: {}", username);
 				}
 			} else {
-				logger.warn("Token validation failed for user: {}", username);
+				// Log token validation failure and reject the request
+				logger.warn("Invalid token or token expired for user: {}", username);
 			}
-			
-			if (!jwtTokenUtil.validateToken(token, username)) {
-			    logger.warn("Invalid token or token expired for user: {}", username);
-			}
+		} else {
+			logger.warn("No token found in request headers.");
 		}
-		
+
 		// Continue the filter chain
 		filterChain.doFilter(request, response);
 	}
-	
-	// Helper method to check if the request URI should be skipped for JWT validation
-		private boolean shouldSkip(HttpServletRequest request) {
-			String requestURI = request.getRequestURI();
-			logger.debug("Checking if should skip path: {}", requestURI);
-			
-			return EXCLUDED_PATHS.stream().anyMatch(requestURI::matches);
-		}
-	
+
+	// Helper method to check if the request URI should be skipped for JWT
+	// validation
+	private boolean shouldSkip(HttpServletRequest request) {
+		String requestURI = request.getRequestURI();
+		logger.debug("Checking if should skip path: {}", requestURI);
+
+		return EXCLUDED_PATHS.stream().anyMatch(requestURI::matches);
+	}
+
 	// Helper method to extract username from the token
 	private String extractUsernameFromToken(String token) {
 		return jwtTokenUtil.extractUsername(token);
 	}
 
-	// Helper method to extract the JWT token from the request's Authorization header
+	// Helper method to extract the JWT token from the request's Authorization
+	// header
 	private String getJwtFromRequest(HttpServletRequest request) {
 		String bearerToken = request.getHeader("Authorization");
 		logger.debug("Authorization header received: {}", bearerToken);
@@ -120,7 +112,5 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
 		}
 		return null;
 	}
-	
-	
 
 }

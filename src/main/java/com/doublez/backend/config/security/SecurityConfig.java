@@ -4,6 +4,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -22,6 +24,7 @@ import org.slf4j.LoggerFactory;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 	
 	private final JwtTokenUtil jwtTokenUtil;
@@ -54,8 +57,6 @@ public class SecurityConfig {
 			.authorizeHttpRequests((authz) -> authz
 					// Define public URLs (no authentication required)
 //					.requestMatchers(
-//							"/swagger-ui/**",						// http://localhost:8080/swagger-ui/index.html
-//							"/v3/api-docs/**",
 //							"/swagger-resources/**",
 //							"/webjars/**",
 //							"/api/authenticate",
@@ -72,9 +73,9 @@ public class SecurityConfig {
 //							"/api/real-estates/**"
 //							).permitAll()
 					
-					// Define URLs that require specific role
-//					.requestMatchers("/admin/**").hasRole("ADMIN")
-//					.requestMatchers("/agent/**").hasRole("AGENT")	// TODO Complete Role creation - AGENT
+					// Define URLs that require specific role		
+					.requestMatchers("/swagger-ui/**", "/v3/api-docs/**").hasRole("DEV")
+//					.requestMatchers("/agent/**").hasRole("ROLE_AGENT")
 					
 					// Define URLs that require authentication
 //					.requestMatchers("/api/users/**").authenticated()

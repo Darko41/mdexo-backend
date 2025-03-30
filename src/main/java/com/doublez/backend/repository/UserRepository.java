@@ -14,6 +14,8 @@ public interface UserRepository extends JpaRepository<User, Long>{
 	
 	Optional<User> findByEmail(String email);
 	
+	Optional<User> findById(Long id);
+	
 	long count();
 	
 	@Query("SELECT COUNT(u) FROM User u JOIN u.roles r WHERE r.name = :roleName")

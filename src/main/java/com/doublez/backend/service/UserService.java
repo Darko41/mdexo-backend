@@ -1,7 +1,12 @@
 package com.doublez.backend.service;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import javax.management.relation.RoleNotFoundException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -86,9 +91,9 @@ public class UserService {
 		return new UserDetailsDTO(user.getEmail(), roles);
 	}
 
-	public boolean updateProfile(String email, UserDetailsDTO userDetailsDTO) {
-		User user = userRepository.findByEmail(email)
-				.orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+	public boolean updateProfile(Long id, UserDetailsDTO userDetailsDTO) {
+		User user = userRepository.findById(id)
+				.orElseThrow(() -> new UsernameNotFoundException("User not found with ID: " + id));		// TODO Change it in TEST as well
 		
 		// Update email if provided (optional, as you may not allow email updates in some systems)
 		if (userDetailsDTO.getEmail() != null && !userDetailsDTO.getEmail().isEmpty()) {
@@ -99,6 +104,24 @@ public class UserService {
 			String encodedPassword = passwordEncoder.encode(userDetailsDTO.getPassword());
 			user.setPassword(encodedPassword);
 		}
+		
+		if (userDetailsDTO.getRoles() != null && !userDetailsDTO.getRoles().isEmpty()) {
+	        List<Role> updatedRoles = new ArrayList<>();
+	        for (String roleName : userDetailsDTO.getRoles()) {
+				try {
+					Role role = roleRepository.findByName(roleName)
+					        .orElseThrow(() -> new RoleNotFoundException("Role not found: " + roleName));
+					updatedRoles.add(role);
+				} catch (RoleNotFoundException e) {
+					// Handle the exception, e.g., log it or return an appropriate message
+	                // You could return false, or throw another custom exception, etc.
+					System.out.println(e.getMessage());
+					return false;
+				}
+	            
+	        }
+	        user.setRoles(updatedRoles); // Update user's roles
+	    }
 		
 		userRepository.save(user);
 			
