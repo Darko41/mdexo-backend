@@ -35,13 +35,13 @@ public class AdminApiController {
 
 	
 	@PostMapping("/real-estates/add")
-	@PreAuthorize("hasRole('ADMIN')")
+	@PreAuthorize("hasRole('ROLE_ADMIN')")
 	public ResponseEntity<RealEstate> createRealEstate(RealEstate realEstate) {
 		return realEstateController.createRealEstate(realEstate);
 	}
 	
 	@PutMapping("/real-estates/update/{propertyId}")
-	@PreAuthorize("hasRole('ADMIN')")
+	@PreAuthorize("hasRole('OLE_ADMIN')")
 	public ResponseEntity<RealEstate> updateRealEstate(
 			@PathVariable Long propertyId,
 			@RequestBody RealEstate realEstateDetails) {
@@ -49,7 +49,7 @@ public class AdminApiController {
 	}
 	
 	@GetMapping("/real-estates")
-	@PreAuthorize("hasRole('ADMIN')")
+	@PreAuthorize("hasRole('ROLE_ADMIN')")
 	public ResponseEntity<?> getRealEstate(
 			@RequestParam(value = "priceMin", required = false) BigDecimal priceMin,
             @RequestParam(value = "priceMax", required = false) BigDecimal priceMax,
@@ -64,19 +64,19 @@ public class AdminApiController {
 	}
 	
 	@PostMapping("/users/add")
-	@PreAuthorize("hasRole('ADMIN')")
+	@PreAuthorize("hasRole('ROLE_ADMIN')")
 	public ResponseEntity<String> addUser(@RequestBody UserDetailsDTO userDetailsDTO) {
 		return userController.addUser(userDetailsDTO);
 	}
 	
 	@PutMapping("/users/update/{username}")
-	@PreAuthorize("hasRole('ADMIN')")
+	@PreAuthorize("hasRole('ROLE_ADMIN')")
 	public ResponseEntity<String> updateUserProfile(@PathVariable String username, @RequestBody UserDetailsDTO userDetailsDTO) {
 		return userController.updateUserProfile(username, userDetailsDTO);
 	}
 	
 	@GetMapping("/users")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
 	public ResponseEntity<List<UserDetailsDTO>> getAllUsers() {		// TODO Align with new get all users logic
         return userController.getAllUsers();  
     }
