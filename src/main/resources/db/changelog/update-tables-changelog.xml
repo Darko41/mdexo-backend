@@ -80,6 +80,12 @@
     			<column name="email" type="varchar(255)"/>
     		</addColumn>
     </changeSet>
+    
+    <changeSet id="11" author="darko" dbms="postgresql">
+        <addColumn tableName="real_estates">
+            <column name="listing_type" type="varchar(20)" />
+        </addColumn>
+    </changeSet>
 
 
 </databaseChangeLog>

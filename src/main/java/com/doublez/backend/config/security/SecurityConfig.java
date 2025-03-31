@@ -4,7 +4,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -13,7 +12,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import com.doublez.backend.service.CustomUserDetailsService;
@@ -56,10 +54,10 @@ public class SecurityConfig {
 		http
 			.authorizeHttpRequests((authz) -> authz
 					// Define public URLs (no authentication required)
-//					.requestMatchers(
+					.requestMatchers(
 //							"/swagger-resources/**",
 //							"/webjars/**",
-//							"/api/authenticate",
+							"/api/authenticate"
 //							"/api/real-estates/",
 //							"/api/email/send-email",
 //							"/api/db-status",
@@ -71,14 +69,14 @@ public class SecurityConfig {
 //							"/admin/**",
 //							"/api/users/**",
 //							"/api/real-estates/**"
-//							).permitAll()
+							).permitAll()
 					
-					// Define URLs that require specific role		
-					.requestMatchers("/swagger-ui/**", "/v3/api-docs/**").hasRole("DEV")
-					.requestMatchers("/admin/**").hasRole("ADMIN")
+					// Define URLs that require specific role				
+					.requestMatchers("/swagger-ui/**", "/v3/api-docs/**").hasRole("DEV")	// TODO Resolve cors problems, why this works on Postman but not deployed
+					.requestMatchers("/admin/**").hasRole("ADMIN")							// TODO Resolve cors problems, why this works on Postman but not deployed
 					
 					// Define URLs that require authentication
-//					.requestMatchers("/api/users/**").authenticated()
+//					.requestMatchers("/api/**").authenticated()
 					
 					// Any other request must be authenticated
 //					.anyRequest().authenticated()
@@ -94,32 +92,17 @@ public class SecurityConfig {
 	}
 	
 	@Bean
-	WebMvcConfigurer corsConfigurer() {
-		return new WebMvcConfigurer() {
-			@Override
-			public void addCorsMappings(CorsRegistry registry) {
-				registry.addMapping("*") // Allow CORS for /api endpoints
-					.allowedOrigins("https://mdexo-frontend.onrender.com", "http://localhost:5173") // Frontendt URL
-					.allowedMethods("*") // Allow these HTTP methods
-					.allowedHeaders("*"); // Allow all headers
-			}
-		};
-	}
+    WebMvcConfigurer corsConfigurer() {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addCorsMappings(CorsRegistry registry) {
+                registry.addMapping("/api/**")
+                    .allowedOrigins("https://mdexo-frontend.onrender.com", "http://localhost:5173")
+                    .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                    .allowedHeaders("*")
+                    .allowCredentials(true);
+            }
+        };
+    }
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -28,7 +28,14 @@ public class RealEstateSpecifications {
 	public static Specification<RealEstate> hasPropertyType(String propertyType) {
 		return (root, query, criteriaBulder) -> {
 			if (propertyType == null) return null;
-			return criteriaBulder.lessThanOrEqualTo(root.get("propertyType"), propertyType);
+			return criteriaBulder.equal(root.get("propertyType"), propertyType);
+		};
+	}
+	
+	public static Specification<RealEstate> hasListingType(String listingType) {
+		return (root, query, criteriaBulder) -> {
+			if (listingType == null) return null;
+			return criteriaBulder.equal(root.get("listingType"), listingType);
 		};
 	}
 	

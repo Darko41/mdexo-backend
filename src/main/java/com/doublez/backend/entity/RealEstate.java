@@ -18,18 +18,11 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-
-enum PropertyType {
-	HOUSE,
-	APARTMENT,
-	CONDO,
-	LAND,
-	GARRAGE
-}
 
 @Entity
 @Table(name = "real_estates")
@@ -51,6 +44,10 @@ public class RealEstate {
 	@Enumerated(EnumType.STRING)
 	@Column(name = "property_type", nullable = false)
 	private PropertyType propertyType;
+	
+	@Enumerated(EnumType.STRING)
+    @Column(name = "listing_type", nullable = false)
+    private ListingType listingType;
 	
 	@NumberFormat(pattern = "#.###,00")
 	@Column(name = "price", nullable = false)
@@ -88,6 +85,7 @@ public class RealEstate {
 		this.updatedAt = LocalDate.now();
 	}
 	
+	@PreUpdate
 	public void preUpdate() {
 		this.updatedAt = LocalDate.now();
 	}
@@ -194,6 +192,14 @@ public class RealEstate {
 
 	public void setFeatures(List<String> features) {
 		this.features = features;
+	}
+	
+	public ListingType getListingType() {
+		return listingType;
+	}
+
+	public void setListingType(ListingType listingType) {
+		this.listingType = listingType;
 	}
 	
 }
