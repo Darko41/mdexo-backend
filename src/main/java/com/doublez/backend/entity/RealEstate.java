@@ -13,10 +13,12 @@ import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -68,10 +70,19 @@ public class RealEstate {
 	@Column(name = "size_in_sqmt")
 	private String sizeInSqMt;
 	
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "user_id")
+	private User owner;
+	
 	@ElementCollection
 	@CollectionTable(name = "real-estate-features", joinColumns = @JoinColumn(name = "property_id"))
 	@Column(name = "features")
 	private List<String> features = new ArrayList<>();
+	
+	@ElementCollection
+	@CollectionTable(name = "real_estate_images", joinColumns = @JoinColumn(name = "property_id"))
+	@Column(name = "images")
+	private List<String> images = new ArrayList<>();
 	
 	@Column(name = "created_at", nullable = false)
 	private LocalDate createdAt;
@@ -200,6 +211,22 @@ public class RealEstate {
 
 	public void setListingType(ListingType listingType) {
 		this.listingType = listingType;
+	}
+
+	public List<String> getImages() {
+		return images;
+	}
+
+	public void setImages(List<String> images) {
+		this.images = images;
+	}
+
+	public User getOwner() {
+		return owner;
+	}
+
+	public void setOwner(User owner) {
+		this.owner = owner;
 	}
 	
 }

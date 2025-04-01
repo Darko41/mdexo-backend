@@ -1,9 +1,14 @@
 package com.doublez.backend.controller;
 
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,7 +17,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,14 +31,16 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
-import com.doublez.backend.config.security.SecurityConfig;
-import com.doublez.backend.entity.ListingType;
-import com.doublez.backend.entity.PropertyType;
+import com.doublez.backend.dto.RealEstateDTO;
 import com.doublez.backend.entity.RealEstate;
-import com.doublez.backend.repository.RealEstateRepository;
+import com.doublez.backend.entity.User;
+import com.doublez.backend.repository.UserRepository;
 import com.doublez.backend.service.RealEstateService;
+import com.doublez.backend.service.S3Service;
 import com.doublez.backend.specification.RealEstateSpecifications;
 
 import jakarta.validation.Valid;
@@ -41,6 +52,12 @@ public class RealEstateApiController {
 
     @Autowired
     private RealEstateService realEstateService;
+    
+    @Autowired
+    private S3Service s3Service;
+    
+    @Autowired
+    private UserRepository userRepository;
 
     private static final Logger logger = LoggerFactory.getLogger(RealEstateApiController.class);
 
@@ -55,6 +72,12 @@ public class RealEstateApiController {
             @RequestParam(value = "zipCode", required = false) String zipCode,
             @RequestParam(value = "listingType", required = false) String listingType,
             Pageable pageable) {
+    	
+//    	try {
+//			Page<RealEstate> realEstates = realEstateService.get		
+//		} catch (Exception e) {
+//			// TODO: handle exception
+//		}
 
         try {
             Specification<RealEstate> spec = Specification.where(null);
@@ -116,4 +139,104 @@ public class RealEstateApiController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
+    
+    @PostMapping(value = "/create-with-images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//  @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<?> createRealEstateWithImages(
+    		@RequestPart ("realEstate") @Valid RealEstateDTO realEstateDTO,
+    		@RequestPart (value = "images", required = false) MultipartFile[] images,
+    		@AuthenticationPrincipal UserDetails userDetails) {
+    	
+    	try {
+    		// Convert DTO to Entity
+			RealEstate realEstate = convertToEntity(realEstateDTO);
+			
+			// Set owner from authenticated user
+			if (userDetails != null) {
+				User owner = userRepository.findByEmail(userDetails.getUsername())
+						.orElseThrow( () -> new RuntimeException("User not found"));
+				realEstate.setOwner(owner);
+			}
+			
+			if (images != null && images.length > 0) {
+				List<String> imageUrls = uploadImagesToS3(images);
+				realEstate.setImages(imageUrls);
+			}
+			
+			RealEstate savedRealEstate = realEstateService.createRealEstate(realEstate);
+			return ResponseEntity.status(HttpStatus.CREATED).body(savedRealEstate);
+			
+		} catch (Exception e) {
+			logger.error("Error creating real estate with images", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error creating listing: " + e.getMessage());
+		}
+    	
+    }
+
+	private List<String> uploadImagesToS3(MultipartFile[] images) throws IOException{
+		
+		List<String> imageUrls = new ArrayList<>();
+		
+		for (MultipartFile image : images) {
+			String fileName = "real-estates/" + UUID.randomUUID() + "-" + image.getOriginalFilename();
+			String presignedUrl = s3Service.generatePresignedUrl(fileName);
+			imageUrls.add(presignedUrl.split("\\?")[0]);
+		}
+				
+		return imageUrls;
+	}
+	
+	private void uploadToS3(String presignedUrl, MultipartFile file) throws IOException {
+		HttpURLConnection connection = (HttpURLConnection) new URL(presignedUrl).openConnection();
+		connection.setDoOutput(true);
+		connection.setRequestMethod("PUT");
+		connection.setRequestProperty("Content-Type", file.getContentType());
+		connection.getOutputStream().write(file.getBytes());
+		
+		if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
+			throw new IOException("Failed to upload file to S3");
+		}
+	}
+
+	private RealEstate convertToEntity(RealEstateDTO realEstateDTO) {
+		RealEstate realEstate = new RealEstate();
+		realEstate.setTitle(realEstateDTO.getTitle());
+		realEstate.setDescription(realEstateDTO.getDescription());
+		realEstate.setPropertyType(realEstateDTO.getPropertyType());
+		realEstate.setListingType(realEstateDTO.getListingType());
+        realEstate.setPrice(realEstateDTO.getPrice());
+        realEstate.setAddress(realEstateDTO.getAddress());
+        realEstate.setCity(realEstateDTO.getCity());
+        realEstate.setState(realEstateDTO.getState());
+        realEstate.setZipCode(realEstateDTO.getZipCode());
+        realEstate.setSizeInSqMt(realEstateDTO.getSizeInSqMt());
+        realEstate.setFeatures(realEstateDTO.getFeatures());
+        realEstate.setCreatedAt(LocalDate.now());
+		return realEstate;
+	}
+    
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

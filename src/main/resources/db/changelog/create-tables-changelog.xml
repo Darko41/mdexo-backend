@@ -85,7 +85,6 @@
 	    </createTable>
 	</changeSet>
 	
-	<!-- Add foreign key for user_roles.user_id -->
 	<changeSet author="darko" id="7" dbms="postgresql">
 	    <addForeignKeyConstraint
 	        baseTableName="user_roles"
@@ -97,7 +96,6 @@
 	        initiallyDeferred="false"/>
 	</changeSet>
 	
-	<!-- Add foreign key for user_roles.role_id -->
 	<changeSet author="darko" id="8" dbms="postgresql">
 	    <addForeignKeyConstraint
 	        baseTableName="user_roles"
@@ -108,6 +106,23 @@
 	        deferrable="false"
 	        initiallyDeferred="false"/>
 	</changeSet>
+	
+	<changeSet author="darko" id="9" dbms="postgresql">
+    <createTable tableName="real_estate_images">
+        <column name="property_id" type="BIGINT">
+            <constraints nullable="false"/>
+        </column>
+        <column name="images" type="VARCHAR(512)"/>
+    </createTable>
+    
+    <addForeignKeyConstraint 
+        baseTableName="real_estate_images"
+        baseColumnNames="property_id"
+        constraintName="fk_images_real_estate"
+        referencedTableName="real_estates"
+        referencedColumnNames="property_id"
+        onDelete="CASCADE"/>
+</changeSet>
 
 
 </databaseChangeLog>
