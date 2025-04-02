@@ -6,16 +6,13 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
         
     <changeSet id="0000-validate" author="darko">
-    	<validCheckSum>ANY</validCheckSum> <!-- Bypass checksum validation -->
-    	<sql>SELECT 1</sql> <!-- Simple validation query -->
-	</changeSet>
+        <validCheckSum>ANY</validCheckSum>
+        <sql>SELECT 1</sql>
+    </changeSet>
 
-    <!-- Create tables with proper preconditions -->
     <changeSet id="0001" author="darko" dbms="postgresql">
         <preConditions onFail="MARK_RAN">
-            <not>
-                <tableExists tableName="roles"/>
-            </not>
+            <not><tableExists tableName="roles"/></not>
         </preConditions>
         <createTable tableName="roles">
             <column name="id" type="bigint">
@@ -27,9 +24,7 @@
 
     <changeSet id="0002" author="darko" dbms="postgresql">
         <preConditions onFail="MARK_RAN">
-            <not>
-                <tableExists tableName="users"/>
-            </not>
+            <not><tableExists tableName="users"/></not>
         </preConditions>
         <createTable tableName="users">
             <column name="id" type="bigint">
@@ -44,9 +39,7 @@
 
     <changeSet id="0003" author="darko" dbms="postgresql">
         <preConditions onFail="MARK_RAN">
-            <not>
-                <tableExists tableName="real_estates"/>
-            </not>
+            <not><tableExists tableName="real_estates"/></not>
         </preConditions>
         <createTable tableName="real_estates">
             <column name="property_id" type="bigint">
@@ -68,30 +61,24 @@
         </createTable>
     </changeSet>
 
-    <changeSet id="0004" author="darko">
-    <createTable tableName="real_estate_features">
-        <column name="property_id" type="bigint">
-            <constraints nullable="false"/>
-        </column>
-        <column name="feature_value" type="varchar(255)">
-            <constraints nullable="false"/>
-        </column>
-    </createTable>
-    
-    <addForeignKeyConstraint 
-        baseTableName="real_estate_features"
-        baseColumnNames="property_id"
-        referencedTableName="real_estates"
-        referencedColumnNames="property_id"
-        constraintName="fk_features_property"
-        onDelete="CASCADE"/>
-</changeSet>
+     <changeSet id="0004" author="darko" dbms="postgresql" runOnChange="true">
+        <validCheckSum>ANY</validCheckSum>
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="real_estate_features"/></not>
+        </preConditions>
+        <createTable tableName="real_estate_features">
+            <column name="property_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="feature" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
 
     <changeSet id="0005" author="darko" dbms="postgresql">
         <preConditions onFail="MARK_RAN">
-            <not>
-                <tableExists tableName="real_estate_images"/>
-            </not>
+            <not><tableExists tableName="real_estate_images"/></not>
         </preConditions>
         <createTable tableName="real_estate_images">
             <column name="property_id" type="bigint">
@@ -105,9 +92,7 @@
 
     <changeSet id="0006" author="darko" dbms="postgresql">
         <preConditions onFail="MARK_RAN">
-            <not>
-                <tableExists tableName="user_roles"/>
-            </not>
+            <not><tableExists tableName="user_roles"/></not>
         </preConditions>
         <createTable tableName="user_roles">
             <column name="user_id" type="bigint">
