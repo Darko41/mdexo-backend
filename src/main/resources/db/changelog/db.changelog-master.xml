@@ -7,8 +7,8 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
 
     <!-- Include separate change log files -->
-    <include file="db/changelog/create-tables-changelog.xml" />
-    <include file="db/changelog/update-tables-changelog.xml" />
+    <include file="db/changelog/0001-initial-schema.xml" />
+    <include file="db/changelog/0002-constraints-sequences.xml" />
     <include file="db/changelog/insert-data-changelog.xml" />
     
 </databaseChangeLog>

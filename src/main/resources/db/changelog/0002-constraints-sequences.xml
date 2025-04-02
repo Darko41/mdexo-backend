@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <!-- Sequences -->
+    <changeSet id="0007" author="darko" dbms="postgresql">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <sequenceExists sequenceName="roles_id_seq"/>
+            </not>
+        </preConditions>
+        <createSequence sequenceName="roles_id_seq" startValue="1" incrementBy="1"/>
+    </changeSet>
+
+    <changeSet id="0008" author="darko" dbms="postgresql">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <sequenceExists sequenceName="users_id_seq"/>
+            </not>
+        </preConditions>
+        <createSequence sequenceName="users_id_seq" startValue="1" incrementBy="1"/>
+    </changeSet>
+
+    <changeSet id="0009" author="darko" dbms="postgresql">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <sequenceExists sequenceName="real_estates_id_seq"/>
+            </not>
+        </preConditions>
+        <createSequence sequenceName="real_estates_id_seq" startValue="1" incrementBy="1"/>
+    </changeSet>
+
+    <!-- Set sequence defaults -->
+    <changeSet id="0010" author="darko" dbms="postgresql">
+        <sql>ALTER TABLE roles ALTER COLUMN id SET DEFAULT nextval('roles_id_seq');</sql>
+        <sql>ALTER TABLE users ALTER COLUMN id SET DEFAULT nextval('users_id_seq');</sql>
+        <sql>ALTER TABLE real_estates ALTER COLUMN property_id SET DEFAULT nextval('real_estates_id_seq');</sql>
+    </changeSet>
+
+    <!-- Foreign Keys -->
+    <changeSet id="0011" author="darko" dbms="postgresql">
+        <addForeignKeyConstraint 
+            baseTableName="user_roles"
+            baseColumnNames="user_id"
+            referencedTableName="users"
+            referencedColumnNames="id"
+            constraintName="fk_user_roles_user_id"
+            onDelete="CASCADE"/>
+            
+        <addForeignKeyConstraint 
+            baseTableName="user_roles"
+            baseColumnNames="role_id"
+            referencedTableName="roles"
+            referencedColumnNames="id"
+            constraintName="fk_user_roles_role_id"
+            onDelete="CASCADE"/>
+    </changeSet>
+
+    <changeSet id="0012" author="darko" dbms="postgresql">
+        <addForeignKeyConstraint 
+            baseTableName="real_estates"
+            baseColumnNames="user_id"
+            referencedTableName="users"
+            referencedColumnNames="id"
+            constraintName="fk_real_estates_user_id"
+            onDelete="SET NULL"/>
+    </changeSet>
+
+    <changeSet id="0013" author="darko" dbms="postgresql">
+        <addForeignKeyConstraint 
+            baseTableName="real_estate_features"
+            baseColumnNames="property_id"
+            referencedTableName="real_estates"
+            referencedColumnNames="property_id"
+            constraintName="fk_real_estate_features"
+            onDelete="CASCADE"/>
+    </changeSet>
+
+    <changeSet id="0014" author="darko" dbms="postgresql">
+        <addForeignKeyConstraint 
+            baseTableName="real_estate_images"
+            baseColumnNames="property_id"
+            referencedTableName="real_estates"
+            referencedColumnNames="property_id"
+            constraintName="fk_real_estate_images"
+            onDelete="CASCADE"/>
+    </changeSet>
+
+    <!-- Indexes -->
+    <changeSet id="0015" author="darko" dbms="postgresql">
+        <createIndex tableName="real_estate_images" indexName="idx_real_estate_images_property_id">
+            <column name="property_id"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>

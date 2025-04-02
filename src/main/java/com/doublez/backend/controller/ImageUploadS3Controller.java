@@ -77,6 +77,4 @@ public class ImageUploadS3Controller {
 		}
 		
 	}
-
-
 }

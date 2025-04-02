@@ -220,8 +220,27 @@ public class RealEstateApiController {
 
 
 
-
-
+//
+//@PostMapping(value = "/create-with-images", consumes = MULTIPART_FORM_DATA_VALUE)
+//public ResponseEntity<ApiResponse<RealEstate>> createWithImages(
+//        @RequestPart @Valid RealEstateDTO dto,
+//        @RequestPart(required = false) MultipartFile[] images,
+//        @AuthenticationPrincipal UserDetails userDetails) {
+//    
+//    try {
+//        User owner = userService.getAuthenticatedUser(userDetails);
+//        List<String> imageUrls = realEstateImageService.uploadRealEstateImages(images);
+//        
+//        RealEstate realEstate = realEstateService.createFromDto(dto, owner, imageUrls);
+//        return ResponseEntity.ok(ApiResponse.success(realEstate));
+//        
+//    } catch (InvalidImageException e) {
+//        return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+//    } catch (ImageUploadException e) {
+//        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+//            .body(ApiResponse.error("Image upload failed. Please try again later."));
+//    }
+//}
 
 
 
