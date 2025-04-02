@@ -8,70 +8,101 @@
     <!-- Sequences -->
     <changeSet id="0007" author="darko" dbms="postgresql">
         <preConditions onFail="MARK_RAN">
-            <not>
-                <sequenceExists sequenceName="roles_id_seq"/>
-            </not>
+            <not><sequenceExists sequenceName="roles_id_seq"/></not>
         </preConditions>
         <createSequence sequenceName="roles_id_seq" startValue="1" incrementBy="1"/>
     </changeSet>
 
     <changeSet id="0008" author="darko" dbms="postgresql">
         <preConditions onFail="MARK_RAN">
-            <not>
-                <sequenceExists sequenceName="users_id_seq"/>
-            </not>
+            <not><sequenceExists sequenceName="users_id_seq"/></not>
         </preConditions>
         <createSequence sequenceName="users_id_seq" startValue="1" incrementBy="1"/>
     </changeSet>
 
     <changeSet id="0009" author="darko" dbms="postgresql">
         <preConditions onFail="MARK_RAN">
-            <not>
-                <sequenceExists sequenceName="real_estates_id_seq"/>
-            </not>
+            <not><sequenceExists sequenceName="real_estates_id_seq"/></not>
         </preConditions>
         <createSequence sequenceName="real_estates_id_seq" startValue="1" incrementBy="1"/>
     </changeSet>
 
     <!-- Set sequence defaults -->
-    <changeSet id="0010" author="darko" dbms="postgresql">
+    <changeSet id="0010-seq-defaults" author="darko" dbms="postgresql">
+        <preConditions>
+            <and>
+                <sequenceExists sequenceName="roles_id_seq"/>
+                <tableExists tableName="roles"/>
+                <columnExists tableName="roles" columnName="id"/>
+            </and>
+        </preConditions>
         <sql>ALTER TABLE roles ALTER COLUMN id SET DEFAULT nextval('roles_id_seq');</sql>
         <sql>ALTER TABLE users ALTER COLUMN id SET DEFAULT nextval('users_id_seq');</sql>
         <sql>ALTER TABLE real_estates ALTER COLUMN property_id SET DEFAULT nextval('real_estates_id_seq');</sql>
     </changeSet>
+    
+    <!-- Add user_id column -->
+    <changeSet id="0011-add-user-id-column" author="darko" dbms="postgresql">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <tableExists tableName="user_roles"/>
+                <not><columnExists tableName="user_roles" columnName="user_id"/></not>
+            </and>
+        </preConditions>
+        <addColumn tableName="user_roles">
+            <column name="user_id" type="bigint"/>
+        </addColumn>
+    </changeSet>
 
     <!-- Foreign Keys -->
-    <changeSet id="0011" author="darko" dbms="postgresql">
-    <preConditions onFail="MARK_RAN">
-        <not>
-            <foreignKeyConstraintExists foreignKeyName="fk_user_roles_user_id"/>
-        </not>
-    </preConditions>
-    <addForeignKeyConstraint 
-        baseTableName="user_roles"
-        baseColumnNames="user_id"
-        referencedTableName="users"
-        referencedColumnNames="id"
-        constraintName="fk_user_roles_user_id"
-        onDelete="CASCADE"/>
-	</changeSet>
+    <changeSet id="0012-fk-user-roles" author="darko" dbms="postgresql">
+        <preConditions>
+            <and>
+                <tableExists tableName="user_roles"/>
+                <tableExists tableName="users"/>
+                <columnExists tableName="user_roles" columnName="user_id"/>
+                <columnExists tableName="users" columnName="id"/>
+                <not><foreignKeyConstraintExists foreignKeyName="fk_user_roles_user_id"/></not>
+            </and>
+        </preConditions>
+        <addForeignKeyConstraint 
+            baseTableName="user_roles"
+            baseColumnNames="user_id"
+            referencedTableName="users"
+            referencedColumnNames="id"
+            constraintName="fk_user_roles_user_id"
+            onDelete="CASCADE"/>
+    </changeSet>
 
-    <changeSet id="0012" author="darko" dbms="postgresql">
-    <preConditions onFail="MARK_RAN">
-        <not>
-            <foreignKeyConstraintExists foreignKeyName="fk_real_estates_user_id"/>
-        </not>
-    </preConditions>
-    <addForeignKeyConstraint 
-        baseTableName="real_estates"
-        baseColumnNames="user_id"
-        referencedTableName="users"
-        referencedColumnNames="id"
-        constraintName="fk_real_estates_user_id"
-        onDelete="SET NULL"/>
-</changeSet>
+    <changeSet id="0013-fk-real-estates-user" author="darko" dbms="postgresql">
+        <preConditions>
+            <and>
+                <tableExists tableName="real_estates"/>
+                <tableExists tableName="users"/>
+                <columnExists tableName="real_estates" columnName="user_id"/>
+                <columnExists tableName="users" columnName="id"/>
+                <not><foreignKeyConstraintExists foreignKeyName="fk_real_estates_user_id"/></not>
+            </and>
+        </preConditions>
+        <addForeignKeyConstraint 
+            baseTableName="real_estates"
+            baseColumnNames="user_id"
+            referencedTableName="users"
+            referencedColumnNames="id"
+            constraintName="fk_real_estates_user_id"
+            onDelete="SET NULL"/>
+    </changeSet>
 
-    <changeSet id="0013" author="darko" dbms="postgresql">
+    <changeSet id="0014-fk-real-estate-features" author="darko" dbms="postgresql">
+        <preConditions>
+            <and>
+                <tableExists tableName="real_estate_features"/>
+                <tableExists tableName="real_estates"/>
+                <columnExists tableName="real_estate_features" columnName="property_id"/>
+                <columnExists tableName="real_estates" columnName="property_id"/>
+                <not><foreignKeyConstraintExists foreignKeyName="fk_real_estate_features"/></not>
+            </and>
+        </preConditions>
         <addForeignKeyConstraint 
             baseTableName="real_estate_features"
             baseColumnNames="property_id"
@@ -81,7 +112,16 @@
             onDelete="CASCADE"/>
     </changeSet>
 
-    <changeSet id="0014" author="darko" dbms="postgresql">
+    <changeSet id="0015-fk-real-estate-images" author="darko" dbms="postgresql">
+        <preConditions>
+            <and>
+                <tableExists tableName="real_estate_images"/>
+                <tableExists tableName="real_estates"/>
+                <columnExists tableName="real_estate_images" columnName="property_id"/>
+                <columnExists tableName="real_estates" columnName="property_id"/>
+                <not><foreignKeyConstraintExists foreignKeyName="fk_real_estate_images"/></not>
+            </and>
+        </preConditions>
         <addForeignKeyConstraint 
             baseTableName="real_estate_images"
             baseColumnNames="property_id"
@@ -92,7 +132,14 @@
     </changeSet>
 
     <!-- Indexes -->
-    <changeSet id="0015" author="darko" dbms="postgresql">
+    <changeSet id="0016-idx-real-estate-images" author="darko" dbms="postgresql">
+        <preConditions>
+            <and>
+                <tableExists tableName="real_estate_images"/>
+                <columnExists tableName="real_estate_images" columnName="property_id"/>
+                <not><indexExists tableName="real_estate_images" indexName="idx_real_estate_images_property_id"/></not>
+            </and>
+        </preConditions>
         <createIndex tableName="real_estate_images" indexName="idx_real_estate_images_property_id">
             <column name="property_id"/>
         </createIndex>
