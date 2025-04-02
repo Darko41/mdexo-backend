@@ -75,7 +75,7 @@ public class RealEstate {
 	private User owner;
 	
 	@ElementCollection
-	@CollectionTable(name = "real-estate-features", joinColumns = @JoinColumn(name = "property_id"))
+	@CollectionTable(name = "real_estate_features", joinColumns = @JoinColumn(name = "property_id"))
 	@Column(name = "features")
 	private List<String> features = new ArrayList<>();
 	

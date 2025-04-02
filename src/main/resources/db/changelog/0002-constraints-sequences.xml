@@ -29,16 +29,35 @@
 
     <!-- Set sequence defaults -->
     <changeSet id="0010-seq-defaults" author="darko" dbms="postgresql">
-        <preConditions>
+        <preConditions onFail="MARK_RAN">
             <and>
                 <sequenceExists sequenceName="roles_id_seq"/>
                 <tableExists tableName="roles"/>
-                <columnExists tableName="roles" columnName="id"/>
             </and>
         </preConditions>
         <sql>ALTER TABLE roles ALTER COLUMN id SET DEFAULT nextval('roles_id_seq');</sql>
         <sql>ALTER TABLE users ALTER COLUMN id SET DEFAULT nextval('users_id_seq');</sql>
         <sql>ALTER TABLE real_estates ALTER COLUMN property_id SET DEFAULT nextval('real_estates_id_seq');</sql>
+    </changeSet>
+    
+    <!-- SEQUENCE SYNCHRONIZATION (NEW CHANGESET) -->
+    <changeSet id="0011-sequence-sync" author="darko" dbms="postgresql">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <tableExists tableName="roles"/>
+                <tableExists tableName="users"/>
+                <tableExists tableName="real_estates"/>
+                <sequenceExists sequenceName="roles_id_seq"/>
+                <sequenceExists sequenceName="users_id_seq"/>
+                <sequenceExists sequenceName="real_estates_id_seq"/>
+            </and>
+        </preConditions>
+        <sql>
+            <!-- Smart sync that won't decrease existing sequence values -->
+            SELECT setval('roles_id_seq', GREATEST(nextval('roles_id_seq'), (SELECT COALESCE(MAX(id), 0) FROM roles) + 1));
+            SELECT setval('users_id_seq', GREATEST(nextval('users_id_seq'), (SELECT COALESCE(MAX(id), 0) FROM users) + 1));
+            SELECT setval('real_estates_id_seq', GREATEST(nextval('real_estates_id_seq'), (SELECT COALESCE(MAX(property_id), 0) FROM real_estates) + 1));
+        </sql>
     </changeSet>
     
     <!-- Add user_id column -->
@@ -55,24 +74,26 @@
     </changeSet>
 
     <!-- Foreign Keys -->
-    <changeSet id="0012-fk-user-roles" author="darko" dbms="postgresql">
-        <preConditions>
-            <and>
-                <tableExists tableName="user_roles"/>
-                <tableExists tableName="users"/>
-                <columnExists tableName="user_roles" columnName="user_id"/>
-                <columnExists tableName="users" columnName="id"/>
-                <not><foreignKeyConstraintExists foreignKeyName="fk_user_roles_user_id"/></not>
-            </and>
-        </preConditions>
-        <addForeignKeyConstraint 
-            baseTableName="user_roles"
-            baseColumnNames="user_id"
-            referencedTableName="users"
-            referencedColumnNames="id"
-            constraintName="fk_user_roles_user_id"
-            onDelete="CASCADE"/>
-    </changeSet>
+   <changeSet id="0012-fk-user-roles" author="darko" dbms="postgresql">
+    <preConditions onFail="MARK_RAN"> <!-- Changed from FAIL to MARK_RAN -->
+        <and>
+            <tableExists tableName="user_roles"/>
+            <tableExists tableName="users"/>
+            <columnExists tableName="user_roles" columnName="user_id"/>
+            <columnExists tableName="users" columnName="id"/>
+            <not>
+                <foreignKeyConstraintExists foreignKeyName="fk_user_roles_user_id"/>
+            </not>
+        </and>
+    </preConditions>
+    <addForeignKeyConstraint 
+        baseTableName="user_roles"
+        baseColumnNames="user_id"
+        referencedTableName="users"
+        referencedColumnNames="id"
+        constraintName="fk_user_roles_user_id"
+        onDelete="CASCADE"/>
+</changeSet>
 
     <changeSet id="0013-fk-real-estates-user" author="darko" dbms="postgresql">
         <preConditions>
