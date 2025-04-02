@@ -17,6 +17,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
@@ -74,9 +75,15 @@ public class RealEstate {
 	@JoinColumn(name = "user_id")
 	private User owner;
 	
-	@ElementCollection
-	@CollectionTable(name = "real_estate_features", joinColumns = @JoinColumn(name = "property_id"))
-	@Column(name = "features")
+	@ElementCollection(fetch = FetchType.EAGER)
+	@CollectionTable(
+			name = "real_estate_features",
+			joinColumns = @JoinColumn(name = "property_id"),
+			indexes = @Index(name = "idx_features_property_id", columnList = "property_id")
+	)
+
+	@Column(name = "feature_value", length = 100)
+	@Size(max = 10)
 	private List<String> features = new ArrayList<>();
 	
 	@ElementCollection
