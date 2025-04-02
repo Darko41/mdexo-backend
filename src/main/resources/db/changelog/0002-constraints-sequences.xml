@@ -42,32 +42,34 @@
 
     <!-- Foreign Keys -->
     <changeSet id="0011" author="darko" dbms="postgresql">
-        <addForeignKeyConstraint 
-            baseTableName="user_roles"
-            baseColumnNames="user_id"
-            referencedTableName="users"
-            referencedColumnNames="id"
-            constraintName="fk_user_roles_user_id"
-            onDelete="CASCADE"/>
-            
-        <addForeignKeyConstraint 
-            baseTableName="user_roles"
-            baseColumnNames="role_id"
-            referencedTableName="roles"
-            referencedColumnNames="id"
-            constraintName="fk_user_roles_role_id"
-            onDelete="CASCADE"/>
-    </changeSet>
+    <preConditions onFail="MARK_RAN">
+        <not>
+            <foreignKeyConstraintExists foreignKeyName="fk_user_roles_user_id"/>
+        </not>
+    </preConditions>
+    <addForeignKeyConstraint 
+        baseTableName="user_roles"
+        baseColumnNames="user_id"
+        referencedTableName="users"
+        referencedColumnNames="id"
+        constraintName="fk_user_roles_user_id"
+        onDelete="CASCADE"/>
+	</changeSet>
 
     <changeSet id="0012" author="darko" dbms="postgresql">
-        <addForeignKeyConstraint 
-            baseTableName="real_estates"
-            baseColumnNames="user_id"
-            referencedTableName="users"
-            referencedColumnNames="id"
-            constraintName="fk_real_estates_user_id"
-            onDelete="SET NULL"/>
-    </changeSet>
+    <preConditions onFail="MARK_RAN">
+        <not>
+            <foreignKeyConstraintExists foreignKeyName="fk_real_estates_user_id"/>
+        </not>
+    </preConditions>
+    <addForeignKeyConstraint 
+        baseTableName="real_estates"
+        baseColumnNames="user_id"
+        referencedTableName="users"
+        referencedColumnNames="id"
+        constraintName="fk_real_estates_user_id"
+        onDelete="SET NULL"/>
+</changeSet>
 
     <changeSet id="0013" author="darko" dbms="postgresql">
         <addForeignKeyConstraint 
