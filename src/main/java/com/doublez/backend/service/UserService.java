@@ -1,21 +1,31 @@
 package com.doublez.backend.service;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.management.relation.RoleNotFoundException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.doublez.backend.dto.UserCreateDTO;
 import com.doublez.backend.dto.UserDetailsDTO;
+import com.doublez.backend.dto.UserResponseDTO;
+import com.doublez.backend.dto.UserUpdateDTO;
 import com.doublez.backend.entity.Role;
 import com.doublez.backend.entity.User;
+import com.doublez.backend.exception.CustomAuthenticationException;
+import com.doublez.backend.exception.EmailExistsException;
+import com.doublez.backend.exception.UserNotFoundException;
 import com.doublez.backend.repository.RoleRepository;
 import com.doublez.backend.repository.UserRepository;
 
@@ -24,6 +34,7 @@ import jakarta.transaction.Transactional;	// TODO check if another package is re
 // This class is for registration (encoding passwords, saving users)
 
 @Service
+@Transactional
 public class UserService {
 
 	@Autowired
@@ -32,6 +43,8 @@ public class UserService {
 	private PasswordEncoder passwordEncoder;
 	@Autowired
 	private RoleRepository roleRepository;
+	
+	private static final Logger logger = LoggerFactory.getLogger(RealEstateImageService.class);
 	
 	@Transactional
 	public String registerUser(UserDetailsDTO userDetailsDTO) {
@@ -90,43 +103,55 @@ public class UserService {
 		
 		return new UserDetailsDTO(user.getEmail(), roles);
 	}
-
-	public boolean updateProfile(Long id, UserDetailsDTO userDetailsDTO) {
-		User user = userRepository.findById(id)
-				.orElseThrow(() -> new UsernameNotFoundException("User not found with ID: " + id));		// TODO Change it in TEST as well
-		
-		// Update email if provided (optional, as you may not allow email updates in some systems)
-		if (userDetailsDTO.getEmail() != null && !userDetailsDTO.getEmail().isEmpty()) {
-			user.setEmail(userDetailsDTO.getEmail());
-		}
-		
-		if (userDetailsDTO.getPassword() != null && !userDetailsDTO.getPassword().isEmpty()) {
-			String encodedPassword = passwordEncoder.encode(userDetailsDTO.getPassword());
-			user.setPassword(encodedPassword);
-		}
-		
-		if (userDetailsDTO.getRoles() != null && !userDetailsDTO.getRoles().isEmpty()) {
-	        List<Role> updatedRoles = new ArrayList<>();
-	        for (String roleName : userDetailsDTO.getRoles()) {
-				try {
-					Role role = roleRepository.findByName(roleName)
-					        .orElseThrow(() -> new RoleNotFoundException("Role not found: " + roleName));
-					updatedRoles.add(role);
-				} catch (RoleNotFoundException e) {
-					// Handle the exception, e.g., log it or return an appropriate message
-	                // You could return false, or throw another custom exception, etc.
-					System.out.println(e.getMessage());
-					return false;
-				}
-	            
-	        }
-	        user.setRoles(updatedRoles); // Update user's roles
-	    }
-		
-		userRepository.save(user);
-			
-		return true;
+	
+	public UserDetailsDTO getUserById(Long id) {
+	    User user = userRepository.findById(id)
+	        .orElseThrow(() -> new UserNotFoundException(id));
+	    
+	    return new UserDetailsDTO(
+	        user.getId(),
+	        user.getEmail(),
+	        user.getRoles().stream().map(Role::getName).collect(Collectors.toList()),
+	        user.getCreatedAt(),
+	        user.getUpdatedAt()
+	    );
 	}
+
+	public boolean updateProfile(Long id, UserUpdateDTO updateDTO) {
+        // 1. Fetch user
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        
+        // 2. Track changes
+        boolean wasUpdated = false;
+        
+        // 3. Update email (if provided and different)
+        if (updateDTO.getEmail() != null 
+                && !updateDTO.getEmail().isEmpty()
+                && !updateDTO.getEmail().equals(user.getEmail())) {
+            user.setEmail(updateDTO.getEmail());
+            wasUpdated = true;
+        }
+        
+        // 4. Update password (if provided and different)
+        if (updateDTO.getPassword() != null 
+                && !updateDTO.getPassword().isEmpty()) {
+            String encodedPassword = passwordEncoder.encode(updateDTO.getPassword());
+            if (!encodedPassword.equals(user.getPassword())) {
+                user.setPassword(encodedPassword);
+                wasUpdated = true;
+            }
+        }
+        
+        // 5. Persist changes if any
+        if (wasUpdated) {
+            user.setUpdatedAt(LocalDate.now());
+            userRepository.save(user);
+        }
+        
+        return wasUpdated;
+    }
+	
 	
 	public List<UserDetailsDTO> getAllUsers() {
 	    List<User> users = userRepository.findAll();
@@ -185,5 +210,59 @@ public class UserService {
 	public long getAgentCount() {
 		return userRepository.countUsersByRole("ROLE_AGENT");
 	}
+	
+	public User getAuthenticatedUser()  {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication(); 
+		if (authentication == null || !authentication.isAuthenticated()) {
+			throw new CustomAuthenticationException("User not authenticated");
+		}
+		return userRepository.findByEmail(authentication.getName())
+	                .orElseThrow(() -> new UsernameNotFoundException("User not found: "));
+	}
 
+	@Transactional
+	public UserResponseDTO createUser(UserCreateDTO createDto) {
+	    // Reuse existing validation logic
+	    if (userRepository.findByEmail(createDto.getEmail()).isPresent()) {
+	        throw new EmailExistsException("Email already in use: " + createDto.getEmail());
+	    }
+	    
+	    if (createDto.getPassword() == null || createDto.getPassword().isEmpty()) {
+	        throw new IllegalArgumentException("Password cannot be empty");
+	    }
+	    
+	    // Process roles - using your existing Role entity pattern
+	    List<String> roleNames = createDto.getRoles() != null && !createDto.getRoles().isEmpty() 
+	        ? createDto.getRoles() 
+	        : List.of("ROLE_USER");
+	    
+	    List<Role> roles = roleNames.stream()
+	        .map(roleName -> roleRepository.findByName(roleName)
+	            .orElseGet(() -> {
+	                Role newRole = new Role();
+	                newRole.setName(roleName);
+	                return roleRepository.save(newRole);
+	            }))
+	        .collect(Collectors.toList());
+
+	    // Create and save user
+	    User user = new User();
+	    user.setEmail(createDto.getEmail());
+	    user.setPassword(passwordEncoder.encode(createDto.getPassword()));
+	    user.setRoles(roles);
+	    
+	    User savedUser = userRepository.save(user);
+
+	    // Convert to response DTO
+	    return new UserResponseDTO(
+	        savedUser.getId(),
+	        savedUser.getEmail(),
+	        savedUser.getRoles().stream()
+	            .map(Role::getName)
+	            .collect(Collectors.toList()),
+	        savedUser.getCreatedAt(),
+	        savedUser.getUpdatedAt()
+	    );
+	}
+	
 }

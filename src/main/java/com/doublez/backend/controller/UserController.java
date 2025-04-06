@@ -2,11 +2,13 @@ package com.doublez.backend.controller;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,7 +19,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.doublez.backend.dto.UserDetailsDTO;
+import com.doublez.backend.dto.UserUpdateDTO;
 import com.doublez.backend.service.UserService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/users")
@@ -51,24 +58,26 @@ public class UserController {
 		}
 	}
 	
-	@GetMapping("/{username}")
-	public ResponseEntity<UserDetailsDTO> getUserProfile(@PathVariable String username) {
-		UserDetailsDTO userDetailsDTO = userService.getUserProfile(username);
-		if (userDetailsDTO != null) {
-			return ResponseEntity.ok(userDetailsDTO);
-		}
-		
-		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+	@GetMapping("/by-email{email}")
+	public ResponseEntity<UserDetailsDTO> getUserProfile(@PathVariable String email) {
+		try {
+	        UserDetailsDTO userDetailsDTO = userService.getUserProfile(email);
+	        return ResponseEntity.ok(userDetailsDTO);
+	    } catch (UsernameNotFoundException e) {
+	        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+	    }
 	}
 	
 	@PutMapping("/update/{id}")
 	@PreAuthorize("hasRole('USER') and #id == authentication.principal.id")
-	public ResponseEntity<String> updateUserProfile(@PathVariable Long id, @RequestBody UserDetailsDTO userDetailsDTO) {
-		boolean isUpdated = userService.updateProfile(id, userDetailsDTO);
-		if (isUpdated) {
-			return ResponseEntity.ok("User profile updated successfully!");
-		}
-		return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found.");
+	public ResponseEntity<String> updateUserProfile(
+	        @PathVariable Long id,
+	        @Valid @RequestBody UserUpdateDTO updateDTO) {  // Direct DTO binding
+	    
+	    boolean isUpdated = userService.updateProfile(id, updateDTO);
+	    return isUpdated ? 
+	        ResponseEntity.ok("Profile updated successfully") :
+	        ResponseEntity.notFound().build();
 	}
 	
 	@PostMapping("/add")

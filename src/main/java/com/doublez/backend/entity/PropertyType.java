@@ -5,5 +5,7 @@ public enum PropertyType {
 	APARTMENT,
 	CONDO,
 	LAND,
-	GARRAGE
+	GARRAGE,
+	COMMERCIAL,
+	OTHER
 }

@@ -14,10 +14,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.doublez.backend.customexception.ImageUploadException;
+import com.doublez.backend.exception.ImageUploadException;
 
 @Service
 public class RealEstateImageService {
+	
     private final S3Service s3Service;
     private final FileValidationService validationService;
     private static final Logger logger = LoggerFactory.getLogger(RealEstateImageService.class);

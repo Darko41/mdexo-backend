@@ -7,6 +7,7 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -57,8 +58,8 @@ public class SecurityConfig {
 					.requestMatchers(
 //							"/swagger-resources/**",
 //							"/webjars/**",
-							"/api/authenticate"
-//							"/api/real-estates/",
+							"/api/authenticate",
+							"/api/real-estates/search"
 //							"/api/email/send-email",
 //							"/api/db-status",
 //							"/admin/**",
@@ -82,6 +83,7 @@ public class SecurityConfig {
 //					.anyRequest().authenticated()
 					.anyRequest().permitAll()
 					)
+					.sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			
 					.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 					.csrf(csrf -> csrf.disable());

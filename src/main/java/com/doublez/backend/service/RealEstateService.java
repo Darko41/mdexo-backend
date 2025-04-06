@@ -2,94 +2,140 @@ package com.doublez.backend.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.catalina.mapper.Mapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import com.doublez.backend.dto.RealEstateDTO;
+import com.doublez.backend.dto.RealEstateRequest;
+import com.doublez.backend.dto.RealEstateResponse;
+import com.doublez.backend.dto.RealEstateUpdateRequest;
 import com.doublez.backend.entity.ListingType;
 import com.doublez.backend.entity.PropertyType;
 import com.doublez.backend.entity.RealEstate;
+import com.doublez.backend.entity.User;
+import com.doublez.backend.exception.RealEstateNotFoundException;
+import com.doublez.backend.exception.UnauthorizedAccessException;
+import com.doublez.backend.mapper.RealEstateMapper;
 import com.doublez.backend.repository.RealEstateRepository;
+import com.doublez.backend.specification.RealEstateSpecifications;
+
+import jakarta.transaction.Transactional;
 
 @Service
+@Transactional
 public class RealEstateService {
 
-    @Autowired
-    private RealEstateRepository realEstateRepository;
+	private final RealEstateRepository realEstateRepository;
+	private final UserService userService;
+	private final RealEstateImageService realEstateImageService;
+	private final RealEstateMapper realEstateMapper;
 
-    public long getRealEstateCount() {
-        return realEstateRepository.count();
-    }
+	public RealEstateService(RealEstateRepository realEstateRepository, UserService userService,
+			RealEstateImageService realEstateImageService, RealEstateMapper realEstateMapper) {
+		this.realEstateRepository = realEstateRepository;
+		this.userService = userService;
+		this.realEstateImageService = realEstateImageService;
+		this.realEstateMapper = realEstateMapper;
+	}
 
-    public List<RealEstate> getAllRealEstates() {
-        return realEstateRepository.findAll();
-    }
-    
-    public Page<RealEstate> getRealEstates(Specification<RealEstate> spec, Pageable pageable) {
-        return realEstateRepository.findAll(spec, pageable);
-    }
+	// Search with pagination and filtering
+	public Page<RealEstateResponse> searchRealEstates(BigDecimal priceMin, BigDecimal priceMax,
+			PropertyType propertyType, List<String> features, String city, String state, String zipCode,
+			ListingType listingType, Pageable pageable) {
+		
+		Specification<RealEstate> spec = buildSearchSpecification(priceMin, priceMax, propertyType, features, city,
+				state, zipCode, listingType);
 
-    public RealEstate getRealEstateById(Long propertyId) {
-        return realEstateRepository.findById(propertyId)
-                .orElseThrow(() -> new RuntimeException("Real estate not found with id: " + propertyId));
-    }
+		return realEstateRepository.findAll(spec, pageable)
+	            .map(entity -> realEstateMapper.toResponse(entity));
+	}
 
-    public RealEstate createRealEstate(RealEstate realEstate) {
-        return realEstateRepository.save(realEstate);
-    }
+	// Get single property by ID
+	public RealEstateResponse getById(Long id) {
+		RealEstate entity = realEstateRepository.findById(id)
+	            .orElseThrow(() -> new RealEstateNotFoundException(id));
+	    return realEstateMapper.toResponse(entity);
+	}
 
-    public RealEstate updateRealEstate(Long propertyId, Map<String, Object> updates) {
-        RealEstate realEstate = realEstateRepository.findById(propertyId)
-                .orElseThrow(() -> new RuntimeException("Real estate not found with id: " + propertyId));
+	// Create from DTO without images
+	public RealEstateResponse createRealEstate(RealEstateRequest request) {
+		User owner = userService.getAuthenticatedUser();
+		RealEstate entity = realEstateMapper.toEntity(request);
+		entity.setOwner(owner);
+		RealEstate saved = realEstateRepository.save(entity);
+		return realEstateMapper.toResponse(saved);
+	}
 
-        // Apply updates
-        if (updates.containsKey("title")) {
-            realEstate.setTitle((String) updates.get("title"));
-        }
-        if (updates.containsKey("description")) {
-            realEstate.setDescription((String) updates.get("description"));
-        }
-        if (updates.containsKey("propertyType")) {
-            realEstate.setPropertyType(PropertyType.valueOf((String) updates.get("propertyType")));
-        }
-        if (updates.containsKey("listingType")) {
-            realEstate.setListingType(ListingType.valueOf((String) updates.get("listingType")));
-        }
-        if (updates.containsKey("price")) {
-            realEstate.setPrice(new BigDecimal((String) updates.get("price")));
-        }
-        if (updates.containsKey("address")) {
-            realEstate.setAddress((String) updates.get("address"));
-        }
-        if (updates.containsKey("city")) {
-            realEstate.setCity((String) updates.get("city"));
-        }
-        if (updates.containsKey("state")) {
-            realEstate.setState((String) updates.get("state"));
-        }
-        if (updates.containsKey("zipCode")) {
-            realEstate.setZipCode((String) updates.get("zipCode"));
-        }
-        if (updates.containsKey("sizeInSqMt")) {
-            realEstate.setSizeInSqMt((String) updates.get("sizeInSqMt"));
-        }
-        if (updates.containsKey("features")) {
-            realEstate.setFeatures((List<String>) updates.get("features"));
-        }
+	// Create with images
+	public RealEstateResponse createWithImages(RealEstateRequest request, MultipartFile[] images) {
+	    User owner = userService.getAuthenticatedUser();
+	    List<String> imageUrls = realEstateImageService.uploadRealEstateImages(images);
+	    
+	    RealEstate entity = realEstateMapper.toEntity(request);
+	    entity.setOwner(owner);
+	    entity.setImages(imageUrls);
+	    
+	    RealEstate saved = realEstateRepository.save(entity);
+	    return realEstateMapper.toResponse(saved);
+	}
 
-        // Update the `updatedAt` timestamp
-        realEstate.setUpdatedAt(LocalDate.now());
+	// Update property
+	public RealEstateResponse updateRealEstate(Long propertyId, RealEstateUpdateRequest updates) {
+	    RealEstate entity = getValidatedRealEstate(propertyId);
+	    realEstateMapper.updateEntity(updates, entity);
+	    entity.setUpdatedAt(LocalDate.now());
+	    
+	    RealEstate updated = realEstateRepository.save(entity);
+	    return realEstateMapper.toResponse(updated);
+	}
 
-        // Save the updated entity
-        return realEstateRepository.save(realEstate);
-    }
+	// Delete property
+	public void deleteRealEstate(Long propertyId) {
+		RealEstate entity = getValidatedRealEstate(propertyId);
+		realEstateRepository.delete(entity);
+	}
 
-    public void deleteRealEstate(Long propertyId) {
-        realEstateRepository.deleteById(propertyId);
-    }
+	// Helper methods
+	private RealEstate getValidatedRealEstate(Long propertyId) {
+	    RealEstate entity = realEstateRepository.findById(propertyId)
+	        .orElseThrow(() -> new RealEstateNotFoundException(propertyId));
+	    
+	    User currentUser = userService.getAuthenticatedUser();
+	    if (!entity.getOwner().equals(currentUser)) {
+	        throw new UnauthorizedAccessException("You don't own this property");
+	    }
+	    
+	    return entity;
+	}
+
+	private Specification<RealEstate> buildSearchSpecification(BigDecimal priceMin, BigDecimal priceMax,
+			PropertyType propertyType, List<String> features, String city, String state, String zipCode,
+			ListingType listingType) {
+
+		return Specification.where(RealEstateSpecifications.hasMinPrice(priceMin))
+				.and(RealEstateSpecifications.hasMaxPrice(priceMax))
+				.and(RealEstateSpecifications.hasPropertyType(propertyType))
+				.and(RealEstateSpecifications.hasFeatures(features))
+				.and(RealEstateSpecifications.hasLocation(city, state, zipCode))
+				.and(RealEstateSpecifications.hasListingType(listingType));
+	}
+
+	// Statistics methods
+	public long getRealEstateCount() {
+		return realEstateRepository.count();
+	}
+
+	public List<RealEstate> getAllRealEstates() {
+		return realEstateRepository.findAll();
+	}
 }
