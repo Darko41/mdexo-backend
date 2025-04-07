@@ -102,5 +102,10 @@ public class User {
 	public void setEmail(String email) {
 		this.email = email;
 	}
+	
+	public boolean isAdmin() {
+	    return this.roles.stream()
+	            .anyMatch(role -> role.getName().equals("ROLE_ADMIN"));
+	}
 
 }

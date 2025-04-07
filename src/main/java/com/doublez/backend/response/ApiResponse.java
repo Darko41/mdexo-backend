@@ -20,6 +20,10 @@ public class ApiResponse<T> {
 	public static <T> ApiResponse<T> error(String message) {
 		return new ApiResponse<T>("error", message, null);
 	}
+	
+	public static <T> ApiResponse<T> error(String message, T details) {
+        return new ApiResponse<T>("error", message, details);
+    }
 
 	public String getStatus() {
 		return status;
@@ -45,6 +49,4 @@ public class ApiResponse<T> {
 		this.data = data;
 	}
 	
-	
-
 }

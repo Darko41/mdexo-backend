@@ -1,28 +1,16 @@
 package com.doublez.backend.controller;
 
-import java.io.IOException;
 import java.math.BigDecimal;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,53 +24,35 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.doublez.backend.dto.RealEstateDTO;
+import com.doublez.backend.dto.RealEstateCreateDTO;
 import com.doublez.backend.dto.RealEstateRequest;
-import com.doublez.backend.dto.RealEstateResponse;
-import com.doublez.backend.dto.RealEstateUpdateRequest;
+import com.doublez.backend.dto.RealEstateResponseDTO;
+import com.doublez.backend.dto.RealEstateUpdateDTO;
 import com.doublez.backend.entity.ListingType;
 import com.doublez.backend.entity.PropertyType;
-import com.doublez.backend.entity.RealEstate;
-import com.doublez.backend.entity.User;
-import com.doublez.backend.exception.ImageUploadException;
-import com.doublez.backend.exception.InvalidImageException;
-import com.doublez.backend.exception.RealEstateGetAllException;
 import com.doublez.backend.mapper.RealEstateMapper;
-import com.doublez.backend.repository.RealEstateRepository;
-import com.doublez.backend.repository.UserRepository;
-import com.doublez.backend.response.ApiResponse;
 import com.doublez.backend.service.RealEstateImageService;
 import com.doublez.backend.service.RealEstateService;
-import com.doublez.backend.service.S3Service;
 import com.doublez.backend.service.UserService;
-import com.doublez.backend.specification.RealEstateSpecifications;
 
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 
 @RestController
-//@CrossOrigin(origins = "https://mdexo-frontend.onrender.com")	// was "http://localhost:5173"
 @RequestMapping("/api/real-estates")
+//@CrossOrigin		TODO TRY THIS!
 public class RealEstateApiController {
-
     private final RealEstateService realEstateService;
     private final RealEstateImageService realEstateImageService;
-    private final UserService userService;
-    private final RealEstateMapper realEstateMapper;
-    
-    
-    public RealEstateApiController(RealEstateService realEstateService, RealEstateImageService realEstateImageService,
-			UserService userService, RealEstateMapper realEstateMapper) {
-		this.realEstateService = realEstateService;
-		this.realEstateImageService = realEstateImageService;
-		this.userService = userService;
-		this.realEstateMapper = realEstateMapper;
-	}
+    private static final Logger logger = LoggerFactory.getLogger(RealEstateApiController.class);
 
-	private static final Logger logger = LoggerFactory.getLogger(RealEstateApiController.class);
+    public RealEstateApiController(RealEstateService realEstateService, 
+                                 RealEstateImageService realEstateImageService) {
+        this.realEstateService = realEstateService;
+        this.realEstateImageService = realEstateImageService;
+    }
 
     @GetMapping("/search")
-    public ResponseEntity<Page<RealEstateResponse>> searchRealEstates(
+    public ResponseEntity<Page<RealEstateResponseDTO>> searchRealEstates(
             @RequestParam(required = false) BigDecimal priceMin,
             @RequestParam(required = false) BigDecimal priceMax,
             @RequestParam(required = false) PropertyType propertyType,
@@ -93,51 +63,57 @@ public class RealEstateApiController {
             @RequestParam(required = false) ListingType listingType,
             Pageable pageable) {
         
-        Page<RealEstateResponse> result = realEstateService.searchRealEstates(
+        Page<RealEstateResponseDTO> result = realEstateService.searchRealEstates(
             priceMin, priceMax, propertyType, features,
             city, state, zipCode, listingType, pageable);
         
         return ResponseEntity.ok(result);
     }
 
-    @PostMapping("/create")
+    @PostMapping(value = "/with-images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<RealEstateResponse> createRealEstate(
-            @RequestBody @Valid RealEstateRequest request) {
-        RealEstateResponse response = realEstateService.createRealEstate(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    public ResponseEntity<RealEstateResponseDTO> createWithImages(
+            @RequestPart @Valid RealEstateCreateDTO createDto,
+            @RequestPart(required = false) MultipartFile[] images) {
+        
+        RealEstateResponseDTO response = realEstateService.createWithImages(
+            createDto, 
+            images != null ? images : new MultipartFile[0]
+        );
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .header("Location", "/api/real-estates/" + response.getPropertyId())
+                .body(response);
     }
 
-    @DeleteMapping("/delete/{propertyId}")
-    @PreAuthorize("hasRole('USER')")
+    @PutMapping("/{propertyId}")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('USER') and @realEstateSecurityService.isOwner(#propertyId))")
+    public ResponseEntity<RealEstateResponseDTO> updateRealEstate(
+            @PathVariable Long propertyId,
+            @RequestBody @Valid RealEstateUpdateDTO updateDto) {
+        return ResponseEntity.ok(realEstateService.updateRealEstate(propertyId, updateDto));
+    }
+
+    @DeleteMapping("/{propertyId}")
+    @PreAuthorize("hasRole('USER') and @realEstateSecurityService.isOwner(#propertyId)")
     public ResponseEntity<Void> deleteRealEstate(@PathVariable Long propertyId) {
         realEstateService.deleteRealEstate(propertyId);
         return ResponseEntity.noContent().build();
     }
-
-    @PutMapping("/update/{propertyId}")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<RealEstateResponse> updateRealEstate(
-            @PathVariable Long propertyId,
-            @RequestBody @Valid RealEstateUpdateRequest updates) {
-        
-        RealEstateResponse response = realEstateService.updateRealEstate(propertyId, updates);
-        return ResponseEntity.ok(response);
-    }
-
-    @PostMapping(value = "/with-images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<RealEstateResponse> createWithImages(
-            @RequestPart @Valid RealEstateRequest request,
-            @RequestPart(required = false) MultipartFile[] images) {
-        
-        RealEstateResponse response = realEstateService.createWithImages(
-            request, 
-            images != null ? images : new MultipartFile[0]
-        );
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
-	
     
+    @GetMapping("/{propertyId}")
+    public ResponseEntity<RealEstateResponseDTO> getRealEstateById(
+            @PathVariable Long propertyId) {
+        return ResponseEntity.ok(realEstateService.getRealEstateById(propertyId));
+    }
+    
+    @PostMapping
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<RealEstateResponseDTO> createRealEstate(
+            @RequestBody @Valid RealEstateCreateDTO createDto) {
+        RealEstateResponseDTO response = realEstateService.createRealEstate(createDto);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .header("Location", "/api/real-estates/" + response.getPropertyId())
+                .body(response);
+    }
 }
 

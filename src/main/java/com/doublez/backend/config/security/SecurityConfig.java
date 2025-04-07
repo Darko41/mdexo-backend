@@ -74,7 +74,7 @@ public class SecurityConfig {
 					
 					// Define URLs that require specific role				
 					.requestMatchers("/swagger-ui/**", "/v3/api-docs/**").hasRole("DEV")	// TODO Resolve cors problems, why this works on Postman but not deployed
-					.requestMatchers("/admin/**").hasRole("ADMIN")							// TODO Resolve cors problems, why this works on Postman but not deployed
+					.requestMatchers("/api/admin/**").hasRole("ADMIN")							// TODO Resolve cors problems, why this works on Postman but not deployed
 					
 					// Define URLs that require authentication
 //					.requestMatchers("/api/**").authenticated()

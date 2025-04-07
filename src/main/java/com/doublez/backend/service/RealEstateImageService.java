@@ -1,6 +1,11 @@
 package com.doublez.backend.service;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -15,6 +20,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.doublez.backend.exception.ImageUploadException;
+
+import jakarta.transaction.Transactional;
 
 @Service
 public class RealEstateImageService {
@@ -95,5 +102,37 @@ public class RealEstateImageService {
     private String extractPublicUrl(String presignedUrl) {
         // Handle both real S3 and mock URLs
         return presignedUrl.split("\\?")[0];
+    }
+    
+    @Transactional
+    public void deleteImages(List<String> imageUrls) {
+        if (imageUrls == null || imageUrls.isEmpty()) {
+            return;
+        }
+        
+        imageUrls.forEach(url -> {
+            try {
+                // Extract the S3 key from the URL
+                String key = extractS3Key(url);
+                s3Service.deleteFile(key);
+            } catch (Exception e) {
+                logger.error("Failed to delete image from S3: {}", url, e);
+                // Consider adding a retry mechanism here if needed
+            }
+        });
+    }
+    
+    private String extractS3Key(String imageUrl) {
+        // Assuming your URLs are in format: https://bucket.s3.region.amazonaws.com/folder/filename.jpg
+        try {
+            URI uri = new URI(imageUrl);
+            String path = uri.getPath();
+            // Remove leading slash if present
+            return path.startsWith("/") ? path.substring(1) : path;
+        } catch (URISyntaxException e) {
+            logger.warn("Invalid image URL format: {}", imageUrl);
+            // Fallback - extract everything after last slash
+            return imageUrl.substring(imageUrl.lastIndexOf('/') + 1);
+        }
     }
 }

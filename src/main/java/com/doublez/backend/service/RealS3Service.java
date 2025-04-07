@@ -14,6 +14,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
+
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
@@ -23,11 +27,14 @@ public class RealS3Service implements S3Service {
 	private static final Logger logger = LoggerFactory.getLogger(RealS3Service.class);
 	private final S3Presigner presigner;
 	private final String bucketName;
+	private final S3Client s3Client;
 	
-	public RealS3Service(S3Presigner presigner,
-					@Value("${aws.s3.bucket}") String bucketName) {
-		this.presigner = presigner;
-        this.bucketName = bucketName;
+	public RealS3Service(S3Client s3Client, 
+            	S3Presigner presigner,
+            	@Value("${aws.s3.bucket}") String bucketName) {
+			this.s3Client = s3Client;
+			this.presigner = presigner;
+			this.bucketName = bucketName;
 	}
 	
 	public String generatePresignedUrl(String fileName) {
@@ -91,6 +98,19 @@ public class RealS3Service implements S3Service {
 			throw new IOException("Upload interrupted", e);
 		}
 
+	}
+
+	@Override
+	public void deleteFile(String key) {
+	    try {
+	        s3Client.deleteObject(DeleteObjectRequest.builder()
+	                .bucket(bucketName)
+	                .key(key)
+	                .build());
+	        logger.info("Deleted file from S3: {}", key);
+	    } catch (S3Exception e) {
+	        throw new RuntimeException("Failed to delete file: " + key, e);
+	    }
 	}
 
 }

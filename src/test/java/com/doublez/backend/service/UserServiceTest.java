@@ -1,9 +1,11 @@
 package com.doublez.backend.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -11,233 +13,241 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.time.LocalDate;
+import java.util.Collections;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import com.doublez.backend.dto.UserDetailsDTO;
+import com.doublez.backend.dto.UserCreateDTO;
+import com.doublez.backend.dto.UserResponseDTO;
+import com.doublez.backend.dto.UserUpdateDTO;
 import com.doublez.backend.entity.Role;
 import com.doublez.backend.entity.User;
+import com.doublez.backend.exception.CustomAuthenticationException;
+import com.doublez.backend.exception.EmailExistsException;
+import com.doublez.backend.mapper.UserMapper;
 import com.doublez.backend.repository.RoleRepository;
 import com.doublez.backend.repository.UserRepository;
 
 // TODO update Mockito when a version that fully supports Java 21 is released
 
-public class UserServiceTest {
-	
-	@Mock
-	private UserRepository userRepository;
-	
-	@Mock
-	private PasswordEncoder passwordEncoder;
-	
-	@Mock
-	private RoleRepository roleRepository;
-	
-	@InjectMocks
-	private UserService userService;
-	
-	@BeforeEach
-	void setUp() {
-		MockitoAnnotations.openMocks(this);
-	}
-	
-	@Test
-	void testRegisterUser_UserAlreadyExists() {
-		// Given
-		UserDetailsDTO userDetailsDTO = new UserDetailsDTO("johndoe@gmail.com", List.of("ROLE_USER"));
-		when(userRepository.findByEmail(userDetailsDTO.getEmail())).thenReturn(Optional.of(new User())); // Simulate user already exists
-		
-		// When
-		String result = userService.registerUser(userDetailsDTO);
-		
-		// Then
-		assertEquals("User already exists with this email", result); // Ensure correct message is returned
-		verify(userRepository).findByEmail(userDetailsDTO.getEmail()); // Verify repository call
+class UserServiceTest {
+    
+    @Mock
+    private UserRepository userRepository;
+    @Mock
+    private PasswordEncoder passwordEncoder;
+    @Mock
+    private RoleRepository roleRepository;
+    @Mock
+    private UserMapper userMapper;
+    
+    @InjectMocks
+    private UserService userService;
+    
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
 
-	}
-	
-	@Test
-	void testRegisterUser_NoRolesProvided_ShouldAssignDefaultRole() {
-		// Given: User DTO with no roles (null roles)
-		UserDetailsDTO userDetailsDTO = new UserDetailsDTO("johndoe@gmail.com", null);
-		userDetailsDTO.setPassword("password123");
-		
-		// Mock repository calls
-		when(userRepository.findByEmail(userDetailsDTO.getEmail())).thenReturn(Optional.empty());
-		when(passwordEncoder.encode(userDetailsDTO.getPassword())).thenReturn("encodedPassword123");
-		
-		// Mock role repository to ensure the "USER" role exists or is created
-		Role defaultRole = new Role();
-		defaultRole.setName("ROLE_USER");
-		when(roleRepository.findByName("ROLE_USER")).thenReturn(Optional.of(defaultRole)); // Ensure "ROLE_USER" role exists
-		when(userRepository.save(any(User.class))).thenAnswer(invocation -> 
-			invocation.getArgument(0)); // Return saved user
-		
-		// When: Registering user without roles
-		String result = userService.registerUser(userDetailsDTO);
-		
-		// Then: Ensure the result is successful and the default role is assigned
-		assertEquals("User registered successfully!", result);
-		verify(userRepository).save(any(User.class)); // Ensure user is saved
-		verify(roleRepository).findByName("ROLE_USER"); // Ensure default role is checked
-	}
-	
-	// Test for case when roles are not provided and user is successfully registered
-	@Test
-	void testRegisterUser_Success() {
-		// Given
-		List<String> roles = Arrays.asList("ROLE_USER", "ROLE_ADMIN");
-		UserDetailsDTO userDetailsDTO = new UserDetailsDTO("johndoe@gmail.com", roles);
-		userDetailsDTO.setPassword("password123");
-		String encodedPassword = "encodedPassword123";
-		
-		Role userRole = new Role();
-		userRole.setName("ROLE_USER");
-		
-		Role adminRole = new Role();
-		userRole.setName("ROLE_ADMIN");
-		
-		// Mocking the behavior of the repositories
-		when(userRepository.findByEmail(userDetailsDTO.getEmail())).thenReturn(Optional.empty()); // User doesn't exist yet
-		when(passwordEncoder.encode(userDetailsDTO.getPassword())).thenReturn(encodedPassword); // Password encoding
-		when(roleRepository.findByName("ROLE_USER")).thenReturn(Optional.of(userRole)); // Role "ROLE_USER" exists
-		when(roleRepository.findByName("ROLE_ADMIN")).thenReturn(Optional.empty()); // Role "ROLE_ADMIN" doesn't exist
-		when(roleRepository.save(any(Role.class))).thenReturn(adminRole); // Save new "ROLE_ADMIN" role
-		when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
-			User user = invocation.getArgument(0);
-			user.setId(1L); // Simulate the user having an ID after being used
-			return user;
-		}); // Save the user and return the saved instance
-		
-		// When
-		String result = userService.registerUser(userDetailsDTO);
-		
-		// Then
-		assertEquals("User registered successfully!", result);
-		verify(passwordEncoder).encode("password123");
-		verify(roleRepository).findByName("ROLE_USER");
-		verify(roleRepository).findByName("ROLE_ADMIN");
-		verify(roleRepository).save(any(Role.class));
-		verify(userRepository).save(any(User.class));
-		
-		// Check roles on the saved user
-		verify(userRepository).save(argThat(user -> user.getRoles().size() == 2 &&
-				user.getRoles().contains(userRole) && user.getRoles().contains(adminRole)));
-	}
-	
-	@Test
-	void testRegistrationUser_WithEmptyPassword() {
-		UserDetailsDTO userDetailsDTO = new UserDetailsDTO("John Doe", List.of("ROLE_USER"));
-		userDetailsDTO.setPassword("");
-		
-		String result = userService.registerUser(userDetailsDTO);
-		
-		assertEquals("Password cannot be empty", result); // Empty password leads to role-related validation failure
-		verify(userRepository, never()).save(any(User.class)); // Save is not called if password is empty
-	}
-	
-	@Test
-	void testDeleteUser_NotFound() {
-		Long userId = 1L;
-		
-		when(userRepository.findById(userId)).thenReturn(Optional.empty());
-		
-		Exception exception = assertThrows(RuntimeException.class, () -> {
-			userService.deleteUser(userId);
-		});
-		
-		assertEquals("User not found with id " + userId, exception.getMessage());
-	}
-	
-	@Test
-	void testUpdateProfile_Success() {
-		Long userId = 1L;
-		User existingUser = new User();
-		existingUser.setId(userId);
-		existingUser.setEmail("johndoe@gmail.com");
-		existingUser.setPassword("oldEncodedPassword");
-		
-		// New user details to update
-		String newEmail = "johndoeupdated@gmail.com";
-		String newPassword = "newPassword";
-		UserDetailsDTO userDetailsDTO = new UserDetailsDTO(newEmail, new ArrayList<>());
-		userDetailsDTO.setPassword(newPassword);
-		
-		when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
-		when(passwordEncoder.encode(newPassword)).thenReturn("newEncodedPassword123");
-		when(userRepository.save(any(User.class))).thenAnswer(
-				invocation -> invocation.getArgument(0)); // Return the updated user
-		
-		boolean result = userService.updateProfile(userId, userDetailsDTO);
-		
-		assertTrue(result); // Ensure the result is true
-		assertEquals(newEmail, existingUser.getEmail()); // Ensure email is updated
-		assertEquals("newEncodedPassword123", existingUser.getPassword()); // Ensure password is encoded and updated
-		
-		verify(userRepository).save(existingUser); // Ensure the save method is called with updated user
-	}
-	
-	@Test
-	void testUpdateProfile_UserNotFOund() {
-		Long userId = 1L;
-		UserDetailsDTO userDetailsDTO = new UserDetailsDTO("newemail@gmail.com", null);
-		userDetailsDTO.setPassword("newPassword123");
-		
-		when(userRepository.findById(userId)).thenReturn(Optional.empty());
-		
-		Exception exception = assertThrows(UsernameNotFoundException.class, () -> {
-			userService.updateProfile(userId, userDetailsDTO);
-		});
-		
-		assertEquals("User not found with ID: " + userId, exception.getMessage()); // Ensure exception is thrown with correct message
-		verify(userRepository, never()).save(any(User.class)); // Ensure save method is not called
-	}
-	
-	// Additional tests can be written for other edge cases (e.g. invalid role names, etc.)
+    @Test
+    void registerUser_WhenUserExists_ShouldReturnErrorMessage() {
+        UserCreateDTO createDto = new UserCreateDTO("existing@test.com", "password123", List.of("ROLE_USER"));
+        when(userRepository.findByEmail(createDto.getEmail())).thenReturn(Optional.of(new User()));
+        
+        String result = userService.registerUser(createDto);
+        
+        assertEquals("User already exists with this email", result);
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void registerUser_WhenNoRolesProvided_ShouldAssignDefaultRole() {
+        // Arrange
+        UserCreateDTO createDto = new UserCreateDTO("new@test.com", "password123", null);
+        Role defaultRole = createTestRole("ROLE_USER");
+        User user = new User();
+        user.setEmail(createDto.getEmail());
+        user.setPassword("encodedPass");
+        user.setRoles(List.of(defaultRole));
+        
+        when(userRepository.findByEmail(createDto.getEmail())).thenReturn(Optional.empty());
+        when(roleRepository.findByName("ROLE_USER")).thenReturn(Optional.of(defaultRole));
+        when(passwordEncoder.encode(createDto.getPassword())).thenReturn("encodedPass");
+        when(userMapper.toEntity(createDto)).thenReturn(user); // Add this mock
+        when(userRepository.save(user)).thenAnswer(invocation -> {
+            User saved = invocation.getArgument(0);
+            saved.setId(1L);
+            return saved;
+        });
+        
+        // Act
+        String result = userService.registerUser(createDto);
+        
+        // Assert
+        assertEquals("User registered successfully!", result);
+        verify(userRepository).save(argThat(savedUser -> 
+            savedUser.getRoles() != null &&
+            savedUser.getRoles().size() == 1 &&
+            savedUser.getRoles().get(0).getName().equals("ROLE_USER")
+        ));
+    }
+
+    @Test
+    void registerUser_WhenPasswordInvalid_ShouldThrowException() {
+        UserCreateDTO createDto = new UserCreateDTO("test@test.com", "123", List.of("ROLE_USER"));
+        
+        assertThrows(IllegalArgumentException.class, () -> userService.registerUser(createDto));
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void createUser_WhenValid_ShouldReturnUserResponse() {
+        // Arrange
+        UserCreateDTO createDto = new UserCreateDTO("new@test.com", "password123", List.of("ROLE_USER"));
+        User user = new User();
+        user.setId(1L);
+        user.setEmail(createDto.getEmail());
+        user.setPassword("encodedPass");
+        user.setRoles(List.of(createTestRole("ROLE_USER")));
+        
+        UserResponseDTO responseDto = createTestUserResponseDTO();
+        
+        when(userRepository.findByEmail(createDto.getEmail())).thenReturn(Optional.empty());
+        when(roleRepository.findByName("ROLE_USER")).thenReturn(Optional.of(createTestRole("ROLE_USER")));
+        when(passwordEncoder.encode(createDto.getPassword())).thenReturn("encodedPass");
+        when(userMapper.toEntity(createDto)).thenReturn(user); // Add this mock
+        when(userRepository.save(user)).thenReturn(user);
+        when(userMapper.toResponseDto(user)).thenReturn(responseDto);
+        
+        // Act
+        UserResponseDTO result = userService.createUser(createDto);
+        
+        // Assert
+        assertEquals(responseDto, result);
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void createUser_WhenEmailExists_ShouldThrowException() {
+        UserCreateDTO createDto = new UserCreateDTO("existing@test.com", "password123", List.of("ROLE_USER"));
+        when(userRepository.findByEmail(createDto.getEmail())).thenReturn(Optional.of(new User()));
+        
+        assertThrows(EmailExistsException.class, () -> userService.createUser(createDto));
+    }
+    
+    
+
+    @Test
+    void updateUserProfile_WhenValid_ShouldUpdateUser() {
+        Long userId = 1L;
+        UserUpdateDTO updateDto = new UserUpdateDTO();
+        updateDto.setEmail("new@email.com");
+        updateDto.setPassword("newPassword");
+        
+        User user = new User();
+        user.setId(userId);
+        user.setEmail("old@email.com");
+        
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(passwordEncoder.encode(updateDto.getPassword())).thenReturn("encodedPass");
+        when(userRepository.save(user)).thenReturn(user);
+        when(userMapper.toResponseDto(user)).thenReturn(createTestUserResponseDTO());
+        
+        UserResponseDTO result = userService.updateUserProfile(userId, updateDto);
+        
+        assertEquals("new@email.com", user.getEmail());
+        assertEquals("encodedPass", user.getPassword());
+        assertNotNull(user.getUpdatedAt());
+        assertNotNull(result);
+    }
+
+    @Test
+    void getUserById_WhenExists_ShouldReturnUser() {
+        Long userId = 1L;
+        User user = new User();
+        user.setId(userId);
+        UserResponseDTO responseDto = createTestUserResponseDTO();
+        
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(userMapper.toResponseDto(user)).thenReturn(responseDto);
+        
+        UserResponseDTO result = userService.getUserById(userId);
+        
+        assertEquals(responseDto, result);
+    }
+
+    @Test
+    void getAllUsers_ShouldReturnAllUsers() {
+        User user1 = new User();
+        user1.setId(1L);
+        User user2 = new User();
+        user2.setId(2L);
+        
+        when(userRepository.findAll()).thenReturn(List.of(user1, user2));
+        when(userMapper.toResponseDto(user1)).thenReturn(new UserResponseDTO(1L, "user1@test.com", List.of(), null, null));
+        when(userMapper.toResponseDto(user2)).thenReturn(new UserResponseDTO(2L, "user2@test.com", List.of(), null, null));
+        
+        List<UserResponseDTO> result = userService.getAllUsers();
+        
+        assertEquals(2, result.size());
+        assertEquals(1L, result.get(0).getId());
+        assertEquals(2L, result.get(1).getId());
+    }
+
+    @Test
+    void deleteUser_WhenExists_ShouldDelete() {
+        Long userId = 1L;
+        User user = new User();
+        user.setId(userId);
+        
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        
+        userService.deleteUser(userId);
+        
+        verify(userRepository).delete(user);
+    }
+
+    @Test
+    void getAuthenticatedUser_WhenNotAuthenticated_ShouldThrowException() {
+        SecurityContextHolder.clearContext();
+        
+        assertThrows(CustomAuthenticationException.class, () -> userService.getAuthenticatedUser());
+    }
+
+    @Test
+    void getUserCount_ShouldReturnCount() {
+        when(userRepository.count()).thenReturn(10L);
+        assertEquals(10L, userService.getUserCount());
+    }
+
+    @Test
+    void getAgentCount_ShouldReturnCount() {
+        when(userRepository.countUsersByRole("ROLE_AGENT")).thenReturn(5L);
+        assertEquals(5L, userService.getAgentCount());
+    }
+
+    // Helper methods
+    private UserResponseDTO createTestUserResponseDTO() {
+        return new UserResponseDTO(
+            1L,
+            "test@test.com",
+            List.of("ROLE_USER"),
+            LocalDate.now(),
+            LocalDate.now()
+        );
+    }
+
+    private Role createTestRole(String roleName) {
+        Role role = new Role();
+        role.setName(roleName);
+        return role;
+    }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

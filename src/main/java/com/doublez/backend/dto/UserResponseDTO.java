@@ -51,5 +51,4 @@ public class UserResponseDTO {
 		this.updatedAt = updatedAt;
 	}
     
-
 }

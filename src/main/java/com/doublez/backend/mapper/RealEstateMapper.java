@@ -1,16 +1,21 @@
 package com.doublez.backend.mapper;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Optional;
 
 import org.springframework.stereotype.Component;
 
+import com.doublez.backend.dto.RealEstateCreateDTO;
 import com.doublez.backend.dto.RealEstateDTO;
 import com.doublez.backend.dto.RealEstateRequest;
-import com.doublez.backend.dto.RealEstateResponse;
-import com.doublez.backend.dto.RealEstateUpdateRequest;
+import com.doublez.backend.dto.RealEstateResponseDTO;
+import com.doublez.backend.dto.RealEstateUpdateDTO;
 import com.doublez.backend.entity.RealEstate;
 import com.doublez.backend.entity.User;
 import com.doublez.backend.repository.UserRepository;
+
+import jakarta.persistence.EntityNotFoundException;
 
 @Component
 public class RealEstateMapper {
@@ -20,58 +25,55 @@ public class RealEstateMapper {
         this.userRepository = userRepository;
     }
 
-    public RealEstate toEntity(RealEstateRequest request) {
-    	RealEstate entity = new RealEstate();
-        entity.setTitle(request.getTitle());
-        entity.setDescription(request.getDescription());
-        entity.setPropertyType(request.getPropertyType());
-        entity.setListingType(request.getListingType());
-        entity.setPrice(request.getPrice());
-        entity.setAddress(request.getAddress());
-        entity.setCity(request.getCity());
-        entity.setState(request.getState());
-        entity.setZipCode(request.getZipCode());
-        entity.setSizeInSqMt(request.getSizeInSqMt());
-        entity.setFeatures(request.getFeatures());
+    public RealEstate toEntity(RealEstateCreateDTO createDto) {
+        RealEstate entity = new RealEstate();
+        mapCommonFields(createDto, entity);
+        
+        User owner = userRepository.findById(createDto.getOwnerId())
+            .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + createDto.getOwnerId()));
+        entity.setOwner(owner);
+        
         return entity;
     }
-	
-    public RealEstateResponse toResponse(RealEstate entity) {
-        RealEstateResponse response = new RealEstateResponse();
-        response.setPropertyId(entity.getPropertyId());
-        response.setTitle(entity.getTitle());
-        response.setDescription(entity.getDescription());
-        response.setPropertyType(entity.getPropertyType());
-        response.setListingType(entity.getListingType());
-        response.setPrice(entity.getPrice());
-        response.setAddress(entity.getAddress());
-        response.setCity(entity.getCity());
-        response.setState(entity.getState());
-        response.setZipCode(entity.getZipCode());
-        response.setSizeInSqMt(entity.getSizeInSqMt());
-        response.setFeatures(entity.getFeatures());
-        response.setImages(entity.getImages());
-        response.setOwnerId(entity.getOwner().getId());
-        response.setOwnerEmail(entity.getOwner().getEmail());
-        response.setCreatedAt(entity.getCreatedAt());
-        response.setUpdatedAt(entity.getUpdatedAt());
-        return response;
-    }
-    
-    public void updateEntity(RealEstateUpdateRequest updates, RealEstate entity) {
-        if (updates.getTitle() != null) entity.setTitle(updates.getTitle());
-        if (updates.getDescription() != null) entity.setDescription(updates.getDescription());
-        if (updates.getPropertyType() != null) entity.setPropertyType(updates.getPropertyType());
-        if (updates.getListingType() != null) entity.setListingType(updates.getListingType());
-        if (updates.getPrice() != null) entity.setPrice(updates.getPrice());
-        if (updates.getAddress() != null) entity.setAddress(updates.getAddress());
-        if (updates.getCity() != null) entity.setCity(updates.getCity());
-        if (updates.getState() != null) entity.setState(updates.getState());
-        if (updates.getZipCode() != null) entity.setZipCode(updates.getZipCode());
-        if (updates.getSizeInSqMt() != null) entity.setSizeInSqMt(updates.getSizeInSqMt());
-        if (updates.getFeatures() != null) entity.setFeatures(updates.getFeatures());
-        if (updates.getImages() != null) entity.setImages(updates.getImages());
+
+    public RealEstateResponseDTO toResponseDto(RealEstate entity) {
+        if (entity == null) return null;
         
-        entity.setUpdatedAt(LocalDate.now()); // Fixed to use LocalDate
+        return new RealEstateResponseDTO(entity);
+    }
+
+    public void updateEntity(RealEstateUpdateDTO updateDto, RealEstate entity) {
+        if (updateDto == null || entity == null) return;
+
+        Optional.ofNullable(updateDto.getTitle()).ifPresent(entity::setTitle);
+        Optional.ofNullable(updateDto.getDescription()).ifPresent(entity::setDescription);
+        Optional.ofNullable(updateDto.getPropertyType()).ifPresent(entity::setPropertyType);
+        Optional.ofNullable(updateDto.getListingType()).ifPresent(entity::setListingType);
+        Optional.ofNullable(updateDto.getPrice()).ifPresent(entity::setPrice);
+        Optional.ofNullable(updateDto.getAddress()).ifPresent(entity::setAddress);
+        Optional.ofNullable(updateDto.getCity()).ifPresent(entity::setCity);
+        Optional.ofNullable(updateDto.getState()).ifPresent(entity::setState);
+        Optional.ofNullable(updateDto.getZipCode()).ifPresent(entity::setZipCode);
+        Optional.ofNullable(updateDto.getSizeInSqMt()).ifPresent(entity::setSizeInSqMt);
+        Optional.ofNullable(updateDto.getFeatures()).ifPresent(entity::setFeatures);
+        Optional.ofNullable(updateDto.getImages()).ifPresent(entity::setImages);
+        
+        entity.setUpdatedAt(LocalDate.now());
+    }
+
+    // Helper method for common field mapping
+    private void mapCommonFields(RealEstateCreateDTO source, RealEstate target) {
+        target.setTitle(source.getTitle());
+        target.setDescription(source.getDescription());
+        target.setPropertyType(source.getPropertyType());
+        target.setListingType(source.getListingType());
+        target.setPrice(source.getPrice());
+        target.setAddress(source.getAddress());
+        target.setCity(source.getCity());
+        target.setState(source.getState());
+        target.setZipCode(source.getZipCode());
+        target.setSizeInSqMt(source.getSizeInSqMt());
+        target.setFeatures(source.getFeatures() != null ? source.getFeatures() : new ArrayList<>());
+        target.setImages(source.getImages() != null ? source.getImages() : new ArrayList<>());
     }
 }

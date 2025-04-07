@@ -1,9 +1,9 @@
 package com.doublez.backend.controller;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,11 +18,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.doublez.backend.dto.UserDetailsDTO;
+import com.doublez.backend.dto.AdminUserCreateDTO;
+import com.doublez.backend.dto.UserCreateDTO;
+import com.doublez.backend.dto.UserResponseDTO;
 import com.doublez.backend.dto.UserUpdateDTO;
+import com.doublez.backend.exception.EmailExistsException;
+import com.doublez.backend.exception.UserNotFoundException;
+import com.doublez.backend.response.ApiResponse;
 import com.doublez.backend.service.UserService;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.validation.Valid;
 
@@ -30,80 +33,77 @@ import jakarta.validation.Valid;
 @RequestMapping("/api/users")
 public class UserController {
 
-	@Autowired
-	private UserService userService;
-	
-	@PostMapping("/register")
-	public ResponseEntity<String> registerUser (@RequestBody UserDetailsDTO userDetailsDTO) {
-		
-		try {
-			String registrationResult = userService.registerUser(userDetailsDTO);
-			return ResponseEntity.ok(registrationResult);
-		} catch (Exception e) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error registering user: " + e.getMessage());
-		}
-		
-	}
-	
-	@GetMapping
-	public ResponseEntity<List<UserDetailsDTO>> getAllUsers() {
-		try {
-			List<UserDetailsDTO> userDetailsDTOs = userService.getAllUsers();
-			if (!userDetailsDTOs.isEmpty()) {
-				return ResponseEntity.ok(userDetailsDTOs);
-			}
-			return ResponseEntity.status(HttpStatus.NO_CONTENT).body(Collections.emptyList());
-		} catch (Exception e) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-		}
-	}
-	
-	@GetMapping("/by-email{email}")
-	public ResponseEntity<UserDetailsDTO> getUserProfile(@PathVariable String email) {
-		try {
-	        UserDetailsDTO userDetailsDTO = userService.getUserProfile(email);
-	        return ResponseEntity.ok(userDetailsDTO);
-	    } catch (UsernameNotFoundException e) {
-	        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-	    }
-	}
-	
-	@PutMapping("/update/{id}")
-	@PreAuthorize("hasRole('USER') and #id == authentication.principal.id")
-	public ResponseEntity<String> updateUserProfile(
-	        @PathVariable Long id,
-	        @Valid @RequestBody UserUpdateDTO updateDTO) {  // Direct DTO binding
-	    
-	    boolean isUpdated = userService.updateProfile(id, updateDTO);
-	    return isUpdated ? 
-	        ResponseEntity.ok("Profile updated successfully") :
-	        ResponseEntity.notFound().build();
-	}
-	
-	@PostMapping("/add")
-	public ResponseEntity<String> addUser(@RequestBody UserDetailsDTO userDetailsDTO) {
-		try {
-			String result = userService.addUser(userDetailsDTO);
-			return ResponseEntity.ok(result);
-		} catch (Exception e) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error adding user: " + e.getMessage());
-		}
-		
-	}
-	
-	@DeleteMapping("/delete/{id}")
-	public ResponseEntity<String> deleteUser(@PathVariable Long id) {
-		try {
-			boolean isDeleted = userService.deleteUser(id);
-			if (isDeleted) {
-				return ResponseEntity.ok("User deleted successfully!");
-			}
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User not found");
-		} catch (Exception e) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error deleting user");
-		}
-	}
-	
-	
+    @Autowired
+    private UserService userService;
+    private static final Logger logger = LoggerFactory.getLogger(RealEstateApiController.class);
+    
+    @PostMapping("/register")
+    public ResponseEntity<String> registerUser(@Valid @RequestBody UserCreateDTO createDto) {
+        // Self-service registration with limited fields
+        try {
+            return ResponseEntity.ok(userService.registerUser(createDto));
+        } catch (EmailExistsException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Registration failed: " + e.getMessage());
+        }
+    }
+    
+    @GetMapping
+    public ResponseEntity<List<UserResponseDTO>> getAllUsers() {
+        try {
+            List<UserResponseDTO> users = userService.getAllUsers();
+            return users.isEmpty() ? 
+                ResponseEntity.noContent().build() : 
+                ResponseEntity.ok(users);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+    
+    @GetMapping("/by-email/{email}")
+    public ResponseEntity<UserResponseDTO> getUserProfile(@PathVariable String email) {
+        try {
+            UserResponseDTO user = userService.getUserProfile(email);
+            return ResponseEntity.ok(user);
+        } catch (UsernameNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+    
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('USER') and #id == authentication.principal.id")
+    public ResponseEntity<UserResponseDTO> updateUserProfile(
+            @PathVariable Long id,
+            @Valid @RequestBody UserUpdateDTO updateDTO) {
+        
+        UserResponseDTO updatedUser = userService.updateUserProfile(id, updateDTO);
+        return ResponseEntity.ok(updatedUser);
+    }
+    
+    @PostMapping("/add")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<UserResponseDTO>> addUser(
+            @Valid @RequestBody AdminUserCreateDTO adminCreateDto) {
+        UserResponseDTO userResponse = userService.createUserWithAdminPrivileges(adminCreateDto);
+        return ResponseEntity.ok(ApiResponse.success(userResponse));
+    }
+    
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+        userService.deleteUser(id); // Let exception handler manage responses
+        return ResponseEntity.noContent().build();
+    }
+    
+    @GetMapping("/{id}")
+    public ResponseEntity<UserResponseDTO> getUserById(@PathVariable Long id) {
+        try {
+            UserResponseDTO user = userService.getUserById(id);
+            return ResponseEntity.ok(user);
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 	
 }

@@ -72,7 +72,7 @@ public class RealEstate {
 	private String sizeInSqMt;
 	
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "user_id")
+	@JoinColumn(nullable = false, name = "user_id")
 	private User owner;
 	
 	@ElementCollection(fetch = FetchType.EAGER)
@@ -235,5 +235,5 @@ public class RealEstate {
 	public void setOwner(User owner) {
 		this.owner = owner;
 	}
-	
+		
 }

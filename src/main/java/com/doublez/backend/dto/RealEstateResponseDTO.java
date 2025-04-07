@@ -6,8 +6,9 @@ import java.util.List;
 
 import com.doublez.backend.entity.ListingType;
 import com.doublez.backend.entity.PropertyType;
+import com.doublez.backend.entity.RealEstate;
 
-public class RealEstateResponse {
+public class RealEstateResponseDTO {
 	
 	private Long propertyId;
     private String title;
@@ -27,111 +28,102 @@ public class RealEstateResponse {
     private LocalDate createdAt;
     private LocalDate updatedAt;  
 	
-	public RealEstateResponse() {
-		super();
-	}
-	public String getTitle() {
-		return title;
-	}
-	public void setTitle(String title) {
-		this.title = title;
-	}
-	public String getDescription() {
-		return description;
-	}
-	public void setDescription(String description) {
-		this.description = description;
-	}
-	public PropertyType getPropertyType() {
-		return propertyType;
-	}
-	public void setPropertyType(PropertyType propertyType) {
-		this.propertyType = propertyType;
-	}
-	public ListingType getListingType() {
-		return listingType;
-	}
-	public void setListingType(ListingType listingType) {
-		this.listingType = listingType;
-	}
-	public BigDecimal getPrice() {
-		return price;
-	}
-	public void setPrice(BigDecimal price) {
-		this.price = price;
-	}
-	public String getAddress() {
-		return address;
-	}
-	public void setAddress(String address) {
-		this.address = address;
-	}
-	public String getCity() {
-		return city;
-	}
-	public void setCity(String city) {
-		this.city = city;
-	}
-	public String getState() {
-		return state;
-	}
-	public void setState(String state) {
-		this.state = state;
-	}
-	public String getZipCode() {
-		return zipCode;
-	}
-	public void setZipCode(String zipCode) {
-		this.zipCode = zipCode;
-	}
-	public String getSizeInSqMt() {
-		return sizeInSqMt;
-	}
-	public void setSizeInSqMt(String sizeInSqMt) {
-		this.sizeInSqMt = sizeInSqMt;
-	}
-	public List<String> getFeatures() {
-		return features;
-	}
-	public void setFeatures(List<String> features) {
-		this.features = features;
-	}
-	public List<String> getImages() {
-		return images;
-	}
-	public void setImages(List<String> images) {
-		this.images = images;
-	}
-	public Long getOwnerId() {
-		return ownerId;
-	}
-	public void setOwnerId(Long ownerId) {
-		this.ownerId = ownerId;
-	}
+    public RealEstateResponseDTO(RealEstate realEstate) {
+    	if (realEstate == null) {
+            throw new IllegalArgumentException("RealEstate cannot be null");
+        }
+        this.propertyId = realEstate.getPropertyId();
+        this.title = realEstate.getTitle();
+        this.description = realEstate.getDescription();
+        this.propertyType = realEstate.getPropertyType();
+        this.listingType = realEstate.getListingType();
+        this.price = realEstate.getPrice();
+        this.address = realEstate.getAddress();
+        this.city = realEstate.getCity();
+        this.state = realEstate.getState();
+        this.zipCode = realEstate.getZipCode();
+        this.sizeInSqMt = realEstate.getSizeInSqMt();
+        this.features = realEstate.getFeatures();
+        this.images = realEstate.getImages();
+        if (realEstate.getOwner() != null) {
+            this.ownerId = realEstate.getOwner().getId();
+            this.ownerEmail = realEstate.getOwner().getEmail();
+        } else {
+            this.ownerId = null;
+            this.ownerEmail = null;
+        }
+        this.createdAt = realEstate.getCreatedAt();
+        this.updatedAt = realEstate.getUpdatedAt(); 
+    }
+
 	public Long getPropertyId() {
 		return propertyId;
 	}
-	public void setPropertyId(Long propertyId) {
-		this.propertyId = propertyId;
+
+	public String getTitle() {
+		return title;
 	}
-	public LocalDate getCreatedAt() {
-		return createdAt;
+
+	public String getDescription() {
+		return description;
 	}
-	public void setCreatedAt(LocalDate createdAt) {
-		this.createdAt = createdAt;
+
+	public PropertyType getPropertyType() {
+		return propertyType;
 	}
-	public LocalDate getUpdatedAt() {
-		return updatedAt;
+
+	public ListingType getListingType() {
+		return listingType;
 	}
-	public void setUpdatedAt(LocalDate updatedAt) {
-		this.updatedAt = updatedAt;
+
+	public BigDecimal getPrice() {
+		return price;
 	}
+
+	public String getAddress() {
+		return address;
+	}
+
+	public String getCity() {
+		return city;
+	}
+
+	public String getState() {
+		return state;
+	}
+
+	public String getZipCode() {
+		return zipCode;
+	}
+
+	public String getSizeInSqMt() {
+		return sizeInSqMt;
+	}
+
+	public List<String> getFeatures() {
+		return features;
+	}
+
+	public List<String> getImages() {
+		return images;
+	}
+
+	public Long getOwnerId() {
+		return ownerId;
+	}
+
 	public String getOwnerEmail() {
 		return ownerEmail;
 	}
-	public void setOwnerEmail(String ownerEmail) {
-		this.ownerEmail = ownerEmail;
+
+	public LocalDate getCreatedAt() {
+		return createdAt;
 	}
 
+	public LocalDate getUpdatedAt() {
+		return updatedAt;
+	}
+    
+    
 	
 }

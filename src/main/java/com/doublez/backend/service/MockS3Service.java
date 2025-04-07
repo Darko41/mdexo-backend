@@ -59,7 +59,7 @@ public class MockS3Service implements S3Service {
 	}
 
 	private String cleanFileName(String fileName) {
-		return fileName.replaceAll("[^a-zA-Z0-9.-]", "_");
+	    return fileName.replaceAll("[^a-zA-Z0-9/.-]", "_");
 	}
 
 	@Override
@@ -75,5 +75,32 @@ public class MockS3Service implements S3Service {
 	    logger.info("Mock Streaming Upload: {} ({} bytes, {})", 
 	        filePath.getFileName(), contentLength, contentType);
 		
+	}
+
+	@Override
+	public void deleteFile(String key) {
+	    // Sanitize each part of the key
+	    Path filePath = uploadDir;
+	    for (String part : key.split("/")) {
+	        String cleanedPart = part.replaceAll("[^a-zA-Z0-9.-]", "_");
+	        filePath = filePath.resolve(cleanedPart);
+	    }
+	    filePath = filePath.normalize();
+
+	    // Security check
+	    if (!filePath.startsWith(uploadDir)) {
+	        throw new SecurityException("Invalid key: " + key);
+	    }
+
+	    try {
+	        if (Files.exists(filePath)) {
+	            Files.delete(filePath);
+	            logger.info("Mock Deleted: {}", key);
+	        } else {
+	            logger.warn("Mock file not found: {}", key);
+	        }
+	    } catch (IOException e) {
+	        throw new RuntimeException("Failed to delete mock file: " + key, e);
+	    }
 	}
 }
