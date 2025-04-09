@@ -50,31 +50,34 @@ public class ImageUploadS3Controller {
 	}
 	
 	@PostMapping("/upload")
-	public ResponseEntity<String> uploadFile(
-			@RequestParam MultipartFile file,
-			@RequestParam(required = false) String fileName) throws IOException {
-		
-		String targetFileName = (fileName != null) ? fileName : file.getOriginalFilename();
-		
-		String url = s3Service.generatePresignedUrl(targetFileName);
-		
-		if (file.getSize() > 10_000_000) {
-			s3Service.uploadFileStreaming(
-					url,
-					file.getInputStream(),
-					file.getSize(),
-					file.getContentType());
-			return ResponseEntity.ok("Large file upload started to: " + url);
-		}
-		else {
-			s3Service.uploadFile(
-		            url,
-		            file.getBytes(),
-		            file.getContentType()
-		    );
-			
-			return ResponseEntity.ok("Small file uploaded to: " + url);
-		}
-		
+	public ResponseEntity<Map<String, Object>> uploadFile(
+	        @RequestParam MultipartFile file,
+	        @RequestParam(required = false) String fileName) throws IOException {
+	    
+	    // 1. FAIL FAST: Check size first
+	    if (file.getSize() > 10_000_000) {  // ~10MB
+	        return ResponseEntity.badRequest().body(Map.of(
+	            "status", "error",
+	            "message", "File exceeds maximum size limit (10MB)",
+	            "data", null
+	        ));
+	    }
+
+	    // 2. Generate URL only after validation
+	    String targetFileName = (fileName != null) ? fileName : file.getOriginalFilename();
+	    String url = s3Service.generatePresignedUrl(targetFileName);
+
+	    // 3. Process upload (small files only at this point)
+	    s3Service.uploadFile(
+	        url,
+	        file.getBytes(),
+	        file.getContentType()
+	    );
+
+	    return ResponseEntity.ok(Map.of(
+	        "status", "success",
+	        "message", "File uploaded successfully",
+	        "data", Map.of("url", url)
+	    ));
 	}
 }

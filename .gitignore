@@ -34,3 +34,5 @@ build/
 
 # Ignore a specific file
 application-dev.properties
+
+dev-uploads/
