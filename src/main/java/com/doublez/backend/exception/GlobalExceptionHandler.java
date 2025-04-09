@@ -1,7 +1,10 @@
 package com.doublez.backend.exception;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -11,41 +14,63 @@ import com.doublez.backend.response.ApiResponse;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
-	
-	@ExceptionHandler(ApiException.class)
-	public ResponseEntity<ApiResponse<?>> handleException(Exception e) {
-		return ResponseEntity.internalServerError()
-				.body(ApiResponse.error("Operation failed: " + e.getMessage()));
-	}
-	
-	@ExceptionHandler(Exception.class)
-	public ResponseEntity<ApiResponse<?>> handleGenericException(Exception e) {
-		return ResponseEntity.internalServerError()
-				.body(ApiResponse.error("An unexpected error occurred: " + e.getMessage()));
-	}
-	
-	@ExceptionHandler(SelfDeletionException.class)
-	public ResponseEntity<ApiResponse<Map<String, Object>>> handleSelfDeletion(
-	        SelfDeletionException e) {
-	    return ResponseEntity.status(HttpStatus.FORBIDDEN)
-	            .body(ApiResponse.error(
-	                e.getMessage(),
-	                e.getDetails() // Now this will work
-	            ));
-	}
-	
-	@ExceptionHandler(NullPointerException.class)
-    public ResponseEntity<ApiResponse<Void>> handleNullPointer(NullPointerException e) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error("Invalid data: missing required relationship"));
-    }
-	
-	@ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ApiResponse<Void>> handleResourceNotFound(
-            ResourceNotFoundException ex) {
+    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    // Unified handler for all custom exceptions
+    @ExceptionHandler({
+        ApiException.class,
+        SelfDeletionException.class,
+        ResourceNotFoundException.class,
+        FileSizeException.class,
+        InvalidFileTypeException.class,
+        NullPointerException.class
+    })
+    public ResponseEntity<ApiResponse<?>> handleCustomExceptions(Exception ex) {
+        HttpStatus status = determineStatus(ex);
+        logger.error("Handling {}: {}", ex.getClass().getSimpleName(), ex.getMessage());
+
+        if (ex instanceof FileSizeException sizeEx) {
+            return ResponseEntity.status(status)
+                .body(ApiResponse.error(
+                    ex.getMessage(),
+                    Map.of("maxAllowedSize", sizeEx.getMaxAllowedSize())
+                ));
+        }
         
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.error(ex.getMessage()));
+        if (ex instanceof InvalidFileTypeException typeEx) {
+            return ResponseEntity.status(status)
+                .body(ApiResponse.error(
+                    ex.getMessage(),
+                    Map.of("allowedTypes", typeEx.getAllowedTypes())
+                ));
+        }
+
+        if (ex instanceof SelfDeletionException sdEx) {
+            return ResponseEntity.status(status)
+                .body(ApiResponse.error(
+                    ex.getMessage(),
+                    sdEx.getDetails() // Using your existing details field
+                ));
+        }
+
+        return ResponseEntity.status(status)
+            .body(ApiResponse.error(ex.getMessage()));
     }
-	
+
+    // Fallback for unexpected exceptions
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiResponse<?>> handleUnexpectedException(Exception ex) {
+        logger.error("Unhandled exception", ex);
+        return ResponseEntity.internalServerError()
+            .body(ApiResponse.error("An unexpected error occurred"));
+    }
+
+    private HttpStatus determineStatus(Exception ex) {
+        if (ex instanceof SelfDeletionException) return HttpStatus.FORBIDDEN;
+        if (ex instanceof ResourceNotFoundException) return HttpStatus.NOT_FOUND;
+        if (ex instanceof FileSizeException) return HttpStatus.BAD_REQUEST;
+        if (ex instanceof InvalidFileTypeException) return HttpStatus.BAD_REQUEST;
+        if (ex instanceof NullPointerException) return HttpStatus.BAD_REQUEST;
+        return HttpStatus.INTERNAL_SERVER_ERROR;
+    }
 }

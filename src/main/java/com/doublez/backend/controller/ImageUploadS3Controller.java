@@ -15,69 +15,51 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.doublez.backend.exception.InvalidFileException;
+import com.doublez.backend.response.ApiResponse;
+import com.doublez.backend.service.FileValidationService;
+import com.doublez.backend.service.RealEstateImageService;
 import com.doublez.backend.service.S3Service;
 
 @RestController
 @RequestMapping("api/s3")
 public class ImageUploadS3Controller {
-	
-	private final S3Service s3Service;
-	private static final Logger logger = LoggerFactory.getLogger(ImageUploadS3Controller.class);
-	
-	public ImageUploadS3Controller(S3Service s3Service) {
-		this.s3Service = s3Service;
-	}
-	
-	@GetMapping("/generate-presigned-url")
-	public ResponseEntity<Map<String, String>> generatePresignedUrl(
-			@RequestParam String fileName,
-			@RequestParam(required = false) String contentType) {
-		
-		try {
-			
-			String url = s3Service.generatePresignedUrl(fileName);
-			
-			Map<String, String> response = new HashMap<>();
-			response.put("url", url);
-			response.put("type", "mock".equals(url.substring(0, 4)) ? "MOCK" : "S3");
-			
-			return ResponseEntity.ok(response);
-					
-		} catch (Exception e) {
-			logger.error("URL generation failed", e);
-			return ResponseEntity.internalServerError().build();
-		}
-	}
-	
-	@PostMapping("/upload")
-	public ResponseEntity<Map<String, Object>> uploadFile(
-	        @RequestParam MultipartFile file,
-	        @RequestParam(required = false) String fileName) throws IOException {
-	    
-	    // 1. FAIL FAST: Check size first
-	    if (file.getSize() > 10_000_000) {  // ~10MB
-	        return ResponseEntity.badRequest().body(Map.of(
-	            "status", "error",
-	            "message", "File exceeds maximum size limit (10MB)",
-	            "data", null
-	        ));
-	    }
+    private final RealEstateImageService imageService;
+    private final FileValidationService validationService;
 
-	    // 2. Generate URL only after validation
-	    String targetFileName = (fileName != null) ? fileName : file.getOriginalFilename();
-	    String url = s3Service.generatePresignedUrl(targetFileName);
+    public ImageUploadS3Controller(RealEstateImageService imageService, 
+                                 FileValidationService validationService) {
+        this.imageService = imageService;
+        this.validationService = validationService;
+    }
 
-	    // 3. Process upload (small files only at this point)
-	    s3Service.uploadFile(
-	        url,
-	        file.getBytes(),
-	        file.getContentType()
-	    );
+    @PostMapping("/upload")
+    public ResponseEntity<ApiResponse<String>> uploadFile(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "fileName", required = false) String fileName) {
+        
+        try {
+            validationService.validateFile(file);
+            String url = imageService.uploadFile(file, fileName);
+            return ResponseEntity.ok(ApiResponse.success(url, "File uploaded successfully"));
+        } catch (InvalidFileException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(ApiResponse.error("Security violation: " + e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponse.error("Upload failed: " + e.getMessage()));
+        }
+    }
 
-	    return ResponseEntity.ok(Map.of(
-	        "status", "success",
-	        "message", "File uploaded successfully",
-	        "data", Map.of("url", url)
-	    ));
-	}
+    @GetMapping("/generate-presigned-url")
+    public ResponseEntity<Map<String, String>> generatePresignedUrl(
+            @RequestParam String fileName) {
+        String url = imageService.generatePresignedUrl(fileName);
+        return ResponseEntity.ok(Map.of(
+            "url", url,
+            "type", url.startsWith("mock://") ? "MOCK" : "S3"
+        ));
+    }
 }
