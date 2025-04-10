@@ -6,27 +6,30 @@
                       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
 
     <changeSet id="v2.1" author="your_name">
-        <!-- Rename column -->
-        <renameColumn 
-            tableName="real_estate_images"
-            oldColumnName="images"
-            newColumnName="image_url"
-            columnDataType="VARCHAR(512)"/>
-        
-        <!-- Add index -->
-        <createIndex
-            tableName="real_estate_images"
-            indexName="idx_property_images">
-            <column name="property_id"/>
-        </createIndex>
-        
-        <!-- Optional: Add foreign key constraint if missing -->
-        <addForeignKeyConstraint
-            baseTableName="real_estate_images"
-            baseColumnNames="property_id"
-            constraintName="fk_images_property"
-            referencedTableName="real_estates"
-            referencedColumnNames="property_id"
-            onDelete="CASCADE"/>
-    </changeSet>
+    <!-- Precondition to check if old column exists -->
+    <preConditions onFail="MARK_RAN">
+        <not><columnExists tableName="real_estate_images" columnName="images"/></not>
+    </preConditions>
+    
+    <!-- Add new column (only if old column doesn't exist) -->
+    <addColumn tableName="real_estate_images">
+        <column name="image_url" type="VARCHAR(512)"/>
+    </addColumn>
+    
+    <!-- Add index -->
+    <createIndex
+        tableName="real_estate_images"
+        indexName="idx_property_images">
+        <column name="property_id"/>
+    </createIndex>
+    
+    <!-- Add foreign key constraint if missing -->
+    <addForeignKeyConstraint
+        baseTableName="real_estate_images"
+        baseColumnNames="property_id"
+        constraintName="fk_images_property"
+        referencedTableName="real_estates"
+        referencedColumnNames="property_id"
+        onDelete="CASCADE"/>
+</changeSet>
 </databaseChangeLog>

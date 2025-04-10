@@ -103,4 +103,40 @@
             </column>
         </createTable>
     </changeSet>
+    
+    <changeSet id="0004-add-user-id-column" author="darko" dbms="postgresql">
+    <preConditions onFail="MARK_RAN">
+        <and>
+            <tableExists tableName="real_estates"/>
+            <not><columnExists tableName="real_estates" columnName="user_id"/></not>
+        </and>
+    </preConditions>
+    <addColumn tableName="real_estates">
+        <column name="user_id" type="bigint">
+            <constraints nullable="false"/>
+        </column>
+    </addColumn>
+    <!-- Set default value for existing records if needed -->
+    <sql>UPDATE real_estates SET user_id = (SELECT id FROM users LIMIT 1) WHERE user_id IS NULL</sql>
+	</changeSet>
+
+	<changeSet id="0005-add-user-fk" author="darko" dbms="postgresql">
+    <preConditions onFail="MARK_RAN">
+        <and>
+            <tableExists tableName="real_estates"/>
+            <tableExists tableName="users"/>
+            <columnExists tableName="real_estates" columnName="user_id"/>
+            <columnExists tableName="users" columnName="id"/>
+            <not><foreignKeyConstraintExists foreignKeyName="fk_real_estates_user"/></not>
+        </and>
+    </preConditions>
+    <addForeignKeyConstraint 
+        baseTableName="real_estates"
+        baseColumnNames="user_id"
+        constraintName="fk_real_estates_user"
+        referencedTableName="users"
+        referencedColumnNames="id"
+        onDelete="CASCADE"/>
+	</changeSet>
+	
 </databaseChangeLog>
