@@ -144,12 +144,13 @@
     <preConditions onFail="MARK_RAN">
         <and>
             <tableExists tableName="real_estate_features"/>
-            <primaryKeyExists tableName="real_estate_features" primaryKeyName="real_estate_features_pkey"/>
+            <primaryKeyExists tableName="real_estate_features"/>
         </and>
     </preConditions>
     <dropPrimaryKey tableName="real_estate_features"/>
 	</changeSet>
 
+	<!-- Then add new composite PK -->
 	<changeSet id="0021-add-composite-pk" author="darko" dbms="postgresql">
     <preConditions onFail="MARK_RAN">
         <and>
@@ -159,10 +160,15 @@
             <not><primaryKeyExists tableName="real_estate_features"/></not>
         </and>
     </preConditions>
-    <addPrimaryKey 
-        tableName="real_estate_features"
-        columnNames="property_id, feature_value"
-        constraintName="pk_real_estate_features"/>
+    	<addPrimaryKey 
+        	tableName="real_estate_features"
+        		columnNames="property_id, feature_value"
+        		constraintName="pk_real_estate_features"/>
+        
+    	<addPrimaryKey 
+        	tableName="real_estate_images"
+        		columnNames="property_id, image_url"
+        		constraintName="pk_real_estate_images"/>
 	</changeSet>
     
     
