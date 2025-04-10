@@ -62,19 +62,18 @@
     </changeSet>
 
      <changeSet id="0004" author="darko" dbms="postgresql" runOnChange="true">
-        <validCheckSum>ANY</validCheckSum>
-        <preConditions onFail="MARK_RAN">
-            <not><tableExists tableName="real_estate_features"/></not>
-        </preConditions>
-        <createTable tableName="real_estate_features">
-            <column name="property_id" type="bigint">
-                <constraints nullable="false"/>
-            </column>
-            <column name="feature_value" type="varchar(100)">
-   			 <constraints nullable="false"/>
-			</column>
-        </createTable>
-    </changeSet>
+    <preConditions onFail="MARK_RAN">
+        <not><tableExists tableName="real_estate_features"/></not>
+    </preConditions>
+    <createTable tableName="real_estate_features">
+        <column name="property_id" type="bigint">
+            <constraints nullable="false"/>
+        </column>
+        <column name="feature_value" type="varchar(100)">  
+            <constraints nullable="false"/>
+        </column>
+    </createTable>
+</changeSet>
 
     <changeSet id="0005" author="darko" dbms="postgresql">
         <preConditions onFail="MARK_RAN">
