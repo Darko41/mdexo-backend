@@ -170,6 +170,31 @@
         		columnNames="property_id, image_url"
         		constraintName="pk_real_estate_images"/>
 	</changeSet>
+	
+	<changeSet id="0022-fix-composite-pk" author="darko" dbms="postgresql">
+    <!-- First drop existing PK if it exists -->
+    <preConditions onFail="MARK_RAN">
+        <and>
+            <tableExists tableName="real_estate_features"/>
+            <primaryKeyExists tableName="real_estate_features"/>
+        </and>
+    </preConditions>
+    <dropPrimaryKey tableName="real_estate_features"/>
+    
+    <!-- Then add new composite PK -->
+    <preConditions onFail="MARK_RAN">
+        <and>
+            <tableExists tableName="real_estate_features"/>
+            <columnExists tableName="real_estate_features" columnName="property_id"/>
+            <columnExists tableName="real_estate_features" columnName="feature_value"/>
+            <not><primaryKeyExists tableName="real_estate_features"/></not>
+        </and>
+    </preConditions>
+    <addPrimaryKey 
+        tableName="real_estate_features"
+        columnNames="property_id, feature_value"
+        constraintName="pk_real_estate_features"/>
+</changeSet>
     
     
 </databaseChangeLog>
