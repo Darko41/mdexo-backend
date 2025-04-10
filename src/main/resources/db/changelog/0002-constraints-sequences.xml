@@ -5,7 +5,6 @@
     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
 
-    <!-- Sequences -->
     <changeSet id="0007" author="darko" dbms="postgresql">
         <preConditions onFail="MARK_RAN">
             <not><sequenceExists sequenceName="roles_id_seq"/></not>
@@ -27,7 +26,6 @@
         <createSequence sequenceName="real_estates_id_seq" startValue="1" incrementBy="1"/>
     </changeSet>
 
-    <!-- Set sequence defaults -->
     <changeSet id="0010-seq-defaults" author="darko" dbms="postgresql">
         <preConditions onFail="MARK_RAN">
             <and>
@@ -40,7 +38,6 @@
         <sql>ALTER TABLE real_estates ALTER COLUMN property_id SET DEFAULT nextval('real_estates_id_seq');</sql>
     </changeSet>
     
-    <!-- Foreign Keys -->
     <changeSet id="0011-fk-features" author="darko" dbms="postgresql">
         <preConditions onFail="MARK_RAN">
             <and>
@@ -94,7 +91,6 @@
         onDelete="CASCADE"/>
 	</changeSet>
 
-    <!-- Indexes -->
     <changeSet id="0017-idx-features" author="darko" dbms="postgresql">
         <preConditions onFail="MARK_RAN">
             <tableExists tableName="real_estate_features"/>
@@ -150,7 +146,6 @@
     <dropPrimaryKey tableName="real_estate_features"/>
 	</changeSet>
 
-	<!-- Then add new composite PK -->
 	<changeSet id="0021-add-composite-pk" author="darko" dbms="postgresql">
     <preConditions onFail="MARK_RAN">
         <and>
@@ -160,19 +155,19 @@
             <not><primaryKeyExists tableName="real_estate_features"/></not>
         </and>
     </preConditions>
-    	<addPrimaryKey 
-        	tableName="real_estate_features"
-        		columnNames="property_id, feature_value"
-        		constraintName="pk_real_estate_features"/>
+    
+    <addPrimaryKey 
+        tableName="real_estate_features"
+        columnNames="property_id, feature_value"
+        constraintName="pk_real_estate_features"/>
         
-    	<addPrimaryKey 
-        	tableName="real_estate_images"
-        		columnNames="property_id, image_url"
-        		constraintName="pk_real_estate_images"/>
-	</changeSet>
+    <addPrimaryKey 
+        tableName="real_estate_images"
+        columnNames="property_id, image_url"
+        constraintName="pk_real_estate_images"/>
+</changeSet>
 	
 	<changeSet id="0022-fix-composite-pk" author="darko" dbms="postgresql">
-    <!-- First drop existing PK if it exists -->
     <preConditions onFail="MARK_RAN">
         <and>
             <tableExists tableName="real_estate_features"/>
@@ -181,7 +176,6 @@
     </preConditions>
     <dropPrimaryKey tableName="real_estate_features"/>
     
-    <!-- Then add new composite PK -->
     <preConditions onFail="MARK_RAN">
         <and>
             <tableExists tableName="real_estate_features"/>
