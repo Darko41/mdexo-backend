@@ -90,7 +90,7 @@ public class RealEstate {
 			name = "real_estate_images",
 			joinColumns = @JoinColumn(name = "property_id"),
 			indexes = @Index(columnList = "property_id"))
-	@Column(name = "image_url", length = 512)
+	@Column(name = "image_url", length = 512, columnDefinition = "VARCHAR(512)")
 	private List<String> images = new ArrayList<>();
 	
 	@Column(name = "created_at", nullable = false)

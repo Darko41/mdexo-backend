@@ -76,9 +76,24 @@
             constraintName="fk_user_roles_user_id"
             onDelete="CASCADE"/>
     </changeSet>
-
-    <!-- Other constraints remain unchanged -->
     
+    <changeSet id="0013-fk-images" author="darko" dbms="postgresql">
+    <preConditions onFail="MARK_RAN">
+        <and>
+            <tableExists tableName="real_estate_images"/>
+            <tableExists tableName="real_estates"/>
+            <not><foreignKeyConstraintExists foreignKeyName="fk_images_property"/></not>
+        </and>
+    </preConditions>
+    <addForeignKeyConstraint 
+        baseTableName="real_estate_images"
+        baseColumnNames="property_id"
+        referencedTableName="real_estates"
+        referencedColumnNames="property_id"
+        constraintName="fk_images_property"
+        onDelete="CASCADE"/>
+	</changeSet>
+
     <!-- Indexes -->
     <changeSet id="0017-idx-features" author="darko" dbms="postgresql">
         <preConditions onFail="MARK_RAN">
@@ -88,4 +103,15 @@
             <column name="property_id"/>
         </createIndex>
     </changeSet>
+    
+    <changeSet id="0018-idx-images" author="darko" dbms="postgresql">
+    	<preConditions onFail="MARK_RAN">
+        	<tableExists tableName="real_estate_images"/>
+    	</preConditions>
+    	<createIndex tableName="real_estate_images" indexName="idx_images_property">
+        	<column name="property_id"/>
+    	</createIndex>
+	</changeSet>
+    
+    
 </databaseChangeLog>

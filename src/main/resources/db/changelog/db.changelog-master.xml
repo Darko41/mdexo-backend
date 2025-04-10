@@ -10,6 +10,6 @@
     <include file="db/changelog/0001-initial-schema.xml" />
     <include file="db/changelog/0002-constraints-sequences.xml" />
     <include file="db/changelog/insert-data-changelog.xml" />
-    <include file="db/changelog/v2.1__alter_real_estate_images.xml" />
+    <include file="db/changelog/0003-element-collection-constraints.xml" />
     
 </databaseChangeLog>
