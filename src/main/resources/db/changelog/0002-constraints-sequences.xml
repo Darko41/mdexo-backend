@@ -123,72 +123,35 @@
                  columnDataType="varchar(100)"/>
 	</changeSet>
 
-	<changeSet id="0020-pk-element-collections" author="darko" dbms="postgresql">
-    <preConditions onFail="MARK_RAN">
-        <and>
-            <tableExists tableName="real_estate_features"/>
-            <columnExists tableName="real_estate_features" columnName="feature_value"/>
-        </and>
-    </preConditions>
-    <addPrimaryKey 
-        tableName="real_estate_features"
-        columnNames="property_id, feature_value"
-        constraintName="pk_real_estate_features"/>
-	</changeSet>
-	
 	<changeSet id="0020-drop-existing-pk" author="darko" dbms="postgresql">
-    <preConditions>
-        <and>
-            <tableExists tableName="real_estate_features"/>
-            <primaryKeyExists tableName="real_estate_features"/>
-        </and>
-    </preConditions>
-    <comment>Drop existing primary key before adding composite key</comment>
-    <dropPrimaryKey tableName="real_estate_features"/>
-</changeSet>
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <tableExists tableName="real_estate_features"/>
+                <primaryKeyExists tableName="real_estate_features"/>
+            </and>
+        </preConditions>
+        <comment>Drop existing primary key before adding composite key</comment>
+        <dropPrimaryKey tableName="real_estate_features"/>
+    </changeSet>
 
-	<changeSet id="0021-add-composite-pk" author="darko" dbms="postgresql">
-    <preConditions>
-        <and>
-            <tableExists tableName="real_estate_features"/>
-            <columnExists tableName="real_estate_features" columnName="property_id"/>
-            <columnExists tableName="real_estate_features" columnName="feature_value"/>
-            <not><primaryKeyExists tableName="real_estate_features"/></not>
-        </and>
-    </preConditions>
-    <comment>Add composite primary keys for element collections</comment>
-    <addPrimaryKey 
-        tableName="real_estate_features"
-        columnNames="property_id, feature_value"
-        constraintName="pk_real_estate_features"/>
-    <addPrimaryKey 
-        tableName="real_estate_images"
-        columnNames="property_id, image_url"
-        constraintName="pk_real_estate_images"/>
-</changeSet>
-	
-	<changeSet id="0022-fix-composite-pk" author="darko" dbms="postgresql">
-    <preConditions onFail="MARK_RAN">
-        <and>
-            <tableExists tableName="real_estate_features"/>
-            <primaryKeyExists tableName="real_estate_features"/>
-        </and>
-    </preConditions>
-    <dropPrimaryKey tableName="real_estate_features"/>
-    
-    <preConditions onFail="MARK_RAN">
-        <and>
-            <tableExists tableName="real_estate_features"/>
-            <columnExists tableName="real_estate_features" columnName="property_id"/>
-            <columnExists tableName="real_estate_features" columnName="feature_value"/>
-            <not><primaryKeyExists tableName="real_estate_features"/></not>
-        </and>
-    </preConditions>
-    <addPrimaryKey 
-        tableName="real_estate_features"
-        columnNames="property_id, feature_value"
-        constraintName="pk_real_estate_features"/>
-</changeSet>
-    
+    <changeSet id="0021-add-composite-pk" author="darko" dbms="postgresql">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <tableExists tableName="real_estate_features"/>
+                <columnExists tableName="real_estate_features" columnName="property_id"/>
+                <columnExists tableName="real_estate_features" columnName="feature_value"/>
+                <not><primaryKeyExists tableName="real_estate_features"/></not>
+            </and>
+        </preConditions>
+        <comment>Add composite primary keys for element collections</comment>
+        <addPrimaryKey 
+            tableName="real_estate_features"
+            columnNames="property_id, feature_value"
+            constraintName="pk_real_estate_features"/>
+        <addPrimaryKey 
+            tableName="real_estate_images"
+            columnNames="property_id, image_url"
+            constraintName="pk_real_estate_images"/>
+    </changeSet>    
     
 </databaseChangeLog>
