@@ -164,4 +164,24 @@ public class RealEstateService {
                     "Real estate not found with id: " + propertyId));
         return new RealEstateResponseDTO(realEstate);
     }
+    
+    public RealEstate addImagesToProperty(Long propertyId, MultipartFile[] files) {
+    	RealEstate property = realEstateRepository.findById(propertyId)
+    			.orElseThrow(() -> new ResourceNotFoundException("Property not found"));
+    	
+    	List<String> imageUrls = realEstateImageService.uploadRealEstateImages(files);
+    	property.getImages().addAll(imageUrls);
+    	
+    	return realEstateRepository.save(property);
+    }
+    
+    public void removeImagesFromProperty(Long propertyId, String imageUrl) {
+    	RealEstate property = realEstateRepository.findById(propertyId)
+    			.orElseThrow(() -> new ResourceNotFoundException("Property not found"));
+    	
+    	if (property.getImages().remove(imageUrl)) {
+    		realEstateImageService.deleteImages(List.of(imageUrl));
+    		realEstateRepository.save(property);
+    	}
+    }
 }

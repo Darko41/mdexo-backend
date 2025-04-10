@@ -81,14 +81,16 @@ public class RealEstate {
 			joinColumns = @JoinColumn(name = "property_id"),
 			indexes = @Index(name = "idx_features_property_id", columnList = "property_id")
 	)
-
 	@Column(name = "feature_value", length = 100)
 	@Size(max = 10)
 	private List<String> features = new ArrayList<>();
 	
 	@ElementCollection
-	@CollectionTable(name = "real_estate_images", joinColumns = @JoinColumn(name = "property_id"))
-	@Column(name = "images")
+	@CollectionTable(
+			name = "real_estate_images",
+			joinColumns = @JoinColumn(name = "property_id"),
+			indexes = @Index(columnList = "property_id"))
+	@Column(name = "image_url", length = 512)
 	private List<String> images = new ArrayList<>();
 	
 	@Column(name = "created_at", nullable = false)

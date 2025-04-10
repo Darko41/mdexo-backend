@@ -1,6 +1,7 @@
 package com.doublez.backend.controller;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -9,28 +10,33 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.doublez.backend.entity.RealEstate;
 import com.doublez.backend.exception.InvalidFileException;
 import com.doublez.backend.response.ApiResponse;
 import com.doublez.backend.service.FileValidationService;
 import com.doublez.backend.service.RealEstateImageService;
-import com.doublez.backend.service.S3Service;
+import com.doublez.backend.service.RealEstateService;
 
 @RestController
 @RequestMapping("api/s3")
 public class ImageUploadS3Controller {
     private final RealEstateImageService imageService;
     private final FileValidationService validationService;
+    private final RealEstateService realEstateService;
 
     public ImageUploadS3Controller(RealEstateImageService imageService, 
-                                 FileValidationService validationService) {
+                                 FileValidationService validationService,
+                                 RealEstateService realEstateService) {
         this.imageService = imageService;
         this.validationService = validationService;
+        this.realEstateService = realEstateService;
     }
 
     @PostMapping("/upload")
@@ -62,4 +68,23 @@ public class ImageUploadS3Controller {
             "type", url.startsWith("mock://") ? "MOCK" : "S3"
         ));
     }
+    
+    @PostMapping("/property/{propertyId}/upload")
+    public ResponseEntity<ApiResponse<RealEstate>> uploadToProperty(
+            @PathVariable Long propertyId,
+            @RequestParam("files") MultipartFile[] files) {
+        
+        try {
+            Arrays.stream(files).forEach(validationService::validateFile);
+            RealEstate updated = realEstateService.addImagesToProperty(propertyId, files);
+            return ResponseEntity.ok(ApiResponse.success(updated));
+        } catch (InvalidFileException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(ApiResponse.error("Security violation: " + e.getMessage()));
+        }
+    } 
+    
+    
 }
