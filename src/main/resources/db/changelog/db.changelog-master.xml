@@ -5,6 +5,6 @@
                       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd">
 
   <!-- Include your baseline first -->
-  <include file="db/changelog/0001-new-baseline.xml" relativeToChangelogFile="true"/>
+  <include file="0001-new-baseline.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>
