@@ -34,5 +34,7 @@ build/
 
 # Ignore a specific file
 application-dev.properties
+liquibase-local.properties
+liquibase-render.properties
 
 dev-uploads/

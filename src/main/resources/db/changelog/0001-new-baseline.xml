@@ -1,0 +1,127 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:pro="http://www.liquibase.org/xml/ns/pro" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/pro http://www.liquibase.org/xml/ns/pro/liquibase-pro-latest.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet author="Darko (generated)" id="1744649043707-1">
+        <createTable tableName="real_estate_features">
+            <column name="property_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="feature_value" type="VARCHAR(100)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Darko (generated)" id="1744649043707-2">
+        <createTable tableName="real_estate_images">
+            <column name="property_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="image_url" type="VARCHAR(512)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Darko (generated)" id="1744649043707-3">
+        <createTable tableName="real_estates">
+            <column autoIncrement="true" name="property_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="real_estates_pkey"/>
+            </column>
+            <column name="address" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="city" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="date">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="VARCHAR(1000)"/>
+            <column name="listing_type" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="price" type="numeric(38, 2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="property_type" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="size_in_sqmt" type="VARCHAR(255)"/>
+            <column name="state" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="title" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="date"/>
+            <column name="zip_code" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Darko (generated)" id="1744649043707-4">
+        <createTable tableName="users">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="users_pkey"/>
+            </column>
+            <column name="created_at" type="date">
+                <constraints nullable="false"/>
+            </column>
+            <column name="email" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="password" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="date"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Darko (generated)" id="1744649043707-5">
+        <createTable tableName="roles">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="roles_pkey"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Darko (generated)" id="1744649043707-6">
+        <createIndex indexName="idx_features_property_id" tableName="real_estate_features">
+            <column name="property_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="Darko (generated)" id="1744649043707-7">
+        <createIndex indexName="idxs1dhbg3okelrjawpnbbmn8r4c" tableName="real_estate_images">
+            <column name="property_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="Darko (generated)" id="1744649043707-8">
+        <addUniqueConstraint columnNames="email" constraintName="uk6dotkott2kjsp8vw4d0m25fb7" tableName="users"/>
+    </changeSet>
+    <changeSet author="Darko (generated)" id="1744649043707-9">
+        <addUniqueConstraint columnNames="name" constraintName="ukofx66keruapi6vyqpv6f2or37" tableName="roles"/>
+    </changeSet>
+    <changeSet author="Darko (generated)" id="1744649043707-10">
+        <createTable tableName="user_roles">
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="role_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Darko (generated)" id="1744649043707-11">
+        <addForeignKeyConstraint baseColumnNames="role_id" baseTableName="user_roles" constraintName="fkh8ciramu9cc9q3qcqiv4ue8a6" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="roles" validate="true"/>
+    </changeSet>
+    <changeSet author="Darko (generated)" id="1744649043707-12">
+        <addForeignKeyConstraint baseColumnNames="user_id" baseTableName="user_roles" constraintName="fkhfh9dx7w3ubf1co1vdev94g3f" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="users" validate="true"/>
+    </changeSet>
+    <changeSet author="Darko (generated)" id="1744649043707-13">
+        <addForeignKeyConstraint baseColumnNames="property_id" baseTableName="real_estate_features" constraintName="fklbp52l2vih3hhb0r8ssit4wc" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="property_id" referencedTableName="real_estates" validate="true"/>
+    </changeSet>
+    <changeSet author="Darko (generated)" id="1744649043707-14">
+        <addForeignKeyConstraint baseColumnNames="user_id" baseTableName="real_estates" constraintName="fkrhs91kf2y9ojie8e2c87p0cxu" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="users" validate="true"/>
+    </changeSet>
+    <changeSet author="Darko (generated)" id="1744649043707-15">
+        <addForeignKeyConstraint baseColumnNames="property_id" baseTableName="real_estate_images" constraintName="fksi4r1yuy3kci2axnidtmeplet" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="property_id" referencedTableName="real_estates" validate="true"/>
+    </changeSet>
+</databaseChangeLog>
