@@ -1,5 +1,7 @@
 package com.doublez.backend.dto;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.validation.constraints.Email;
@@ -10,9 +12,16 @@ public class UserUpdateDTO {
 	
 	@Email(message = "Invalid email format")
     private String email;
+    
+    private List<String> roles;
 
-    @Size(min = 6, message = "Password must be at least 6 characters")
-    private String password;
+	public List<String> getRoles() {
+		return roles;
+	}
+
+	public void setRoles(List<String> roles) {
+		this.roles = roles;
+	}
 
 	public String getEmail() {
 		return email;
@@ -20,14 +29,6 @@ public class UserUpdateDTO {
 
 	public void setEmail(String email) {
 		this.email = email;
-	}
-
-	public String getPassword() {
-		return password;
-	}
-
-	public void setPassword(String password) {
-		this.password = password;
 	}
 
 }

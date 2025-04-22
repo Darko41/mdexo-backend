@@ -35,8 +35,9 @@ public class UserController {
 
     @Autowired
     private UserService userService;
-    private static final Logger logger = LoggerFactory.getLogger(RealEstateApiController.class);
+//    private static final Logger logger = LoggerFactory.getLogger(RealEstateApiController.class);
     
+    // creation of new user
     @PostMapping("/register")
     public ResponseEntity<String> registerUser(@Valid @RequestBody UserCreateDTO createDto) {
         // Self-service registration with limited fields
@@ -49,6 +50,7 @@ public class UserController {
         }
     }
     
+    // get all users
     @GetMapping
     public ResponseEntity<List<UserResponseDTO>> getAllUsers() {
         try {
@@ -61,6 +63,7 @@ public class UserController {
         }
     }
     
+    // get user by email
     @GetMapping("/by-email/{email}")
     public ResponseEntity<UserResponseDTO> getUserProfile(@PathVariable String email) {
         try {
@@ -71,6 +74,7 @@ public class UserController {
         }
     }
     
+    // USERS update their profiles
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('USER') and #id == authentication.principal.id")
     public ResponseEntity<UserResponseDTO> updateUserProfile(
@@ -81,21 +85,15 @@ public class UserController {
         return ResponseEntity.ok(updatedUser);
     }
     
-    @PostMapping("/add")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<UserResponseDTO>> addUser(
-            @Valid @RequestBody AdminUserCreateDTO adminCreateDto) {
-        UserResponseDTO userResponse = userService.createUserWithAdminPrivileges(adminCreateDto);
-        return ResponseEntity.ok(ApiResponse.success(userResponse));
-    }
-    
+    // USERS delete themself
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('USER') and #id == authentication.principal.id")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id); // Let exception handler manage responses
         return ResponseEntity.noContent().build();
     }
     
+    // get user by id
     @GetMapping("/{id}")
     public ResponseEntity<UserResponseDTO> getUserById(@PathVariable Long id) {
         try {

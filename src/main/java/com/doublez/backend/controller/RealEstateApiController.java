@@ -107,7 +107,7 @@ public class RealEstateApiController {
     }
     
     @PostMapping
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("@securityService.hasRealEstateCreateAccess()")
     public ResponseEntity<RealEstateResponseDTO> createRealEstate(
             @RequestBody @Valid RealEstateCreateDTO createDto) {
         RealEstateResponseDTO response = realEstateService.createRealEstate(createDto);

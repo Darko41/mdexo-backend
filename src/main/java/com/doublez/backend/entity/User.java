@@ -1,6 +1,7 @@
 package com.doublez.backend.entity;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
@@ -106,6 +107,12 @@ public class User {
 	public boolean isAdmin() {
 	    return this.roles.stream()
 	            .anyMatch(role -> role.getName().equals("ROLE_ADMIN"));
+	}
+	
+	public boolean hasAnyRole(String... roleNames) {
+		return this.roles.stream()
+				.map(Role::getName)
+				.anyMatch(role -> Arrays.asList(roleNames).contains(role));
 	}
 
 }

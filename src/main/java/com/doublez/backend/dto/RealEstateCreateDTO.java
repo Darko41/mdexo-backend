@@ -7,6 +7,7 @@ import java.util.List;
 import com.doublez.backend.entity.ListingType;
 import com.doublez.backend.entity.PropertyType;
 
+import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -43,18 +44,17 @@ public class RealEstateCreateDTO {
     
     private String sizeInSqMt;
     
+    @Nullable
+    private Long ownerId;
+    
     @Size(max = 10)
     private List<String> features = new ArrayList<>();
     
     private List<String> images = new ArrayList<>();
     
-    @NotNull
-    private Long ownerId;
-    
     public RealEstateCreateDTO() {
     }
 
-    // 2. All-args constructor for convenient creation
     public RealEstateCreateDTO(
             String title, 
             String description,
@@ -189,6 +189,4 @@ public class RealEstateCreateDTO {
 		this.ownerId = ownerId;
 	}
     
-    
-
 }

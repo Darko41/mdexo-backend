@@ -8,6 +8,8 @@ import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -18,15 +20,18 @@ import com.doublez.backend.dto.RealEstateUpdateDTO;
 import com.doublez.backend.entity.ListingType;
 import com.doublez.backend.entity.PropertyType;
 import com.doublez.backend.entity.RealEstate;
+import com.doublez.backend.entity.Role;
 import com.doublez.backend.entity.User;
 import com.doublez.backend.exception.RealEstateNotFoundException;
 import com.doublez.backend.exception.ResourceNotFoundException;
 import com.doublez.backend.exception.UnauthorizedAccessException;
+import com.doublez.backend.exception.UserNotFoundException;
 import com.doublez.backend.mapper.RealEstateMapper;
 import com.doublez.backend.repository.RealEstateRepository;
 import com.doublez.backend.repository.UserRepository;
 import com.doublez.backend.specification.RealEstateSpecifications;
 
+import jakarta.annotation.Nullable;
 import jakarta.transaction.Transactional;
 
 @Service
@@ -67,21 +72,60 @@ public class RealEstateService {
     }
 
     public RealEstateResponseDTO createRealEstate(RealEstateCreateDTO createDto) {
-        User owner = userService.getAuthenticatedUser();
-        RealEstate entity = realEstateMapper.toEntity(createDto);
-        entity.setOwner(owner);
+        
+    	User currentUser = userService.getAuthenticatedUser();
+        
+        User owner = resolveOwner(createDto.getOwnerId(), currentUser);
+        
+        RealEstate entity = realEstateMapper.toEntity(createDto, owner);
+        entity.setCreatedAt(LocalDate.now());
+        return realEstateMapper.toResponseDto(realEstateRepository.save(entity));
+    }
+    
+    private User resolveOwner(@Nullable Long ownerId, User currentUser) {
+        // Default to current user if no override
+        if (ownerId == null) {
+            return currentUser;
+        }
+        
+        // Verify admin/agent privileges
+        if (!currentUser.hasAnyRole("ROLE_ADMIN", "ROLE_AGENT")) {
+            throw new AccessDeniedException("Only admins/agents can assign properties to others");
+        }
+        
+        return userRepository.findById(ownerId)
+               .orElseThrow(() -> new UserNotFoundException(ownerId));
+    }
+    
+    @PreAuthorize("hasRole('ADMIN') or hasRole('AGENT')")
+    public RealEstateResponseDTO createRealEstateForUser(RealEstateCreateDTO createDto) {
+        
+    	User currentUser = userService.getAuthenticatedUser();
+    	
+        User owner = (createDto.getOwnerId() != null && isAdminOrAgent(currentUser))
+        		? userService.getUserEntityById(createDto.getOwnerId())
+        		: currentUser;
+        RealEstate entity = realEstateMapper.toEntity(createDto, owner);
+        
+        entity.setCreatedAt(LocalDate.now());
         RealEstate saved = realEstateRepository.save(entity);
         return realEstateMapper.toResponseDto(saved);
     }
 
-    public RealEstateResponseDTO createWithImages(RealEstateCreateDTO createDto, 
-                                                MultipartFile[] images) {
+
+	private boolean isAdminOrAgent(User user) {
+		return user.getRoles().stream()
+				.anyMatch(role ->
+						"ROLE_ADMIN".equals(role.getName()) ||
+						"ROLE_AGENT".equals(role.getName()));
+	}
+
+	public RealEstateResponseDTO createWithImages(RealEstateCreateDTO createDto, MultipartFile[] images) {
         User owner = userService.getAuthenticatedUser();
         List<String> imageUrls = realEstateImageService.uploadRealEstateImages(images);
         
-        RealEstate entity = realEstateMapper.toEntity(createDto);
-        entity.setOwner(owner);
-        entity.setImages(imageUrls);
+        RealEstate entity = realEstateMapper.toEntity(createDto, owner, imageUrls);
+        entity.setCreatedAt(LocalDate.now());
         
         RealEstate saved = realEstateRepository.save(entity);
         return realEstateMapper.toResponseDto(saved);
@@ -184,4 +228,5 @@ public class RealEstateService {
     		realEstateRepository.save(property);
     	}
     }
+    
 }

@@ -2,9 +2,11 @@ package com.doublez.backend.mapper;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.Mapping;
 
 import com.doublez.backend.dto.RealEstateCreateDTO;
 import com.doublez.backend.dto.RealEstateDTO;
@@ -25,15 +27,18 @@ public class RealEstateMapper {
         this.userRepository = userRepository;
     }
 
-    public RealEstate toEntity(RealEstateCreateDTO createDto) {
+    public RealEstate toEntity(RealEstateCreateDTO createDto, User owner, List<String> images) {
         RealEstate entity = new RealEstate();
         mapCommonFields(createDto, entity);
         
-        User owner = userRepository.findById(createDto.getOwnerId())
-            .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + createDto.getOwnerId()));
         entity.setOwner(owner);
+        entity.setImages(images != null ? images : new ArrayList<>());
         
         return entity;
+    }
+    
+    public RealEstate toEntity(RealEstateCreateDTO createDto, User owner) {
+    	return toEntity(createDto, owner, null);
     }
 
     public RealEstateResponseDTO toResponseDto(RealEstate entity) {
@@ -61,7 +66,6 @@ public class RealEstateMapper {
         entity.setUpdatedAt(LocalDate.now());
     }
 
-    // Helper method for common field mapping
     private void mapCommonFields(RealEstateCreateDTO source, RealEstate target) {
         target.setTitle(source.getTitle());
         target.setDescription(source.getDescription());

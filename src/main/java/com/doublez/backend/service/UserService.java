@@ -3,6 +3,7 @@ package com.doublez.backend.service;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -92,20 +93,6 @@ public class UserService {
         return userMapper.toResponseDto(user);
     }
 
-    public UserResponseDTO updateUserProfile(Long id, UserUpdateDTO updateDto) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException(id));
-        
-        boolean wasUpdated = updateUserFields(user, updateDto);
-        
-        if (wasUpdated) {
-            user.setUpdatedAt(LocalDate.now());
-            userRepository.save(user);
-        }
-        
-        return userMapper.toResponseDto(user);
-    }
-    
     public List<UserResponseDTO> getAllUsers() {
         return userRepository.findAll().stream()
                 .map(userMapper::toResponseDto)
@@ -145,6 +132,12 @@ public class UserService {
             userRepository.countByRoles_Name("ROLE_ADMIN") <= 1) {
             throw new IllegalOperationException("System must have at least one admin");
         }
+        
+        User replacementAdmin = userRepository.findFirstByRoles_Name("ROLE_ADMIN")
+                .orElseThrow(() -> new IllegalOperationException("No replacement admin found"));
+
+            // Reassign properties
+            realEstateRepository.reassignAllPropertiesFromUser(targetUser.getId(), replacementAdmin.getId());
 
         // 3. Gracefully handle case where user might own real estates
         try {
@@ -219,6 +212,20 @@ public class UserService {
             throw new IllegalArgumentException("Password must be at least 6 characters long");
         }
     }
+    
+    public UserResponseDTO updateUserProfile(Long id, UserUpdateDTO updateDto) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException(id));
+        
+        boolean wasUpdated = updateUserFields(user, updateDto);
+        
+        if (wasUpdated) {
+            user.setUpdatedAt(LocalDate.now());
+            userRepository.save(user);
+        }
+        
+        return userMapper.toResponseDto(user);
+    }
 
     private boolean updateUserFields(User user, UserUpdateDTO updateDto) {
         boolean wasUpdated = false;
@@ -228,14 +235,19 @@ public class UserService {
             wasUpdated = true;
         }
         
-        if (updateDto.getPassword() != null && !updateDto.getPassword().isEmpty()) {
-            String encodedPassword = passwordEncoder.encode(updateDto.getPassword());
-            if (!encodedPassword.equals(user.getPassword())) {
-                user.setPassword(encodedPassword);
+        if (updateDto.getRoles() != null) {
+            // Convert role names to Role entities with proper typing
+            List<Role> newRoles = updateDto.getRoles().stream()
+                .map(roleName -> roleRepository.findByName(roleName)
+                    .orElseThrow(() -> new IllegalArgumentException("Role not found: " + roleName)))
+                .collect(Collectors.toList());
+            
+            // Check if roles actually changed
+            if (!newRoles.equals(user.getRoles())) {
+                user.setRoles(newRoles);
                 wasUpdated = true;
             }
         }
-        
         return wasUpdated;
     }
     
@@ -282,5 +294,10 @@ public class UserService {
         return userRepository.findByEmail(email) // Now works!
             .orElseThrow(() -> new UsernameNotFoundException("User '" + email + "' not found"))
             .getId();
+    }
+    
+    public User getUserEntityById(Long id) {
+    	return userRepository.findById(id)
+    			.orElseThrow(() -> new UserNotFoundException(id));
     }
 }

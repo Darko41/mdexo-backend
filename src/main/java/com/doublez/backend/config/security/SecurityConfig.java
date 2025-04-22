@@ -3,6 +3,8 @@ package com.doublez.backend.config.security;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authorization.AuthorizationDecision;
+import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -11,6 +13,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -104,6 +107,31 @@ public class SecurityConfig {
                     .allowedHeaders("*")
                     .allowCredentials(true);
             }
+        };
+    }
+	
+	@Bean
+    AuthorizationManager<RequestAuthorizationContext> authorizationManager() {
+        return (authentication, context) -> {
+            if (authentication.get() == null) {
+                return new AuthorizationDecision(false);
+            }
+            
+            // Check roles with hierarchy logic
+            if (authentication.get().getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+                return new AuthorizationDecision(true);
+            }
+            
+            if (authentication.get().getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_AGENT"))) {
+                return new AuthorizationDecision(true);
+            }
+            
+            return new AuthorizationDecision(
+                authentication.get().getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_USER"))
+            );
         };
     }
 
