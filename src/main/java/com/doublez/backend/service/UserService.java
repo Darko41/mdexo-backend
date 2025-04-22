@@ -134,6 +134,7 @@ public class UserService {
         }
         
         User replacementAdmin = userRepository.findFirstByRoles_Name("ROLE_ADMIN")
+        		.filter(admin -> !admin.getId().equals(targetUser.getId()))	// exclude current user
                 .orElseThrow(() -> new IllegalOperationException("No replacement admin found"));
 
             // Reassign properties
