@@ -101,11 +101,10 @@ public class RealEstateApiController {
     }
     
     /** TODO (deleteRealEstate and updateRealEstate):
-     * 1. Testing: Make sure to thoroughly test the combined service,
-     * especially the role hierarchy logic
-     * 2. Performance: For frequently called methods (like isOwner),
-     * 3. Error Handling: You might want to add more detailed
-     * exception handling for security violations
+     * 1. track assigned agents (many-to-many relationship):
+     * private Set<User> assignedAgents = new HashSet<>()... in RealEstate class,
+     * 2. Modify RealEstateAuthorizationService to include agent-specific logic,
+     * 3. add this method to the service: isAssignedAgent(Long propertyId)
      */
 
     @DeleteMapping("/{propertyId}")
