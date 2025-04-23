@@ -146,14 +146,12 @@ class UserServiceTest {
         Long userId = 1L;
         UserUpdateDTO updateDto = new UserUpdateDTO();
         updateDto.setEmail("new@email.com");
-        updateDto.setPassword("newPassword");
         
         User user = new User();
         user.setId(userId);
         user.setEmail("old@email.com");
         
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(passwordEncoder.encode(updateDto.getPassword())).thenReturn("encodedPass");
         when(userRepository.save(user)).thenReturn(user);
         when(userMapper.toResponseDto(user)).thenReturn(createTestUserResponseDTO());
         

@@ -50,7 +50,8 @@ public class AdminApiController {
     }
 
     // Real Estate Endpoints
-    @PostMapping("/real-estates/with-images")
+    
+    @PostMapping(value = "/real-estates/with-images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<RealEstateResponseDTO> createRealEstateWithImages(
             @RequestPart @Valid RealEstateCreateDTO createDto,
             @RequestPart(required = false) MultipartFile[] images) {

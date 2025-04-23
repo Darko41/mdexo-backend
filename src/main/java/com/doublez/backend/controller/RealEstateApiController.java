@@ -3,15 +3,14 @@ package com.doublez.backend.controller;
 import java.math.BigDecimal;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+//import org.slf4j.Logger;
+//import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,32 +24,30 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.doublez.backend.dto.RealEstateCreateDTO;
-import com.doublez.backend.dto.RealEstateRequest;
 import com.doublez.backend.dto.RealEstateResponseDTO;
 import com.doublez.backend.dto.RealEstateUpdateDTO;
 import com.doublez.backend.entity.ListingType;
 import com.doublez.backend.entity.PropertyType;
-import com.doublez.backend.mapper.RealEstateMapper;
+import com.doublez.backend.exception.ResourceNotFoundException;
 import com.doublez.backend.service.RealEstateImageService;
 import com.doublez.backend.service.RealEstateService;
-import com.doublez.backend.service.UserService;
 
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/real-estates")
+@PreAuthorize("hasAnyRole('ADMIN', 'USER', 'AGENT')")
 //@CrossOrigin		TODO TRY THIS!
 public class RealEstateApiController {
     private final RealEstateService realEstateService;
-    private final RealEstateImageService realEstateImageService;
-    private static final Logger logger = LoggerFactory.getLogger(RealEstateApiController.class);
+//    private static final Logger logger = LoggerFactory.getLogger(RealEstateApiController.class);
 
     public RealEstateApiController(RealEstateService realEstateService, 
                                  RealEstateImageService realEstateImageService) {
         this.realEstateService = realEstateService;
-        this.realEstateImageService = realEstateImageService;
     }
 
+    // Show all real estates
     @GetMapping("/search")
     public ResponseEntity<Page<RealEstateResponseDTO>> searchRealEstates(
             @RequestParam(required = false) BigDecimal priceMin,
@@ -70,8 +67,8 @@ public class RealEstateApiController {
         return ResponseEntity.ok(result);
     }
 
+    
     @PostMapping(value = "/with-images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<RealEstateResponseDTO> createWithImages(
             @RequestPart @Valid RealEstateCreateDTO createDto,
             @RequestPart(required = false) MultipartFile[] images) {
@@ -85,35 +82,45 @@ public class RealEstateApiController {
                 .body(response);
     }
 
-    @PutMapping("/{propertyId}")
-    @PreAuthorize("hasRole('ADMIN') or (hasRole('USER') and @realEstateSecurityService.isOwner(#propertyId))")
-    public ResponseEntity<RealEstateResponseDTO> updateRealEstate(
-            @PathVariable Long propertyId,
-            @RequestBody @Valid RealEstateUpdateDTO updateDto) {
-        return ResponseEntity.ok(realEstateService.updateRealEstate(propertyId, updateDto));
-    }
-
-    @DeleteMapping("/{propertyId}")
-    @PreAuthorize("hasRole('USER') and @realEstateSecurityService.isOwner(#propertyId)")
-    public ResponseEntity<Void> deleteRealEstate(@PathVariable Long propertyId) {
-        realEstateService.deleteRealEstate(propertyId);
-        return ResponseEntity.noContent().build();
-    }
-    
+    // Get real estate by id (PathVariable)
     @GetMapping("/{propertyId}")
     public ResponseEntity<RealEstateResponseDTO> getRealEstateById(
             @PathVariable Long propertyId) {
         return ResponseEntity.ok(realEstateService.getRealEstateById(propertyId));
     }
     
+    // Create real estate as authenticated user, agent or admin
     @PostMapping
-    @PreAuthorize("@securityService.hasRealEstateCreateAccess()")
+    @PreAuthorize("@realEstateAuthorizationService.hasRealEstateCreateAccess()")
     public ResponseEntity<RealEstateResponseDTO> createRealEstate(
             @RequestBody @Valid RealEstateCreateDTO createDto) {
         RealEstateResponseDTO response = realEstateService.createRealEstate(createDto);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .header("Location", "/api/real-estates/" + response.getPropertyId())
                 .body(response);
+    }
+    
+    /** TODO (deleteRealEstate and updateRealEstate):
+     * 1. Testing: Make sure to thoroughly test the combined service,
+     * especially the role hierarchy logic
+     * 2. Performance: For frequently called methods (like isOwner),
+     * 3. Error Handling: You might want to add more detailed
+     * exception handling for security violations
+     */
+
+    @DeleteMapping("/{propertyId}")
+    @PreAuthorize("@realEstateAuthorizationService.canDeleteRealEstate(#propertyId)")
+    public ResponseEntity<Void> deleteRealEstate(@PathVariable Long propertyId) {
+        realEstateService.deleteRealEstate(propertyId);
+        return ResponseEntity.noContent().build();
+    }
+    
+    @PutMapping("/{propertyId}")
+    @PreAuthorize("@realEstateAuthorizationService.hasRealEstateUpdateAccess(#propertyId)")
+    public ResponseEntity<RealEstateResponseDTO> updateRealEstate(
+            @PathVariable Long propertyId,
+            @RequestBody @Valid RealEstateUpdateDTO updateDto) {
+        return ResponseEntity.ok(realEstateService.updateRealEstate(propertyId, updateDto));
     }
 }
 
