@@ -35,7 +35,7 @@ public class UserController {
 
     @Autowired
     private UserService userService;
-//    private static final Logger logger = LoggerFactory.getLogger(RealEstateApiController.class);
+//    private static final Logger logger = LoggerFactory.getLogger(RealEstateAuthUserApiController.class);
     
     // creation of new user
     @PostMapping("/register")

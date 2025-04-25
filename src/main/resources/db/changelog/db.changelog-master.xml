@@ -4,7 +4,8 @@
   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
                       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd">
 
-  <!-- Include your baseline first -->
+
   <include file="0001-new-baseline.xml" relativeToChangelogFile="true"/>
+  <include file="20250425-add-real-estate-agents.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

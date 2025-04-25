@@ -32,7 +32,7 @@ public class RealEstateAuthorizationService {
      * @throws ResourceNotFoundException if the property doesn't exist
      */
     
-    /** Important Considerations:
+    /** Important Considerations: TODO
      * 1. Testing: Make sure to thoroughly test the combined service,
      * especially the role hierarchy logic
      * 2. Performance: For frequently called methods (like isOwner),
@@ -68,13 +68,23 @@ public class RealEstateAuthorizationService {
             return true;
         }
         
-        // Users can only delete their own properties
-//        return hasRole("USER") && isOwner(propertyId);
+        if (hasRole("USER") && isOwner(propertyId)) {
+            return true;
+        }
         
-         return (hasAnyRole("USER", "AGENT") && isOwner(propertyId));
+        return hasRole("AGENT") && isAssignedAgent(propertyId);
     }
 
     // Helper methods
+    private boolean isAssignedAgent(Long propertyId) {
+        RealEstate property = realEstateRepository.findById(propertyId)
+            .orElseThrow(() -> new ResourceNotFoundException("Property not found"));
+        
+        User currentUser = userService.getAuthenticatedUser();
+        return property.getAssignedAgents().stream()
+            .anyMatch(agent -> agent.getId().equals(currentUser.getId()));
+    }
+    
     private boolean isAdmin() {
         return hasRole("ADMIN");
     }

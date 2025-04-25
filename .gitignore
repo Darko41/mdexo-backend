@@ -36,5 +36,6 @@ build/
 application-dev.properties
 liquibase-local.properties
 liquibase-render.properties
+liquibase-diff.properties
 
 dev-uploads/

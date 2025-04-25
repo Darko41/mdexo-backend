@@ -3,7 +3,9 @@ package com.doublez.backend.entity;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.format.annotation.NumberFormat;
 
@@ -19,6 +21,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
@@ -109,9 +113,27 @@ public class RealEstate {
 	public void preUpdate() {
 		this.updatedAt = LocalDate.now();
 	}
+	
+	@ManyToMany
+	@JoinTable(
+			name = "real_estate_agents",
+			joinColumns = @JoinColumn(name = "property_id"),
+			inverseJoinColumns = @JoinColumn(name = "user_id")
+			)
+	private Set<User> assignedAgents = new HashSet<>();
+	
+	// GETTERS AND SETTERS
 
 	public Long getPropertyId() {
 		return propertyId;
+	}
+
+	public Set<User> getAssignedAgents() {
+		return assignedAgents;
+	}
+
+	public void setAssignedAgents(Set<User> assignedAgents) {
+		this.assignedAgents = assignedAgents;
 	}
 
 	public void setPropertyId(Long propertyId) {

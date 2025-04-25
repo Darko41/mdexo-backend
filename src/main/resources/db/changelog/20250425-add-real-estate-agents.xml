@@ -1,0 +1,36 @@
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd">
+
+    <changeSet author="Darko" id="20250425-01">
+        <createTable tableName="real_estate_agents">
+            <column name="property_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="real_estate_agents_pkey"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="real_estate_agents_pkey"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="Darko" id="20250425-02">
+        <addForeignKeyConstraint
+            baseColumnNames="property_id"
+            baseTableName="real_estate_agents"
+            constraintName="fk_property_agent"
+            referencedColumnNames="property_id"
+            referencedTableName="real_estates"/>
+    </changeSet>
+
+    <changeSet author="Darko" id="20250425-03">
+        <addForeignKeyConstraint
+            baseColumnNames="user_id"
+            baseTableName="real_estate_agents"
+            constraintName="fk_user_agent"
+            referencedColumnNames="id"
+            referencedTableName="users"/>
+    </changeSet>
+
+</databaseChangeLog>
