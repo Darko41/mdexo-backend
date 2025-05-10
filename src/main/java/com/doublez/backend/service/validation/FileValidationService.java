@@ -1,4 +1,4 @@
-package com.doublez.backend.service;
+package com.doublez.backend.service.validation;
 
 import java.io.IOException;
 import java.io.InputStream;

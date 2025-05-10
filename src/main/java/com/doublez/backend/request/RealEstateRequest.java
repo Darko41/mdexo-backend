@@ -1,4 +1,4 @@
-package com.doublez.backend.dto;
+package com.doublez.backend.request;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;

@@ -21,5 +21,10 @@ public interface RealEstateRepository extends JpaRepository<RealEstate, Long>, J
 	@Query("UPDATE RealEstate r SET r.owner.id = :newOwnerId WHERE r.owner.id = :oldOwnerId")
 	void reassignAllPropertiesFromUser(@Param("oldOwnerId") Long oldOwnerId, 
 	                                 @Param("newOwnerId") Long newOwnerId);
+	
+	@Query("SELECT COUNT(re) > 0 FROM RealEstate re JOIN re.assignedAgents a WHERE re.id = :propertyId AND a.id = :agentId")
+	boolean existsByIdAndAssignedAgentsId (@Param("propertyId") Long propertyId, @Param("agentId") Long agentId);
+	
+	boolean existsByIdAndOwnerId(Long propertyId, Long ownerId);
 
 }

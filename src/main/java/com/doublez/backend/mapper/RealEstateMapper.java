@@ -10,12 +10,12 @@ import org.springframework.web.bind.annotation.Mapping;
 
 import com.doublez.backend.dto.RealEstateCreateDTO;
 import com.doublez.backend.dto.RealEstateDTO;
-import com.doublez.backend.dto.RealEstateRequest;
 import com.doublez.backend.dto.RealEstateResponseDTO;
 import com.doublez.backend.dto.RealEstateUpdateDTO;
 import com.doublez.backend.entity.RealEstate;
 import com.doublez.backend.entity.User;
 import com.doublez.backend.repository.UserRepository;
+import com.doublez.backend.request.RealEstateRequest;
 
 import jakarta.persistence.EntityNotFoundException;
 

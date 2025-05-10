@@ -23,7 +23,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.doublez.backend.dto.RealEstateCreateDTO;
-import com.doublez.backend.dto.RealEstateRequest;
 import com.doublez.backend.dto.RealEstateResponseDTO;
 import com.doublez.backend.dto.RealEstateUpdateDTO;
 import com.doublez.backend.dto.UserCreateDTO;
@@ -31,8 +30,9 @@ import com.doublez.backend.dto.UserResponseDTO;
 import com.doublez.backend.dto.UserUpdateDTO;
 import com.doublez.backend.entity.ListingType;
 import com.doublez.backend.entity.PropertyType;
-import com.doublez.backend.service.RealEstateService;
-import com.doublez.backend.service.UserService;
+import com.doublez.backend.request.RealEstateRequest;
+import com.doublez.backend.service.realestate.RealEstateService;
+import com.doublez.backend.service.user.UserService;
 
 import jakarta.validation.Valid;
 

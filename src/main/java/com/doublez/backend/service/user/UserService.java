@@ -1,4 +1,4 @@
-package com.doublez.backend.service;
+package com.doublez.backend.service.user;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -36,6 +36,7 @@ import com.doublez.backend.mapper.UserMapper;
 import com.doublez.backend.repository.RealEstateRepository;
 import com.doublez.backend.repository.RoleRepository;
 import com.doublez.backend.repository.UserRepository;
+import com.doublez.backend.service.realestate.RealEstateImageService;
 
 import jakarta.transaction.Transactional;	// TODO check if another package is required
 

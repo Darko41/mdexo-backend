@@ -1,4 +1,4 @@
-package com.doublez.backend.service;
+package com.doublez.backend.service.user;
 
 import java.util.stream.Collectors;
 

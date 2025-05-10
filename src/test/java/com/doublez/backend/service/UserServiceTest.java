@@ -31,6 +31,7 @@ import com.doublez.backend.exception.EmailExistsException;
 import com.doublez.backend.mapper.UserMapper;
 import com.doublez.backend.repository.RoleRepository;
 import com.doublez.backend.repository.UserRepository;
+import com.doublez.backend.service.user.UserService;
 
 // TODO update Mockito when a version that fully supports Java 21 is released
 

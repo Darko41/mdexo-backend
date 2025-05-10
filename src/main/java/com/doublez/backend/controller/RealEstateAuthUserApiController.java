@@ -1,8 +1,5 @@
 package com.doublez.backend.controller;
 
-import java.math.BigDecimal;
-import java.util.List;
-
 //import org.slf4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -21,8 +18,9 @@ import org.springframework.web.multipart.MultipartFile;
 import com.doublez.backend.dto.RealEstateCreateDTO;
 import com.doublez.backend.dto.RealEstateResponseDTO;
 import com.doublez.backend.dto.RealEstateUpdateDTO;
-import com.doublez.backend.service.RealEstateImageService;
-import com.doublez.backend.service.RealEstateService;
+import com.doublez.backend.service.realestate.RealEstateAgentAssignmentService;
+import com.doublez.backend.service.realestate.RealEstateImageService;
+import com.doublez.backend.service.realestate.RealEstateService;
 
 import jakarta.validation.Valid;
 
@@ -32,11 +30,13 @@ import jakarta.validation.Valid;
 //@CrossOrigin		TODO TRY THIS!
 public class RealEstateAuthUserApiController {
     private final RealEstateService realEstateService;
+    private final RealEstateAgentAssignmentService assignmentService;
 //    private static final Logger logger = LoggerFactory.getLogger(RealEstateAuthUserApiController.class);
 
-    public RealEstateAuthUserApiController(RealEstateService realEstateService, 
-                                 RealEstateImageService realEstateImageService) {
+    public RealEstateAuthUserApiController(RealEstateService realEstateService,
+                                 RealEstateAgentAssignmentService assignmentService) {
         this.realEstateService = realEstateService;
+        this.assignmentService = assignmentService;
     }
 
     // TODO Test this
@@ -64,13 +64,6 @@ public class RealEstateAuthUserApiController {
                 .header("Location", "/api/real-estates/" + response.getPropertyId())
                 .body(response);
     }
-    
-    /** TODO (deleteRealEstate and updateRealEstate):
-     * 1. track assigned agents (many-to-many relationship):
-     * private Set<User> assignedAgents = new HashSet<>()... in RealEstate class,
-     * 2. Modify RealEstateAuthorizationService to include agent-specific logic,
-     * 3. add this method to the service: isAssignedAgent(Long propertyId)
-     */
 
     @DeleteMapping("/{propertyId}")
     @PreAuthorize("@realEstateAuthorizationService.canDeleteRealEstate(#propertyId)")
@@ -85,6 +78,15 @@ public class RealEstateAuthUserApiController {
             @PathVariable Long propertyId,
             @RequestBody @Valid RealEstateUpdateDTO updateDto) {
         return ResponseEntity.ok(realEstateService.updateRealEstate(propertyId, updateDto));
+    }
+    
+    @PostMapping("/{propertyId}/assign-agent/{agentId}")
+    @PreAuthorize("hasRole('ADMIN') or @realEstateAuthorizationService.isOwner(#propertyId)")
+    public ResponseEntity<Void> assignAgentToProperty(
+            @PathVariable Long propertyId,
+            @PathVariable Long agentId) {
+        assignmentService.assignAgentToProperty(propertyId, agentId);
+        return ResponseEntity.ok().build();
     }
 }
 

@@ -20,9 +20,9 @@ import org.springframework.web.multipart.MultipartFile;
 import com.doublez.backend.entity.RealEstate;
 import com.doublez.backend.exception.InvalidFileException;
 import com.doublez.backend.response.ApiResponse;
-import com.doublez.backend.service.FileValidationService;
-import com.doublez.backend.service.RealEstateImageService;
-import com.doublez.backend.service.RealEstateService;
+import com.doublez.backend.service.realestate.RealEstateImageService;
+import com.doublez.backend.service.realestate.RealEstateService;
+import com.doublez.backend.service.validation.FileValidationService;
 
 @RestController
 @RequestMapping("api/s3")

@@ -11,8 +11,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import com.doublez.backend.dto.RealEstateResponseDTO;
 import com.doublez.backend.dto.UserResponseDTO;
 import com.doublez.backend.entity.RealEstate;
-import com.doublez.backend.service.RealEstateService;
-import com.doublez.backend.service.UserService;
+import com.doublez.backend.service.realestate.RealEstateService;
+import com.doublez.backend.service.user.UserService;
 
 
 @Controller

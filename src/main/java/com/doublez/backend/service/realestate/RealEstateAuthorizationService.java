@@ -1,4 +1,4 @@
-package com.doublez.backend.service;
+package com.doublez.backend.service.realestate;
 
 import java.util.Arrays;
 
@@ -10,9 +10,13 @@ import com.doublez.backend.entity.RealEstate;
 import com.doublez.backend.entity.User;
 import com.doublez.backend.exception.ResourceNotFoundException;
 import com.doublez.backend.repository.RealEstateRepository;
+import com.doublez.backend.service.user.UserService;
+import com.doublez.backend.utils.RoleUtils;
 
 @Service
 public class RealEstateAuthorizationService {
+	
+	private static final String ROLE_PREFIX = "ROLE_";
 
     private final RealEstateRepository realEstateRepository;
     private final UserService userService;
@@ -74,15 +78,36 @@ public class RealEstateAuthorizationService {
         
         return hasRole("AGENT") && isAssignedAgent(propertyId);
     }
+    
+    public boolean canManageProperty(Long propertyId) {
+    	User currentUser = userService.getAuthenticatedUser();
+    	
+    	if (currentUser.hasRole("ROLE_ADMIN")) {
+    		return true;
+    	}
+    	
+    	if (isOwner(propertyId)) {
+    		return true;
+    	}
+    	
+    	return isAssignedAgent(propertyId);
+    	
+    }
 
     // Helper methods
     private boolean isAssignedAgent(Long propertyId) {
-        RealEstate property = realEstateRepository.findById(propertyId)
-            .orElseThrow(() -> new ResourceNotFoundException("Property not found"));
+    	User currentUser = userService.getAuthenticatedUser();
         
-        User currentUser = userService.getAuthenticatedUser();
-        return property.getAssignedAgents().stream()
-            .anyMatch(agent -> agent.getId().equals(currentUser.getId()));
+        // Short-circuit if not an agent
+        if (!currentUser.hasRole("ROLE_AGENT")) {
+            return false;
+        }
+        
+        // More efficient query - avoids loading entire property
+        return realEstateRepository.existsByIdAndAssignedAgentsId(
+            propertyId, 
+            currentUser.getId()
+        );
     }
     
     private boolean isAdmin() {
@@ -91,15 +116,14 @@ public class RealEstateAuthorizationService {
 
     private boolean hasRole(String role) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        return auth.getAuthorities().stream()
-                .anyMatch(a -> ("ROLE_" + role).equals(a.getAuthority()));
+        return RoleUtils.hasRole(auth, role);
     }
 
     private boolean hasAnyRole(String... roles) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        return auth.getAuthorities().stream()
-                .anyMatch(a -> Arrays.stream(roles)
-                        .anyMatch(role -> ("ROLE_" + role).equals(a.getAuthority())));
+        return RoleUtils.hasAnyRole(auth, roles);
     }
+    
+    
 
 }

@@ -25,7 +25,7 @@ import com.doublez.backend.dto.UserUpdateDTO;
 import com.doublez.backend.exception.EmailExistsException;
 import com.doublez.backend.exception.UserNotFoundException;
 import com.doublez.backend.response.ApiResponse;
-import com.doublez.backend.service.UserService;
+import com.doublez.backend.service.user.UserService;
 
 import jakarta.validation.Valid;
 

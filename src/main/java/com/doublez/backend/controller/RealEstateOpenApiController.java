@@ -15,8 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.doublez.backend.dto.RealEstateResponseDTO;
 import com.doublez.backend.entity.ListingType;
 import com.doublez.backend.entity.PropertyType;
-import com.doublez.backend.service.RealEstateImageService;
-import com.doublez.backend.service.RealEstateService;
+import com.doublez.backend.service.realestate.RealEstateImageService;
+import com.doublez.backend.service.realestate.RealEstateService;
 
 @RestController
 @RequestMapping("/api/real-estates")

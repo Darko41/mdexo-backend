@@ -1,4 +1,4 @@
-package com.doublez.backend.service;
+package com.doublez.backend.service.s3;
 
 import java.io.IOException;
 import java.io.InputStream;

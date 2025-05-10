@@ -1,4 +1,4 @@
-package com.doublez.backend.service;
+package com.doublez.backend.service.realestate;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.doublez.backend.dto.RealEstateCreateDTO;
-import com.doublez.backend.dto.RealEstateRequest;
 import com.doublez.backend.dto.RealEstateResponseDTO;
 import com.doublez.backend.dto.RealEstateUpdateDTO;
 import com.doublez.backend.entity.ListingType;
@@ -29,6 +28,8 @@ import com.doublez.backend.exception.UserNotFoundException;
 import com.doublez.backend.mapper.RealEstateMapper;
 import com.doublez.backend.repository.RealEstateRepository;
 import com.doublez.backend.repository.UserRepository;
+import com.doublez.backend.request.RealEstateRequest;
+import com.doublez.backend.service.user.UserService;
 import com.doublez.backend.specification.RealEstateSpecifications;
 
 import jakarta.annotation.Nullable;

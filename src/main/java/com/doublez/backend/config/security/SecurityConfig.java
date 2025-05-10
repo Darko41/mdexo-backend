@@ -18,8 +18,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import com.doublez.backend.service.CustomUserDetailsService;
-
+import com.doublez.backend.service.user.CustomUserDetailsService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

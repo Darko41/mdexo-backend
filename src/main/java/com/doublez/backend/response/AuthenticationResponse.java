@@ -1,4 +1,4 @@
-package com.doublez.backend.dto;
+package com.doublez.backend.response;
 
 import java.util.List;
 

@@ -122,6 +122,18 @@ public class RealEstate {
 			)
 	private Set<User> assignedAgents = new HashSet<>();
 	
+	public void assignAgent(User agent) {
+		this.assignedAgents.add(agent);
+	}
+	
+	public void removeAgent(User agent) {
+        this.assignedAgents.remove(agent);
+    }
+	
+	 public boolean isAssignedToAgent(User agent) {
+	        return this.assignedAgents.contains(agent);
+	    }
+	
 	// GETTERS AND SETTERS
 
 	public Long getPropertyId() {

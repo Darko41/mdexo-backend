@@ -1,4 +1,4 @@
-package com.doublez.backend.service;
+package com.doublez.backend.service.realestate;
 
 import java.io.IOException;
 import java.net.URI;
@@ -19,6 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.doublez.backend.exception.ImageUploadException;
+import com.doublez.backend.service.s3.S3Service;
+import com.doublez.backend.service.validation.FileValidationService;
 
 import jakarta.transaction.Transactional;
 

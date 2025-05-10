@@ -114,5 +114,10 @@ public class User {
 				.map(Role::getName)
 				.anyMatch(role -> Arrays.asList(roleNames).contains(role));
 	}
+	
+	public boolean hasRole(String roleName) {
+	    return this.roles.stream()
+	            .anyMatch(role -> role.getName().equals(roleName));
+	}
 
 }

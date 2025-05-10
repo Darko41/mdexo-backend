@@ -15,10 +15,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.doublez.backend.config.security.JwtTokenUtil;
-import com.doublez.backend.dto.AuthenticationRequest;
-import com.doublez.backend.dto.AuthenticationResponse;
 import com.doublez.backend.entity.User;
 import com.doublez.backend.repository.UserRepository;
+import com.doublez.backend.request.AuthenticationRequest;
+import com.doublez.backend.response.AuthenticationResponse;
 
 @RestController
 @RequestMapping("/api")
