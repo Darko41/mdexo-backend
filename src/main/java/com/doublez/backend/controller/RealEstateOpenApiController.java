@@ -27,7 +27,6 @@ import org.springframework.data.domain.Sort;
 
 @RestController
 @RequestMapping("/api/real-estates")
-@CrossOrigin(origins = {"http://localhost:5173", "https://mdexo-backend.onrender.com"})
 public class RealEstateOpenApiController {
 	
 	private final RealEstateService realEstateService;
