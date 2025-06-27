@@ -2,6 +2,7 @@ package com.doublez.backend.service.realestate;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -11,6 +12,8 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.doublez.backend.dto.RealEstateCreateDTO;
@@ -19,7 +22,6 @@ import com.doublez.backend.dto.RealEstateUpdateDTO;
 import com.doublez.backend.entity.ListingType;
 import com.doublez.backend.entity.PropertyType;
 import com.doublez.backend.entity.RealEstate;
-import com.doublez.backend.entity.Role;
 import com.doublez.backend.entity.User;
 import com.doublez.backend.exception.RealEstateNotFoundException;
 import com.doublez.backend.exception.ResourceNotFoundException;
@@ -28,11 +30,11 @@ import com.doublez.backend.exception.UserNotFoundException;
 import com.doublez.backend.mapper.RealEstateMapper;
 import com.doublez.backend.repository.RealEstateRepository;
 import com.doublez.backend.repository.UserRepository;
-import com.doublez.backend.request.RealEstateRequest;
 import com.doublez.backend.service.user.UserService;
 import com.doublez.backend.specification.RealEstateSpecifications;
 
 import jakarta.annotation.Nullable;
+import jakarta.persistence.criteria.Predicate;
 import jakarta.transaction.Transactional;
 
 @Service
@@ -56,20 +58,126 @@ public class RealEstateService {
         this.userRepository = userRepository;
     }
 
-    public Page<RealEstateResponseDTO> searchRealEstates(BigDecimal priceMin, 
-                                                        BigDecimal priceMax,
-                                                        PropertyType propertyType, 
-                                                        List<String> features,
-                                                        String city, 
-                                                        String state, 
-                                                        String zipCode,
-                                                        ListingType listingType,
-                                                        Pageable pageable) {
-        Specification<RealEstate> spec = buildSearchSpecification(
-            priceMin, priceMax, propertyType, features, city, state, zipCode, listingType);
-
-        return realEstateRepository.findAll(spec, pageable)
+    public Page<RealEstateResponseDTO> searchRealEstates(
+            String searchTerm,
+            BigDecimal priceMin,
+            BigDecimal priceMax,
+            PropertyType propertyType,
+            List<String> features,
+            String city,
+            String state,
+            String zipCode,
+            ListingType listingType,
+            Pageable pageable) {
+        
+        // Build the complete specification
+        Specification<RealEstate> spec = buildCompleteSpecification(
+            searchTerm, priceMin, priceMax, propertyType, 
+            features, city, state, zipCode, listingType);
+        
+        // Execute the query with proper error handling
+        try {
+            return realEstateRepository.findAll(spec, pageable)
                 .map(realEstateMapper::toResponseDto);
+        } catch (Exception e) {
+            throw new RuntimeException("Search failed: " + e.getMessage(), e);
+        }
+    }
+    
+    private Specification<RealEstate> buildCompleteSpecification(
+            String searchTerm,
+            BigDecimal priceMin,
+            BigDecimal priceMax,
+            PropertyType propertyType,
+            List<String> features,
+            String city,
+            String state,
+            String zipCode,
+            ListingType listingType) {
+        
+        return Specification.where(buildTextSearchSpec(searchTerm))
+            .and(buildPriceSpec(priceMin, priceMax))
+            .and(buildPropertyTypeSpec(propertyType))
+            .and(buildFeaturesSpec(features))
+            .and(buildLocationSpec(city, state, zipCode))
+            .and(buildListingTypeSpec(listingType));
+    }
+    
+    // Text search specification
+    private Specification<RealEstate> buildTextSearchSpec(String searchTerm) {
+        return (root, query, cb) -> {
+            if (!StringUtils.hasText(searchTerm)) return null;
+            
+            String likePattern = "%" + searchTerm.toLowerCase() + "%";
+            query.distinct(true);
+            return cb.or(
+                cb.like(cb.lower(root.get("title")), likePattern),
+                cb.like(cb.lower(root.get("description")), likePattern),
+                cb.like(cb.lower(root.get("city")), likePattern),
+                cb.like(cb.lower(root.get("address")), likePattern)
+            );
+        };
+    }
+    
+    // Price range specification
+    private Specification<RealEstate> buildPriceSpec(BigDecimal min, BigDecimal max) {
+        return (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            
+            if (min != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("price"), min));
+            }
+            if (max != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("price"), max));
+            }
+            
+            return predicates.isEmpty() ? null : cb.and(predicates.toArray(new Predicate[0]));
+        };
+    }
+
+    // Property type specification
+    private Specification<RealEstate> buildPropertyTypeSpec(PropertyType propertyType) {
+        return (root, query, cb) -> 
+            propertyType != null ? cb.equal(root.get("propertyType"), propertyType) : null;
+    }
+
+    // Features specification
+    private Specification<RealEstate> buildFeaturesSpec(List<String> features) {
+        return (root, query, cb) -> {
+            if (features == null || features.isEmpty()) return null;
+            
+            List<Predicate> featurePredicates = new ArrayList<>();
+            for (String feature : features) {
+                featurePredicates.add(cb.isMember(feature, root.get("features")));
+            }
+            
+            return cb.and(featurePredicates.toArray(new Predicate[0]));
+        };
+    }
+
+    // Location specification
+    private Specification<RealEstate> buildLocationSpec(String city, String state, String zipCode) {
+        return (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            
+            if (StringUtils.hasText(city)) {
+                predicates.add(cb.equal(cb.lower(root.get("city")), city.toLowerCase()));
+            }
+            if (StringUtils.hasText(state)) {
+                predicates.add(cb.equal(cb.lower(root.get("state")), state.toLowerCase()));
+            }
+            if (StringUtils.hasText(zipCode)) {
+                predicates.add(cb.equal(root.get("zipCode"), zipCode));
+            }
+            
+            return predicates.isEmpty() ? null : cb.and(predicates.toArray(new Predicate[0]));
+        };
+    }
+
+    // Listing type specification
+    private Specification<RealEstate> buildListingTypeSpec(ListingType listingType) {
+        return (root, query, cb) -> 
+            listingType != null ? cb.equal(root.get("listingType"), listingType) : null;
     }
 
     public RealEstateResponseDTO createRealEstate(RealEstateCreateDTO createDto) {
@@ -185,22 +293,6 @@ public class RealEstateService {
         }
         
         return entity;
-    }
-
-    private Specification<RealEstate> buildSearchSpecification(BigDecimal priceMin,
-                                                            BigDecimal priceMax,
-                                                            PropertyType propertyType,
-                                                            List<String> features,
-                                                            String city,
-                                                            String state,
-                                                            String zipCode,
-                                                            ListingType listingType) {
-        return Specification.where(RealEstateSpecifications.hasMinPrice(priceMin))
-                .and(RealEstateSpecifications.hasMaxPrice(priceMax))
-                .and(RealEstateSpecifications.hasPropertyType(propertyType))
-                .and(RealEstateSpecifications.hasFeatures(features))
-                .and(RealEstateSpecifications.hasLocation(city, state, zipCode))
-                .and(RealEstateSpecifications.hasListingType(listingType));
     }
 
     public RealEstateResponseDTO getRealEstateById(Long propertyId) {

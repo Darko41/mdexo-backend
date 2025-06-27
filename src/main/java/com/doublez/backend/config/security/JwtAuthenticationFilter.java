@@ -12,105 +12,117 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 @Component
-public class JwtAuthenticationFilter extends OncePerRequestFilter{
-	
-	private final JwtTokenUtil jwtTokenUtil;
-	private final UserDetailsService userDetailsService;
-	
-	private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
-	
-	private static final List<String> EXCLUDED_PATHS = Arrays.asList(
-	        "/api/authenticate"
-	);
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-	public JwtAuthenticationFilter(JwtTokenUtil jwtTokenUtil, UserDetailsService userDetailsService) {
-		this.jwtTokenUtil = jwtTokenUtil;
-		this.userDetailsService = userDetailsService;
-	}
+    private final JwtTokenUtil jwtTokenUtil;
+    private final UserDetailsService userDetailsService;
 
-	@Override
-	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-			throws ServletException, IOException {
-		
-		if (shouldSkip(request)) {
-			filterChain.doFilter(request, response);
-			return;
-		}
+    private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
-		// Extract token from request header
-		String token = getJwtFromRequest(request);
+    // Ant-style patterns for public endpoints
+    private static final List<String> EXCLUDED_PATHS = Arrays.asList(
+        "/api/authenticate",
+        "/api/real-estates/**",
+        "/v3/api-docs/**",
+        "/swagger-ui/**",
+        "/swagger-resources/**",
+        "/webjars/**"
+    );
 
-		if (token != null) {
-			// Extract username from the token
-			String username = extractUsernameFromToken(token);
-			logger.info("Extracted username from token: {}", username);
+    private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
-			// Validate the token
-			if (jwtTokenUtil.validateToken(token, username)) {
-				logger.info("Token validated successfully for user: {}", username);
+    public JwtAuthenticationFilter(JwtTokenUtil jwtTokenUtil, UserDetailsService userDetailsService) {
+        this.jwtTokenUtil = jwtTokenUtil;
+        this.userDetailsService = userDetailsService;
+    }
 
-				// Fetch user details based on username (without password)
-				UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
 
-				if (userDetails != null) {
-					logger.info("User found and details loaded for user: {}", username);
+        final String requestURI = request.getRequestURI();
 
-					// Create an authentication object
-					UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-							userDetails, null, userDetails.getAuthorities());
+        if (shouldSkipAuthentication(requestURI)) {
+            logger.debug("Skipping JWT validation for public endpoint: {}", requestURI);
+            filterChain.doFilter(request, response);
+            return;
+        }
 
-					// Set details in the authentication object
-					authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+        try {
+            String token = getJwtFromRequest(request);
 
-					// Set the authentication object into the security context
-					SecurityContextHolder.getContext().setAuthentication(authentication);
-					logger.info("Authentication successfully set for user: {}", username);
-				} else {
-					logger.warn("User details not found for username: {}", username);
-				}
-			} else {
-				// Log token validation failure and reject the request
-				logger.warn("Invalid token or token expired for user: {}", username);
-			}
-		} else {
-			logger.warn("No token found in request headers.");
-		}
+            if (token == null) {
+                logger.warn("No JWT token found in request to {}", requestURI);
+                filterChain.doFilter(request, response);
+                return;
+            }
 
-		// Continue the filter chain
-		filterChain.doFilter(request, response);
-	}
+            String username = jwtTokenUtil.extractEmail(token);
+            logger.debug("Extracted username from token: {}", username);
 
-	// Helper method to check if the request URI should be skipped for JWT
-	// validation
-	private boolean shouldSkip(HttpServletRequest request) {
-		String requestURI = request.getRequestURI();
-		logger.debug("Checking if should skip path: {}", requestURI);
+            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                if (jwtTokenUtil.validateToken(token, username)) {
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-		return EXCLUDED_PATHS.stream().anyMatch(requestURI::matches);
-	}
+                    if (userDetails != null) {
+                        UsernamePasswordAuthenticationToken authentication =
+                                new UsernamePasswordAuthenticationToken(
+                                        userDetails,
+                                        null,
+                                        userDetails.getAuthorities());
+                        authentication.setDetails(
+                                new WebAuthenticationDetailsSource().buildDetails(request));
 
-	// Helper method to extract username from the token
-	private String extractUsernameFromToken(String token) {
-		return jwtTokenUtil.extractEmail(token);
-	}
+                        SecurityContextHolder.getContext().setAuthentication(authentication);
+                        logger.info("Authenticated user: {}", username);
+                    }
+                }
+            }
+        } catch (ExpiredJwtException ex) {
+            logger.warn("JWT token expired for request {}: {}", requestURI, ex.getMessage());
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("{\"error\":\"Token expired\",\"message\":\"Please authenticate again\"}");
+            return;
+        } catch (Exception ex) {
+            logger.error("Error processing JWT token for request {}: {}", requestURI, ex.getMessage());
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("{\"error\":\"Invalid token\",\"message\":\"Authentication failed\"}");
+            return;
+        }
 
-	// Helper method to extract the JWT token from the request's Authorization
-	// header
-	private String getJwtFromRequest(HttpServletRequest request) {
-		String bearerToken = request.getHeader("Authorization");
-		logger.debug("Authorization header received: {}", bearerToken);
-		if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-			return bearerToken.substring(7);
-		}
-		return null;
-	}
+        filterChain.doFilter(request, response);
+    }
 
+    private boolean shouldSkipAuthentication(String requestURI) {
+        return EXCLUDED_PATHS.stream().anyMatch(pattern -> pathMatcher.match(pattern, requestURI));
+    }
+
+    private String getJwtFromRequest(HttpServletRequest request) {
+        String bearerToken = request.getHeader("Authorization");
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7);
+        }
+
+        // Check for token in cookies if not found in header
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if ("token".equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+
+        return null;
+    }
 }

@@ -68,6 +68,7 @@ public class AdminApiController {
 
     @GetMapping("/real-estates")
     public ResponseEntity<Page<RealEstateResponseDTO>> getAllRealEstates(
+            @RequestParam(required = false) String searchTerm,
             @RequestParam(required = false) BigDecimal priceMin,
             @RequestParam(required = false) BigDecimal priceMax,
             @RequestParam(required = false) PropertyType propertyType,
@@ -79,8 +80,16 @@ public class AdminApiController {
             Pageable pageable) {
         
         return ResponseEntity.ok(realEstateService.searchRealEstates(
-            priceMin, priceMax, propertyType, features,
-            city, state, zipCode, listingType, pageable));
+            searchTerm, 
+            priceMin, 
+            priceMax, 
+            propertyType, 
+            features,
+            city, 
+            state, 
+            zipCode, 
+            listingType, 
+            pageable));
     }
 
     @PutMapping("/real-estates/{propertyId}")

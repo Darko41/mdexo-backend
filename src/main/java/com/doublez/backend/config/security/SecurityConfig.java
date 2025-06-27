@@ -15,10 +15,15 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import com.doublez.backend.service.user.CustomUserDetailsService;
+
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,10 +63,14 @@ public class SecurityConfig {
 			.authorizeHttpRequests((authz) -> authz
 					// Define public URLs (no authentication required)
 					.requestMatchers(
-//							"/swagger-resources/**",
-//							"/webjars/**",
 							"/api/authenticate",
-							"/api/real-estates/search"
+							"/api/real-estates/**",
+							"/v3/api-docs/**",
+			                "/swagger-ui/**",
+			                "/swagger-resources/**",
+			                "/webjars/**",
+			                "/api/users/**",
+			                "/api/agents/**"
 //							"/api/email/send-email",
 //							"/api/db-status",
 //							"/admin/**",
@@ -75,19 +84,19 @@ public class SecurityConfig {
 							).permitAll()
 					
 					// Define URLs that require specific role				
-					.requestMatchers("/swagger-ui/**", "/v3/api-docs/**").hasRole("DEV")	// TODO Resolve cors problems, why this works on Postman but not deployed
-					.requestMatchers("/api/admin/**").hasRole("ADMIN")							// TODO Resolve cors problems, why this works on Postman but not deployed
+					.requestMatchers("/api/admin/**", "admin/**").hasRole("ADMIN")							// TODO Resolve cors problems, why this works on Postman but not deployed
 					
 					// Define URLs that require authentication
 //					.requestMatchers("/api/**").authenticated()
 					
 					// Any other request must be authenticated
-//					.anyRequest().authenticated()
-					.anyRequest().permitAll()
+					.anyRequest().authenticated()
+//					.anyRequest().permitAll()
 					)
 					.sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			
 					.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+					.cors(cors -> cors.configurationSource(corsConfigurationSource()))
 					.csrf(csrf -> csrf.disable());
 		
 		logger.debug("Security filter chain configured");
@@ -96,18 +105,15 @@ public class SecurityConfig {
 	}
 	
 	@Bean
-    WebMvcConfigurer corsConfigurer() {
-        return new WebMvcConfigurer() {
-            @Override
-            public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/api/**")
-                    .allowedOrigins("https://mdexo-frontend.onrender.com", "http://localhost:5173")
-                    .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                    .allowedHeaders("*")
-                    .allowCredentials(true);
-            }
-        };
-    }
+	CorsConfigurationSource corsConfigurationSource() {
+		CorsConfiguration configuration = new CorsConfiguration();
+		configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+		configuration.setAllowedMethods(List.of("*"));
+		configuration.setAllowedHeaders(List.of("*"));
+		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+		source.registerCorsConfiguration("/**", configuration);
+		return source;
+	}
 	
 	@Bean
     AuthorizationManager<RequestAuthorizationContext> authorizationManager() {
