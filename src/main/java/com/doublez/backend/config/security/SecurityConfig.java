@@ -63,14 +63,15 @@ public class SecurityConfig {
 			.authorizeHttpRequests((authz) -> authz
 					// Define public URLs (no authentication required)
 					.requestMatchers(
-							"/api/authenticate",
-							"/api/real-estates/**",
+//							"/api/authenticate/",
+//							"/api/real-estates/**",
+							"/api/**",
 							"/v3/api-docs/**",
 			                "/swagger-ui/**",
 			                "/swagger-resources/**",
-			                "/webjars/**",
-			                "/api/users/**",
-			                "/api/agents/**"
+			                "/webjars/**"
+//			                "/api/users/**",
+//			                "/api/agents/**"
 //							"/api/email/send-email",
 //							"/api/db-status",
 //							"/admin/**",
