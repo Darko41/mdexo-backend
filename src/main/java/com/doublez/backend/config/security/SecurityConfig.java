@@ -2,6 +2,7 @@ package com.doublez.backend.config.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
@@ -62,6 +63,7 @@ public class SecurityConfig {
 		http
 			.authorizeHttpRequests((authz) -> authz
 					// Define public URLs (no authentication required)
+					.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 					.requestMatchers(
 //							"/api/authenticate/",
 //							"/api/real-estates/**",
