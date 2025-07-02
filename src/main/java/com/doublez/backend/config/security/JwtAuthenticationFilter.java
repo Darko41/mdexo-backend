@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -53,8 +54,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         final String requestURI = request.getRequestURI();
 
-        if (shouldSkipAuthentication(requestURI)) {
-            logger.debug("Skipping JWT validation for public endpoint: {}", requestURI);
+        if (shouldSkipAuthentication(request)) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -104,7 +104,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    private boolean shouldSkipAuthentication(String requestURI) {
+    private boolean shouldSkipAuthentication(HttpServletRequest request) {
+        String requestURI = request.getRequestURI();
+        String method = request.getMethod();
+
+        // Skip OPTIONS (CORS preflight)
+        if (HttpMethod.OPTIONS.matches(method)) {
+            logger.debug("Skipping JWT validation for OPTIONS request: {}", requestURI);
+            return true;
+        }
+
         return EXCLUDED_PATHS.stream().anyMatch(pattern -> pathMatcher.match(pattern, requestURI));
     }
 

@@ -23,7 +23,6 @@ import com.doublez.backend.response.AuthenticationResponse;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "https://mdexo-frontend.onrender.com")
 public class AuthenticationController {
 	
 	private final AuthenticationManager authenticationManager;
