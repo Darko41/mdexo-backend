@@ -24,6 +24,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import com.doublez.backend.service.user.CustomUserDetailsService;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -99,7 +100,7 @@ public class SecurityConfig {
 					.sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			
 					.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-//					.cors(cors -> cors.configurationSource(corsConfigurationSource()))
+					.cors(cors -> cors.configurationSource(corsConfigurationSource()))
 					.csrf(csrf -> csrf.disable());
 		
 		logger.debug("Security filter chain configured");
@@ -110,9 +111,15 @@ public class SecurityConfig {
 	@Bean
 	CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
-		configuration.setAllowedOrigins(List.of("http://localhost:5173"));
-		configuration.setAllowedMethods(List.of("*"));
-		configuration.setAllowedHeaders(List.of("*"));
+		configuration.setAllowedOrigins(Arrays.asList(
+		        "http://localhost:5173", 
+		        "https://mdexo-frontend.onrender.com"
+		    ));
+		configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+		configuration.setAllowedHeaders(Arrays.asList("*"));
+		configuration.setAllowCredentials(true);
+		configuration.setMaxAge(3600L);
+		
 		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 		source.registerCorsConfiguration("/**", configuration);
 		return source;
