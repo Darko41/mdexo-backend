@@ -115,7 +115,7 @@ public class SecurityConfig {
 		        "http://localhost:5173", 
 		        "https://mdexo-frontend.onrender.com"
 		    ));
-		configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+		configuration.setAllowedMethods(Arrays.asList("*"));
 		configuration.setAllowedHeaders(Arrays.asList("*"));
 		configuration.setAllowCredentials(true);
 		configuration.setMaxAge(3600L);
