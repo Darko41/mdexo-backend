@@ -67,7 +67,7 @@ public class SecurityConfig {
 					.requestMatchers(
 //							"/api/authenticate/",
 //							"/api/real-estates/**",
-							"/api/**",
+//							"/api/**",
 							"/v3/api-docs/**",
 			                "/swagger-ui/**",
 			                "/swagger-resources/**",
@@ -99,7 +99,7 @@ public class SecurityConfig {
 					.sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			
 					.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-					.cors(cors -> cors.configurationSource(corsConfigurationSource()))
+//					.cors(cors -> cors.configurationSource(corsConfigurationSource()))
 					.csrf(csrf -> csrf.disable());
 		
 		logger.debug("Security filter chain configured");
