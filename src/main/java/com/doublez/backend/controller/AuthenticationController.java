@@ -1,6 +1,7 @@
 package com.doublez.backend.controller;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
@@ -10,6 +11,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -64,6 +66,18 @@ public class AuthenticationController {
 	    return ResponseEntity.ok(new AuthenticationResponse(jwt, roles));
 	    
 	   
+	}
+	
+	@GetMapping("/test-token")
+	public ResponseEntity<?> testTokenGeneration() {
+	    List<String> roles = List.of("ROLE_ADMIN");
+	    String token = jwtTokenUtil.generateToken("admin123@gmail.com", roles);
+	    
+	    return ResponseEntity.ok(Map.of(
+	        "token", token,
+	        "valid", jwtTokenUtil.validateToken(token, "admin123@gmail.com"),
+	        "claims", jwtTokenUtil.extractClaims(token)
+	    ));
 	}
 
 }

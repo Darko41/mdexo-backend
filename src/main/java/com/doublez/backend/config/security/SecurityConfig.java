@@ -68,6 +68,11 @@ public class SecurityConfig {
 					// Define public URLs (no authentication required)
 					.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 					.requestMatchers(
+							"/",
+			                "/index.html",
+			                "/static/**",
+			                "/assets/**",
+			                "/favicon.ico",
 							"/api/authenticate",
 //							"/api/real-estates/**",
 //							"/api/**",
