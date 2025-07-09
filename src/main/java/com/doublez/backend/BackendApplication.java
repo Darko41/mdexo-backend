@@ -19,18 +19,19 @@ public class BackendApplication {
 		SpringApplication.run(BackendApplication.class, args);
 	}
 	
-	@Bean
-    CommandLineRunner testConnection(DataSource dataSource) {
-        return args -> {
-            try (Connection conn = dataSource.getConnection()) {
-                System.out.println("✔ DATABASE CONNECTION SUCCESSFUL");
-                System.out.println("✔ URL: " + conn.getMetaData().getURL());
-                System.out.println("✔ Driver: " + conn.getMetaData().getDriverName());
-            } catch (Exception e) {
-                System.err.println("✖ DATABASE CONNECTION FAILED");
-                e.printStackTrace();
-            }
-        };
-    }
+	// Uncomment to check for database connection
+//	@Bean
+//    CommandLineRunner testConnection(DataSource dataSource) {
+//        return args -> {
+//            try (Connection conn = dataSource.getConnection()) {
+//                System.out.println("✔ DATABASE CONNECTION SUCCESSFUL");
+//                System.out.println("✔ URL: " + conn.getMetaData().getURL());
+//                System.out.println("✔ Driver: " + conn.getMetaData().getDriverName());
+//            } catch (Exception e) {
+//                System.err.println("✖ DATABASE CONNECTION FAILED");
+//                e.printStackTrace();
+//            }
+//        };
+//    }
 
 }

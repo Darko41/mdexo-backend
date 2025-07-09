@@ -24,6 +24,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import com.doublez.backend.service.user.CustomUserDetailsService;
 
+import jakarta.servlet.http.HttpServletResponse;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -66,7 +68,7 @@ public class SecurityConfig {
 					// Define public URLs (no authentication required)
 					.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 					.requestMatchers(
-//							"/api/authenticate/",
+							"/api/authenticate",
 //							"/api/real-estates/**",
 //							"/api/**",
 							"/v3/api-docs/**",
@@ -101,7 +103,12 @@ public class SecurityConfig {
 			
 					.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 					.cors(cors -> cors.configurationSource(corsConfigurationSource()))
-					.csrf(csrf -> csrf.disable());
+					.csrf(csrf -> csrf.disable())
+					.exceptionHandling(ex -> ex
+							.authenticationEntryPoint((request, response, authException) -> {
+								response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unautorized");
+							})
+					);
 		
 		logger.debug("Security filter chain configured");
 		
