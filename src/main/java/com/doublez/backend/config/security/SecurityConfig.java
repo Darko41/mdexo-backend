@@ -74,6 +74,7 @@ public class SecurityConfig {
 			                "/assets/**",
 			                "/favicon.ico",
 							"/api/authenticate",
+							"/api/users/register",
 //							"/api/real-estates/**",
 //							"/api/**",
 							"/v3/api-docs/**",
@@ -95,7 +96,7 @@ public class SecurityConfig {
 							).permitAll()
 					
 					// Define URLs that require specific role				
-					.requestMatchers("/api/admin/**", "admin/**").hasRole("ADMIN")							// TODO Resolve cors problems, why this works on Postman but not deployed
+					.requestMatchers("/api/admin/**", "/admin/**").hasRole("ADMIN")							
 					
 					// Define URLs that require authentication
 //					.requestMatchers("/api/**").authenticated()
