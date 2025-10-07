@@ -68,19 +68,27 @@ public class SecurityConfig {
 					// Define public URLs (no authentication required)
 					.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 					.requestMatchers(
-							"/",
-			                "/index.html",
+			                "/",
 			                "/static/**",
 			                "/assets/**",
+			                "/css/**",
+			                "/js/**",
+			                "/images/**",
 			                "/favicon.ico",
+			                "/manifest.json",
+			                "/robots.txt"
+			            ).permitAll()
+					.requestMatchers(
 							"/api/authenticate",
 							"/api/users/register",
-//							"/api/real-estates/**",
+							"/api/real-estates/**",
 //							"/api/**",
 							"/v3/api-docs/**",
 			                "/swagger-ui/**",
 			                "/swagger-resources/**",
-			                "/webjars/**"
+			                "/webjars/**",
+			                "/auth/login",
+			                "/auth/logout"
 //			                "/api/users/**",
 //			                "/api/agents/**"
 //							"/api/email/send-email",
@@ -96,7 +104,9 @@ public class SecurityConfig {
 							).permitAll()
 					
 					// Define URLs that require specific role				
-					.requestMatchers("/api/admin/**", "/admin/**").hasRole("ADMIN")							
+					.requestMatchers("/admin/**").hasRole("ADMIN")
+					
+					.requestMatchers("/api/admin/**").hasRole("ADMIN")
 					
 					// Define URLs that require authentication
 //					.requestMatchers("/api/**").authenticated()
@@ -105,6 +115,20 @@ public class SecurityConfig {
 					.anyRequest().authenticated()
 //					.anyRequest().permitAll()
 					)
+			.formLogin(form -> form
+		            .loginPage("/auth/login")  // Make sure this matches your actual login path
+		            .loginProcessingUrl("/auth/login")  // Add this line
+		            .defaultSuccessUrl("/admin/dashboard")  // Fixed missing slash
+		            .failureUrl("/auth/login?error")  // Add error handling
+		            .permitAll()
+		        )
+			.logout(logout -> logout
+		            .logoutUrl("/auth/logout")
+		            .logoutSuccessUrl("/auth/login")
+		            .invalidateHttpSession(true)
+		            .deleteCookies("JSESSIONID", "JWT")  // Add JWT cookie if using
+		            .permitAll()
+		        )
 					.sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			
 					.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
@@ -126,7 +150,8 @@ public class SecurityConfig {
 		CorsConfiguration configuration = new CorsConfiguration();
 		configuration.setAllowedOrigins(Arrays.asList(
 		        "http://localhost:5173", 
-		        "https://mdexo-frontend.onrender.com"
+		        "https://mdexo-frontend.onrender.com",
+		        "http://localhost:8080"
 		    ));
 		configuration.setAllowedMethods(Arrays.asList("*"));
 		configuration.setAllowedHeaders(Arrays.asList("*"));

@@ -12,20 +12,13 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // Handle static resources
-        registry.addResourceHandler("/**")
+        // This is for the dashboard's static resources, which are in static/
+        // We don't need to add anything because Spring Boot already handles classpath:/static/
+        // But if you want to explicitly configure, you can do:
+        registry.addResourceHandler("/static/**")
                 .addResourceLocations("classpath:/static/")
                 .setCachePeriod(3600);
-        
-        // Explicit favicon configuration
-        registry.addResourceHandler("/favicon.ico")
-                .addResourceLocations("classpath:/static/favicon.ico");
     }
 
-    @Override
-    public void addViewControllers(ViewControllerRegistry registry) {
-        // Default view controller
-        registry.addViewController("/").setViewName("forward:/index.html");
-    }
-
+    // No view controllers for the root, because the root is handled by the React dev server.
 }
