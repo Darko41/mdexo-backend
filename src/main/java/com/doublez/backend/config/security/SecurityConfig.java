@@ -76,7 +76,10 @@ public class SecurityConfig {
 			                "/images/**",
 			                "/favicon.ico",
 			                "/manifest.json",
-			                "/robots.txt"
+			                "/robots.txt",
+			                "/dist/**",           
+			                "/plugins/**",          
+			                "/pages/**"          
 			            ).permitAll()
 					.requestMatchers(
 							"/api/authenticate",
@@ -88,7 +91,9 @@ public class SecurityConfig {
 			                "/swagger-resources/**",
 			                "/webjars/**",
 			                "/auth/login",
-			                "/auth/logout"
+			                "/auth/logout",
+			                "/admin/login",
+			                "/admin/**"
 //			                "/api/users/**",
 //			                "/api/agents/**"
 //							"/api/email/send-email",
@@ -104,7 +109,7 @@ public class SecurityConfig {
 							).permitAll()
 					
 					// Define URLs that require specific role				
-					.requestMatchers("/admin/**").hasRole("ADMIN")
+//					.requestMatchers("/admin/**").hasRole("ADMIN")
 					
 					.requestMatchers("/api/admin/**").hasRole("ADMIN")
 					
@@ -115,7 +120,7 @@ public class SecurityConfig {
 					.anyRequest().authenticated()
 //					.anyRequest().permitAll()
 					)
-			.formLogin(form -> form
+			/*.formLogin(form -> form
 		            .loginPage("/auth/login")  // Make sure this matches your actual login path
 		            .loginProcessingUrl("/auth/login")  // Add this line
 		            .defaultSuccessUrl("/admin/dashboard")  // Fixed missing slash
@@ -129,6 +134,7 @@ public class SecurityConfig {
 		            .deleteCookies("JSESSIONID", "JWT")  // Add JWT cookie if using
 		            .permitAll()
 		        )
+		     */
 					.sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			
 					.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

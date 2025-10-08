@@ -302,4 +302,16 @@ public class UserService {
     	return userRepository.findById(id)
     			.orElseThrow(() -> new UserNotFoundException(id));
     }
+    
+    public boolean hasAdminRole(String email) {
+        return userRepository.findByEmail(email)
+                .map(user -> user.getRoles().stream()
+                        .anyMatch(role -> "ROLE_ADMIN".equals(role.getName())))
+                .orElse(false);
+    }
+
+    public boolean isAdmin(User user) {
+        return user.getRoles().stream()
+                .anyMatch(role -> "ROLE_ADMIN".equals(role.getName()));
+    }
 }

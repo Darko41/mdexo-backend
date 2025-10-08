@@ -38,14 +38,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         "/v3/api-docs/**",
         "/swagger-ui/**",
         "/swagger-resources/**",
-        "/webjars/**"
+        "/webjars/**",
+        "/admin/**"  
     );
 
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     public JwtAuthenticationFilter(JwtTokenUtil jwtTokenUtil, UserDetailsService userDetailsService) {
         this.jwtTokenUtil = jwtTokenUtil;
-        this.userDetailsService = userDetailsService;
+        this.userDetailsService = userDetailsService; // Your CustomUserDetailsService is injected here
     }
 
     @Override
@@ -53,15 +54,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         final String requestURI = request.getRequestURI();
+        logger.debug("🛡️ JWT Filter processing: {}", requestURI);
 
         if (shouldSkipAuthentication(request)) {
+            logger.debug("✅ Skipping JWT filter for: {}", requestURI);
             filterChain.doFilter(request, response);
             return;
-        }
-        
-        if (request.getServletPath().equals("/api/authenticate")) {
-        	filterChain.doFilter(request, response);
-        	return;
         }
 
         try {
@@ -119,7 +117,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return true;
         }
 
-        return EXCLUDED_PATHS.stream().anyMatch(pattern -> pathMatcher.match(pattern, requestURI));
+        // Skip authentication for excluded paths
+        boolean shouldSkip = EXCLUDED_PATHS.stream().anyMatch(pattern -> pathMatcher.match(pattern, requestURI));
+        if (shouldSkip) {
+            logger.debug("✅ JWT filter skipping: {}", requestURI);
+        }
+        return shouldSkip;
     }
 
     private String getJwtFromRequest(HttpServletRequest request) {
