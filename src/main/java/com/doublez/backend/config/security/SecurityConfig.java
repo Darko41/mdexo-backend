@@ -1,5 +1,6 @@
 package com.doublez.backend.config.security;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -23,7 +24,9 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import com.doublez.backend.service.user.CustomUserDetailsService;
+import com.doublez.backend.service.user.UserService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.util.Arrays;
@@ -93,11 +96,10 @@ public class SecurityConfig {
 			                "/auth/login",
 			                "/auth/logout",
 			                "/admin/login",
-			                "/admin/**"
+			                "/admin/access"
 //			                "/api/users/**",
 //			                "/api/agents/**"
 //							"/api/email/send-email",
-//							"/api/db-status",
 //							"/admin/**",
 //							"/dist/**",
 //							"/pages/**",
@@ -109,46 +111,47 @@ public class SecurityConfig {
 							).permitAll()
 					
 					// Define URLs that require specific role				
-//					.requestMatchers("/admin/**").hasRole("ADMIN")
-					
-					.requestMatchers("/api/admin/**").hasRole("ADMIN")
-					
+					.requestMatchers("/admin/**").hasRole("ADMIN")
 					// Define URLs that require authentication
-//					.requestMatchers("/api/**").authenticated()
+					.requestMatchers("/api/real-estates/create").authenticated()
+		            .requestMatchers("/api/real-estates/update/**").authenticated()
+		            .requestMatchers("/api/real-estates/delete/**").authenticated()
+		            .requestMatchers("/api/admin/**").hasRole("ADMIN")
 					
 					// Any other request must be authenticated
 					.anyRequest().authenticated()
-//					.anyRequest().permitAll()
 					)
-			/*.formLogin(form -> form
-		            .loginPage("/auth/login")  // Make sure this matches your actual login path
-		            .loginProcessingUrl("/auth/login")  // Add this line
-		            .defaultSuccessUrl("/admin/dashboard")  // Fixed missing slash
-		            .failureUrl("/auth/login?error")  // Add error handling
-		            .permitAll()
-		        )
-			.logout(logout -> logout
-		            .logoutUrl("/auth/logout")
-		            .logoutSuccessUrl("/auth/login")
-		            .invalidateHttpSession(true)
-		            .deleteCookies("JSESSIONID", "JWT")  // Add JWT cookie if using
-		            .permitAll()
-		        )
-		     */
-					.sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-			
-					.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-					.cors(cors -> cors.configurationSource(corsConfigurationSource()))
-					.csrf(csrf -> csrf.disable())
-					.exceptionHandling(ex -> ex
-							.authenticationEntryPoint((request, response, authException) -> {
-								response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unautorized");
-							})
-					);
-		
-		logger.debug("Security filter chain configured");
-		
-		return http.build();
+			.formLogin(form -> form
+	                .loginPage("/auth/login")
+	                .loginProcessingUrl("/auth/login")
+	                .defaultSuccessUrl("/auth/success") // Redirect to success handler
+	                .failureUrl("/auth/login?error")
+	                .permitAll()
+	            )
+	            .logout(logout -> logout
+	                .logoutUrl("/auth/logout")
+	                .logoutSuccessUrl("/auth/login")
+	                .invalidateHttpSession(true)
+	                .deleteCookies("JSESSIONID")
+	            )
+	            .sessionManagement(sess -> sess
+	                    .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+	                )
+	                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+	                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+	                .csrf(csrf -> csrf.disable())
+	                .exceptionHandling(ex -> ex
+	                    .authenticationEntryPoint((request, response, authException) -> {
+	                        String requestUri = request.getRequestURI();
+	                        if (requestUri.startsWith("/api/")) {
+	                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+	                        } else {
+	                            response.sendRedirect("/auth/login");
+	                        }
+	                    })
+	                );
+	            
+	            return http.build();
 	}
 	
 	@Bean

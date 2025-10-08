@@ -3,10 +3,12 @@ package com.doublez.backend.controller;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -24,71 +26,71 @@ import jakarta.servlet.http.HttpServletRequest;
 @Controller
 @RequestMapping("/admin")
 public class AdminController {
-	
-	@Autowired
-	private RealEstateService realEstateService;
-	@Autowired
-	private UserService userService;
-	@Autowired
-	private JwtTokenUtil jwtTokenUtil;
-	
-	@GetMapping("/dashboard")
-	public String showAdminDashboard(Model model,
-	                                @RequestParam(name = "token", required = false) String tokenParam,
-	                                HttpServletRequest request) {
-	    
-	    System.out.println("🛠️ Admin dashboard accessed");
-	    
-	    // Check token from URL parameter
-	    if (tokenParam != null) {
-	        try {
-	            String email = jwtTokenUtil.extractEmail(tokenParam);
-	            if (jwtTokenUtil.validateToken(tokenParam, email) && 
-	                userService.hasAdminRole(email)) { // Now this method exists
-	                
-	                // Create session for this admin session
-	                request.getSession().setAttribute("adminUser", email);
-	                System.out.println("✅ Admin authenticated via token: " + email);
-	                return setupDashboard(model);
-	            } else {
-	                System.out.println("❌ User is not an admin: " + email);
-	            }
-	        } catch (Exception e) {
-	            System.out.println("❌ Invalid admin token: " + e.getMessage());
-	        }
-	    }
-	    
-	    // Check existing session
-	    String adminUser = (String) request.getSession().getAttribute("adminUser");
-	    if (adminUser != null && userService.hasAdminRole(adminUser)) {
-	        System.out.println("✅ Admin session found for: " + adminUser);
-	        return setupDashboard(model);
-	    }
-	    
-	    // No valid auth - redirect to React login
-	    System.out.println("❌ No admin auth, redirecting to React");
-	    return "redirect:http://localhost:5173/login";
-	}
     
+    @Autowired
+    private RealEstateService realEstateService;
+    @Autowired
+    private UserService userService;
+    @Autowired
+    private JwtTokenUtil jwtTokenUtil;
+
+    // Show admin login page (uses existing auth/login.html)
+    @GetMapping("/login")
+    public String showAdminLoginPage(Model model) {
+        model.addAttribute("adminLogin", true);
+        return "auth/login"; // Use existing login page
+    }
+
+    // Process admin login - redirects to form login
+    @GetMapping("/access")
+    public String adminAccessRedirect() {
+        return "redirect:/admin/login";
+    }
+
+    // Secure all admin pages with session check
+    @GetMapping("/dashboard")
+    public String showAdminDashboard(Model model, HttpServletRequest request) {
+        if (!isAdminAuthenticated(request)) {
+            return "redirect:/admin/login";
+        }
+        
+        String adminUser = (String) request.getSession().getAttribute("adminUser");
+        System.out.println("🛠️ Admin dashboard accessed by: " + adminUser);
+        return setupDashboard(model);
+    }
+
+    @GetMapping("/users")
+    public String showUserData(Model model, HttpServletRequest request) {
+        if (!isAdminAuthenticated(request)) {
+            return "redirect:/admin/login";
+        }
+        
+        List<UserResponseDTO> users = userService.getAllUsers();
+        model.addAttribute("users", users);
+        return "admin/userdata";
+    }
+
+    @GetMapping("/real-estates")
+    public String showRealEstatesData(Model model, HttpServletRequest request) {
+        if (!isAdminAuthenticated(request)) {
+            return "redirect:/admin/login";
+        }
+        
+        List<RealEstateResponseDTO> realEstates = realEstateService.getAllRealEstates();
+        model.addAttribute("realEstates", realEstates);
+        return "admin/realestatedata";
+    }
+
+    // Helper methods
+    private boolean isAdminAuthenticated(HttpServletRequest request) {
+        String adminUser = (String) request.getSession().getAttribute("adminUser");
+        return adminUser != null && userService.hasAdminRole(adminUser);
+    }
+
     private String setupDashboard(Model model) {
         model.addAttribute("realEstateCount", realEstateService.getRealEstateCount());
         model.addAttribute("userCount", userService.getUserCount());
         model.addAttribute("agentCount", userService.getAgentCount());
         return "admin/dashboard";
-	}
-	
-	@GetMapping("/users")
-	public String showUserData(Model model) {
-		List<UserResponseDTO> users = userService.getAllUsers();
-		model.addAttribute("users", users);
-		return "admin/userdata";
-	}
-	
-	@GetMapping("/real-estates")
-	public String showRealEstatesData(Model model) {
-	    List<RealEstateResponseDTO> realEstates = realEstateService.getAllRealEstates();
-	    model.addAttribute("realEstates", realEstates);
-	    return "admin/realestatedata";
-	}
-	
+    }
 }

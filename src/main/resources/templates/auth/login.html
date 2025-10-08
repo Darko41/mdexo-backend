@@ -1,29 +1,75 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-  <!-- Your existing head content -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Login</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" th:href="@{/plugins/bootstrap/css/bootstrap.min.css}">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" th:href="@{/plugins/fontawesome-free/css/all.min.css}">
+    <!-- AdminLTE Theme -->
+    <link rel="stylesheet" th:href="@{/dist/css/adminlte.min.css}">
 </head>
 <body class="hold-transition login-page">
 <div class="login-box">
-  <!-- ... existing content ... -->
-  
-  <!-- Modified form -->
-  <form th:action="@{/auth/login}" method="post">
-    <div class="input-group mb-3">
-      <input type="email" name="username" class="form-control" placeholder="Email">
-      <!-- ... -->
+    <div class="login-logo">
+        <b>Admin</b>Portal
     </div>
-    <div class="input-group mb-3">
-      <input type="password" name="password" class="form-control" placeholder="Password">
-      <!-- ... -->
-    </div>
-    <!-- ... -->
-  </form>
+    
+    <div class="card">
+        <div class="card-body login-card-body">
+            <p class="login-box-msg" th:text="${adminLogin != null ? 'Admin Sign In' : 'Sign in to start your session'}"></p>
 
-  <!-- Add error message display -->
-  <div th:if="${param.error}" class="alert alert-danger">
-    Invalid username or password
-  </div>
+            <!-- Unified login form for both regular users and admin -->
+            <form th:action="@{/auth/login}" method="post">
+                <div class="input-group mb-3">
+                    <input type="email" name="username" class="form-control" placeholder="Email" required>
+                    <div class="input-group-append">
+                        <div class="input-group-text">
+                            <span class="fas fa-envelope"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="input-group mb-3">
+                    <input type="password" name="password" class="form-control" placeholder="Password" required>
+                    <div class="input-group-append">
+                        <div class="input-group-text">
+                            <span class="fas fa-lock"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <span th:text="${adminLogin != null ? 'Admin Sign In' : 'Sign In'}"></span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Hidden field to indicate admin login -->
+                <input type="hidden" name="adminLogin" th:value="${adminLogin}">
+            </form>
+
+            <!-- Error message -->
+            <div th:if="${param.error}" class="alert alert-danger mt-3" role="alert">
+                Invalid username or password
+            </div>
+
+            <p class="mb-1 mt-3">
+                <a th:href="${adminLogin != null ? '/' : '/admin/login'}">
+                    <span th:text="${adminLogin != null ? 'Back to Main Site' : 'Admin Login'}"></span>
+                </a>
+            </p>
+        </div>
+    </div>
 </div>
+
+<!-- jQuery -->
+<script th:src="@{/plugins/jquery/jquery.min.js}"></script>
+<!-- Bootstrap 4 -->
+<script th:src="@{/plugins/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<!-- AdminLTE App -->
+<script th:src="@{/dist/js/adminlte.min.js}"></script>
 </body>
 </html>
