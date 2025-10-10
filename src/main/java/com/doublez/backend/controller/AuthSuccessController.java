@@ -23,7 +23,6 @@ public class AuthSuccessController {
             
             try {
                 if (userService.hasAdminRole(email)) {
-                    // Set admin session and redirect to admin dashboard
                     request.getSession().setAttribute("adminUser", email);
                     return "redirect:/admin/dashboard";
                 }
@@ -31,7 +30,7 @@ public class AuthSuccessController {
                 System.out.println("❌ Error checking admin role: " + e.getMessage());
             }
             
-            // Regular user - redirect to React app home
+            // For regular users accessing via form login
             return "redirect:/";
         }
         

@@ -314,4 +314,9 @@ public class UserService {
         return user.getRoles().stream()
                 .anyMatch(role -> "ROLE_ADMIN".equals(role.getName()));
     }
+    
+    public User getUserEntityByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+    }
 }
