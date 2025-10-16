@@ -19,7 +19,6 @@ import com.doublez.backend.dto.RealEstateCreateDTO;
 import com.doublez.backend.dto.RealEstateResponseDTO;
 import com.doublez.backend.dto.RealEstateUpdateDTO;
 import com.doublez.backend.service.realestate.RealEstateAgentAssignmentService;
-import com.doublez.backend.service.realestate.RealEstateImageService;
 import com.doublez.backend.service.realestate.RealEstateService;
 
 import jakarta.validation.Valid;

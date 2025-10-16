@@ -2,7 +2,6 @@ package com.doublez.backend.controller;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,7 +29,10 @@ import com.doublez.backend.dto.UserResponseDTO;
 import com.doublez.backend.dto.UserUpdateDTO;
 import com.doublez.backend.entity.ListingType;
 import com.doublez.backend.entity.PropertyType;
-import com.doublez.backend.request.RealEstateRequest;
+import com.doublez.backend.exception.IllegalOperationException;
+import com.doublez.backend.exception.SelfDeletionException;
+import com.doublez.backend.exception.UserNotFoundException;
+import com.doublez.backend.response.ApiResponse;
 import com.doublez.backend.service.realestate.RealEstateService;
 import com.doublez.backend.service.user.UserService;
 
@@ -131,9 +133,19 @@ public class AdminApiController {
     }
 
     @DeleteMapping("/users/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-        userService.deleteUser(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<ApiResponse<String>> deleteUser(@PathVariable Long id) {
+        try {
+            userService.deleteUser(id);
+            return ResponseEntity.ok(ApiResponse.success("User deleted successfully"));
+        } catch (IllegalOperationException | SelfDeletionException e) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error(e.getMessage()));
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponse.error("Failed to delete user: " + e.getMessage()));
+        }
     }
     
     

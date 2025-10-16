@@ -129,21 +129,38 @@ public class UserService {
         }
 
         // 2. Prevent removing last admin
-        if (targetUser.isAdmin() && 
-            userRepository.countByRoles_Name("ROLE_ADMIN") <= 1) {
+        long adminCount = userRepository.countByRoles_Name("ROLE_ADMIN");
+        if (targetUser.isAdmin() && adminCount <= 1) {
             throw new IllegalOperationException("System must have at least one admin");
         }
         
-        User replacementAdmin = userRepository.findFirstByRoles_Name("ROLE_ADMIN")
-        		.filter(admin -> !admin.getId().equals(targetUser.getId()))	// exclude current user
-                .orElseThrow(() -> new IllegalOperationException("No replacement admin found"));
+        // 3. Handle property reassignment for admins
+        if (targetUser.isAdmin()) {
+            // Find all admins excluding the target user
+            List<User> otherAdmins = userRepository.findByRoleName("ROLE_ADMIN")
+                    .stream()
+                    .filter(admin -> !admin.getId().equals(targetUser.getId()))
+                    .collect(Collectors.toList());
+            
+            if (!otherAdmins.isEmpty()) {
+                // Use the first available admin as replacement
+                User replacementAdmin = otherAdmins.get(0);
+                
+                // Reassign properties only if the admin owns any properties
+                if (realEstateRepository.existsByOwner(targetUser)) {
+                    realEstateRepository.reassignAllPropertiesFromUser(targetUser.getId(), replacementAdmin.getId());
+                    System.out.println("✅ Reassigned properties from user " + targetUser.getId() + " to admin " + replacementAdmin.getId());
+                }
+            } else {
+                // This should not happen due to the admin count check above
+                throw new IllegalOperationException("No replacement admin available for property reassignment");
+            }
+        }
 
-            // Reassign properties
-            realEstateRepository.reassignAllPropertiesFromUser(targetUser.getId(), replacementAdmin.getId());
-
-        // 3. Gracefully handle case where user might own real estates
+        // 4. Delete the user
         try {
             userRepository.delete(targetUser);
+            System.out.println("✅ Successfully deleted user: " + targetUser.getEmail());
         } catch (DataIntegrityViolationException e) {
             throw new IllegalOperationException("Cannot delete user: may be referenced by existing properties");
         }

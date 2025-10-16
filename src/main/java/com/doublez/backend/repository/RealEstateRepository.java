@@ -35,5 +35,7 @@ public interface RealEstateRepository extends JpaRepository<RealEstate, Long>, J
 		       "LOWER(re.description) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
 		       "LOWER(re.address) LIKE LOWER(CONCAT('%', :searchTerm, '%'))")
 	Page<RealEstate> fullTextSearch(@Param("searchTerm") String searchTerm, Pageable pageable);
+	
+	
 
 }
