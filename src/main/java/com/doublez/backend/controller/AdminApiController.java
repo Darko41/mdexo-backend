@@ -51,15 +51,13 @@ public class AdminApiController {
 
     // Real Estate Endpoints
     
-    @PostMapping(value = "/real-estates/with-images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<RealEstateResponseDTO> createRealEstateWithImages(
+    @PostMapping(value = "/real-estates", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<RealEstateResponseDTO> createRealEstate(
             @RequestPart @Valid RealEstateCreateDTO createDto,
             @RequestPart(required = false) MultipartFile[] images) {
         
-        RealEstateResponseDTO response = realEstateService.createWithImages(
-            createDto, 
-            images != null ? images : new MultipartFile[0]
-        );
+        // Use the new unified method instead of the deleted createWithImages
+        RealEstateResponseDTO response = realEstateService.createRealEstateForUser(createDto, images);
         return ResponseEntity
             .status(HttpStatus.CREATED)
             .header("Location", "/api/real-estates/" + response.getPropertyId())

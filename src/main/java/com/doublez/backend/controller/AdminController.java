@@ -3,20 +3,13 @@ package com.doublez.backend.controller;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
-import com.doublez.backend.config.security.JwtTokenUtil;
 import com.doublez.backend.dto.RealEstateResponseDTO;
 import com.doublez.backend.dto.UserResponseDTO;
-import com.doublez.backend.entity.RealEstate;
 import com.doublez.backend.service.realestate.RealEstateService;
 import com.doublez.backend.service.user.UserService;
 
@@ -31,8 +24,6 @@ public class AdminController {
     private RealEstateService realEstateService;
     @Autowired
     private UserService userService;
-    @Autowired
-    private JwtTokenUtil jwtTokenUtil;
 
     // Show admin login page (uses existing auth/login.html)
     @GetMapping("/login")

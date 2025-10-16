@@ -27,11 +27,9 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping("/api/real-estates")
 @PreAuthorize("hasAnyRole('ADMIN', 'USER', 'AGENT')")
-//@CrossOrigin		TODO TRY THIS!
 public class RealEstateAuthUserApiController {
     private final RealEstateService realEstateService;
     private final RealEstateAgentAssignmentService assignmentService;
-//    private static final Logger logger = LoggerFactory.getLogger(RealEstateAuthUserApiController.class);
 
     public RealEstateAuthUserApiController(RealEstateService realEstateService,
                                  RealEstateAgentAssignmentService assignmentService) {
@@ -39,31 +37,45 @@ public class RealEstateAuthUserApiController {
         this.assignmentService = assignmentService;
     }
 
-    // TODO Test this
-    @PostMapping(value = "/with-images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<RealEstateResponseDTO> createWithImages(
+    // Unified create endpoint - handles both with and without images
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("@realEstateAuthorizationService.hasRealEstateCreateAccess()")
+    public ResponseEntity<RealEstateResponseDTO> createRealEstate(
             @RequestPart @Valid RealEstateCreateDTO createDto,
             @RequestPart(required = false) MultipartFile[] images) {
         
-        RealEstateResponseDTO response = realEstateService.createWithImages(
-            createDto, 
-            images != null ? images : new MultipartFile[0]
-        );
+        RealEstateResponseDTO response = realEstateService.createRealEstate(createDto, images);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .header("Location", "/api/real-estates/" + response.getPropertyId())
+                .body(response);
+    }
+    
+ // Agent/Admin creating listing for other users
+    @PostMapping(value = "/for-user", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('ADMIN') or hasRole('AGENT')")
+    public ResponseEntity<RealEstateResponseDTO> createRealEstateForUser(
+            @RequestPart @Valid RealEstateCreateDTO createDto,
+            @RequestPart(required = false) MultipartFile[] images) {
+        
+        RealEstateResponseDTO response = realEstateService.createRealEstateForUser(createDto, images);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .header("Location", "/api/real-estates/" + response.getPropertyId())
                 .body(response);
     }
 
-    // Create real estate as authenticated user, agent or admin
-    @PostMapping
+    // Keep the JSON-only endpoint for backward compatibility
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("@realEstateAuthorizationService.hasRealEstateCreateAccess()")
-    public ResponseEntity<RealEstateResponseDTO> createRealEstate(
+    public ResponseEntity<RealEstateResponseDTO> createRealEstateJson(
             @RequestBody @Valid RealEstateCreateDTO createDto) {
-        RealEstateResponseDTO response = realEstateService.createRealEstate(createDto);
+        // Call the same service method but with no images
+        RealEstateResponseDTO response = realEstateService.createRealEstate(createDto, null);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .header("Location", "/api/real-estates/" + response.getPropertyId())
                 .body(response);
     }
+
+    // Remove the old createWithImages method entirely
 
     @DeleteMapping("/{propertyId}")
     @PreAuthorize("@realEstateAuthorizationService.canDeleteRealEstate(#propertyId)")

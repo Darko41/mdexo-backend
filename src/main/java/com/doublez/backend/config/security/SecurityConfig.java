@@ -60,95 +60,100 @@ public class SecurityConfig {
 	
 	@Bean
 	SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-		http
-			.authorizeHttpRequests((authz) -> authz
-					// Define public URLs (no authentication required)
-					.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-					.requestMatchers(
-			                "/",
-			                "/static/**",
-			                "/assets/**",
-			                "/css/**",
-			                "/js/**",
-			                "/images/**",
-			                "/favicon.ico",
-			                "/manifest.json",
-			                "/robots.txt",
-			                "/dist/**",           
-			                "/plugins/**",          
-			                "/pages/**"          
-			            ).permitAll()
-					.requestMatchers(
-							"/api/authenticate",
-							"/api/users/register",
-							"/api/auth/authenticate",
-							"/api/auth/current-user",
-							"/api/real-estates/**",
-//							"/api/**",
-							"/v3/api-docs/**",
-			                "/swagger-ui/**",
-			                "/swagger-resources/**",
-			                "/webjars/**",
-			                "/auth/login",
-			                "/auth/logout",
-			                "/auth/success",
-			                "/admin/login",
-			                "/admin/access"
-//			                "/api/users/**",
-//			                "/api/agents/**"
-//							"/api/email/send-email",
-//							"/admin/**",
-//							"/dist/**",
-//							"/pages/**",
-//							"/plugins/**",
-//							"/static/**",
-//							"/admin/**",
-//							"/api/users/**",
-//							"/api/real-estates/**"
-							).permitAll()
-					
-					// Define URLs that require specific role				
-					.requestMatchers("/admin/**").hasRole("ADMIN")
-					// Define URLs that require authentication
-					.requestMatchers("/api/real-estates/create").authenticated()
-		            .requestMatchers("/api/real-estates/update/**").authenticated()
-		            .requestMatchers("/api/real-estates/delete/**").authenticated()
-		            .requestMatchers("/api/admin/**").hasRole("ADMIN")
-					
-					// Any other request must be authenticated
-					.anyRequest().authenticated()
-					)
-			.formLogin(form -> form
-	                .loginPage("/auth/login")
-	                .loginProcessingUrl("/auth/login")
-	                .defaultSuccessUrl("/auth/success") // Redirect to success handler
-	                .failureUrl("/auth/login?error")
-	                .permitAll()
-	            )
-	            .logout(logout -> logout
-	                .logoutUrl("/auth/logout")
-	                .logoutSuccessUrl("/auth/login")
-	                .invalidateHttpSession(true)
-	                .deleteCookies("JSESSIONID")
-	            )
-	            .sessionManagement(sess -> sess
-	                    .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-	                )
-	                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-	                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-	                .csrf(csrf -> csrf.disable())
-	                .exceptionHandling(ex -> ex
-	                    .authenticationEntryPoint((request, response, authException) -> {
-	                        String requestUri = request.getRequestURI();
-	                        if (requestUri.startsWith("/api/")) {
-	                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
-	                        } else {
-	                            response.sendRedirect("/auth/login");
-	                        }
-	                    })
-	                );
+	    http
+	        .authorizeHttpRequests((authz) -> authz
+	            // Define public URLs (no authentication required)
+	            .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+	            .requestMatchers(
+	                "/",
+	                "/static/**",
+	                "/assets/**", 
+	                "/css/**",
+	                "/js/**",
+	                "/images/**",
+	                "/favicon.ico",
+	                "/manifest.json", 
+	                "/robots.txt",
+	                "/dist/**",           
+	                "/plugins/**",          
+	                "/pages/**",
+	                "/v3/api-docs/**",
+	                "/swagger-ui/**",
+	                "/swagger-resources/**",
+	                "/webjars/**"
+	            ).permitAll()
 	            
-	            return http.build();
+	            // Public API endpoints
+	            .requestMatchers(
+	                "/api/users/register",
+	                "/api/auth/authenticate"
+	            ).permitAll()
+	            
+	            // Public real estate endpoints (search and get by ID)
+	            .requestMatchers(HttpMethod.GET, "/api/real-estates/search").permitAll()
+	            .requestMatchers(HttpMethod.GET, "/api/real-estates/*").permitAll()
+	            
+	            // Public auth endpoints for admin login
+	            .requestMatchers(
+	                "/auth/**",
+	                "/admin/login", 
+	                "/admin/access"
+	            ).permitAll()
+	            
+	            // PROTECTED real estate endpoints (JWT authentication)
+	            .requestMatchers(HttpMethod.POST, "/api/real-estates").authenticated()
+	            .requestMatchers(HttpMethod.POST, "/api/real-estates/with-images").authenticated()
+	            .requestMatchers(HttpMethod.PUT, "/api/real-estates/**").authenticated()
+	            .requestMatchers(HttpMethod.DELETE, "/api/real-estates/**").authenticated()
+	            
+	            // Admin API endpoints (JWT + ROLE_ADMIN)
+	            .requestMatchers("/api/admin/**").hasRole("ADMIN")
+	            
+	            // General API protection (JWT)
+	            .requestMatchers("/api/**").authenticated()
+	            
+	            // Admin dashboard endpoints (Session + ROLE_ADMIN)  
+	            .requestMatchers("/admin/**").hasRole("ADMIN")
+	            
+	            // Any other request must be authenticated
+	            .anyRequest().authenticated()
+	        )
+	        // Form login ONLY for admin pages (session-based)
+	        .formLogin(form -> form
+	            .loginPage("/auth/login")
+	            .loginProcessingUrl("/auth/login") 
+	            .defaultSuccessUrl("/auth/success")
+	            .failureUrl("/auth/login?error")
+	            .permitAll()
+	        )
+	        // Logout ONLY for admin pages (session-based)
+	        .logout(logout -> logout
+	            .logoutUrl("/auth/logout")
+	            .logoutSuccessUrl("/auth/login")
+	            .invalidateHttpSession(true)
+	            .deleteCookies("JSESSIONID")
+	        )
+	        .sessionManagement(sess -> sess
+	            .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+	        )
+	        // JWT filter for API requests
+	        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+	        .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+	        .csrf(csrf -> csrf.disable())
+	        .exceptionHandling(ex -> ex
+	            .authenticationEntryPoint((request, response, authException) -> {
+	                String requestUri = request.getRequestURI();
+	                if (requestUri.startsWith("/api/")) {
+	                    // API calls get 401 (JWT)
+	                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+	                } else {
+	                    // Web pages get redirect to login (Session)
+	                    response.sendRedirect("/auth/login");
+	                }
+	            })
+	        );
+	    
+	    return http.build();
 	}
 	
 	@Bean

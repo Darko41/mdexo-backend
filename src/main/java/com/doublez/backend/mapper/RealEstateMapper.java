@@ -36,10 +36,6 @@ public class RealEstateMapper {
         
         return entity;
     }
-    
-    public RealEstate toEntity(RealEstateCreateDTO createDto, User owner) {
-    	return toEntity(createDto, owner, null);
-    }
 
     public RealEstateResponseDTO toResponseDto(RealEstate entity) {
         if (entity == null) return null;

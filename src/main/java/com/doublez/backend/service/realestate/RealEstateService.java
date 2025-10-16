@@ -3,6 +3,7 @@ package com.doublez.backend.service.realestate;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -180,15 +181,21 @@ public class RealEstateService {
             listingType != null ? cb.equal(root.get("listingType"), listingType) : null;
     }
 
-    public RealEstateResponseDTO createRealEstate(RealEstateCreateDTO createDto) {
-        
-    	User currentUser = userService.getAuthenticatedUser();
-        
+    public RealEstateResponseDTO createRealEstate(RealEstateCreateDTO createDto, MultipartFile[] images) {
+        User currentUser = userService.getAuthenticatedUser();
         User owner = resolveOwner(createDto.getOwnerId(), currentUser);
         
-        RealEstate entity = realEstateMapper.toEntity(createDto, owner);
+        // Handle image upload if provided
+        List<String> imageUrls = Collections.emptyList();
+        if (images != null && images.length > 0) {
+            imageUrls = realEstateImageService.uploadRealEstateImages(images);
+        }
+        
+        RealEstate entity = realEstateMapper.toEntity(createDto, owner, imageUrls);
         entity.setCreatedAt(LocalDate.now());
-        return realEstateMapper.toResponseDto(realEstateRepository.save(entity));
+        
+        RealEstate saved = realEstateRepository.save(entity);
+        return realEstateMapper.toResponseDto(saved);
     }
     
     private User resolveOwner(@Nullable Long ownerId, User currentUser) {
@@ -207,15 +214,20 @@ public class RealEstateService {
     }
     
     @PreAuthorize("hasRole('ADMIN') or hasRole('AGENT')")
-    public RealEstateResponseDTO createRealEstateForUser(RealEstateCreateDTO createDto) {
+    public RealEstateResponseDTO createRealEstateForUser(RealEstateCreateDTO createDto, MultipartFile[] images) {
+        User currentUser = userService.getAuthenticatedUser();
         
-    	User currentUser = userService.getAuthenticatedUser();
-    	
         User owner = (createDto.getOwnerId() != null && isAdminOrAgent(currentUser))
-        		? userService.getUserEntityById(createDto.getOwnerId())
-        		: currentUser;
-        RealEstate entity = realEstateMapper.toEntity(createDto, owner);
+                ? userService.getUserEntityById(createDto.getOwnerId())
+                : currentUser;
         
+        // Handle image upload if provided
+        List<String> imageUrls = Collections.emptyList();
+        if (images != null && images.length > 0) {
+            imageUrls = realEstateImageService.uploadRealEstateImages(images);
+        }
+        
+        RealEstate entity = realEstateMapper.toEntity(createDto, owner, imageUrls);
         entity.setCreatedAt(LocalDate.now());
         RealEstate saved = realEstateRepository.save(entity);
         return realEstateMapper.toResponseDto(saved);
@@ -228,17 +240,6 @@ public class RealEstateService {
 						"ROLE_ADMIN".equals(role.getName()) ||
 						"ROLE_AGENT".equals(role.getName()));
 	}
-
-	public RealEstateResponseDTO createWithImages(RealEstateCreateDTO createDto, MultipartFile[] images) {
-        User owner = userService.getAuthenticatedUser();
-        List<String> imageUrls = realEstateImageService.uploadRealEstateImages(images);
-        
-        RealEstate entity = realEstateMapper.toEntity(createDto, owner, imageUrls);
-        entity.setCreatedAt(LocalDate.now());
-        
-        RealEstate saved = realEstateRepository.save(entity);
-        return realEstateMapper.toResponseDto(saved);
-    }
 
     @Transactional
     public RealEstateResponseDTO updateRealEstate(Long propertyId, RealEstateUpdateDTO updateDto) {
