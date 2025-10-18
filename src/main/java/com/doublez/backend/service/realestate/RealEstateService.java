@@ -14,7 +14,6 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.doublez.backend.dto.RealEstateCreateDTO;
@@ -32,7 +31,6 @@ import com.doublez.backend.mapper.RealEstateMapper;
 import com.doublez.backend.repository.RealEstateRepository;
 import com.doublez.backend.repository.UserRepository;
 import com.doublez.backend.service.user.UserService;
-import com.doublez.backend.specification.RealEstateSpecifications;
 
 import jakarta.annotation.Nullable;
 import jakarta.persistence.criteria.Predicate;
