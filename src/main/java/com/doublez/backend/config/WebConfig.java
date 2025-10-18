@@ -12,7 +12,6 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // Serve AdminLTE resources from static/
         registry.addResourceHandler(
             "/dist/**",
             "/plugins/**", 
@@ -32,10 +31,8 @@ public class WebConfig implements WebMvcConfigurer {
     @Controller
     public static class ReactRoutingController {
         
-        @RequestMapping(value = { 
-            "/", "/property/**", "/create-listing", "/login", 
-            "/signup", "/buy", "/rent", "/sell", "/help", "/search" 
-        })
+        // Catch ALL non-API, non-Admin routes
+        @RequestMapping(value = "/{path:^(?!api$|admin$|api/|admin/).*}/**")
         public String forwardToReact() {
             return "forward:/index.html";
         }
