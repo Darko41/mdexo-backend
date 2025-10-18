@@ -62,7 +62,7 @@ public class SecurityConfig {
 	SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 	    http
 	        .authorizeHttpRequests((authz) -> authz
-	            // Define public URLs (no authentication required)
+	        	// 1. Public static resources - public URLs (no authentication required)
 	            .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 	            .requestMatchers(
 	                "/",
@@ -83,39 +83,40 @@ public class SecurityConfig {
 	                "/webjars/**"
 	            ).permitAll()
 	            
-	            // Public API endpoints
-	            .requestMatchers(
-	                "/api/users/register",
-	                "/api/auth/authenticate"
-	            ).permitAll()
-	            
-	            // Public real estate endpoints (search and get by ID)
-	            .requestMatchers(HttpMethod.GET, "/api/real-estates/search").permitAll()
-	            .requestMatchers(HttpMethod.GET, "/api/real-estates/*").permitAll()
-	            
-	            // Public auth endpoints for admin login
+	            // 2. Public auth endpoints
 	            .requestMatchers(
 	                "/auth/**",
 	                "/admin/login", 
 	                "/admin/access"
 	            ).permitAll()
 	            
-	            // PROTECTED real estate endpoints (JWT authentication)
-	            .requestMatchers(HttpMethod.POST, "/api/real-estates").authenticated()
-	            .requestMatchers(HttpMethod.POST, "/api/real-estates/with-images").authenticated()
+	            // 3. Public API endpoints (EXPLICITLY LIST ALL PUBLIC API ENDPOINTS)
+	            .requestMatchers(
+	                "/api/users/register",
+	                "/api/auth/authenticate"
+	            ).permitAll()
+	            
+	            // 4. Public real estate API endpoints (search and get by ID)
+	            .requestMatchers(HttpMethod.GET, "/api/real-estates/search").permitAll()
+	            .requestMatchers(HttpMethod.GET, "/api/real-estates/features").permitAll()
+	            .requestMatchers(HttpMethod.GET, "/api/real-estates/{propertyId}").permitAll()
+	            .requestMatchers(HttpMethod.GET, "/api/real-estates/**").permitAll()
+	            
+	            // 5. Protected real estate endpoints (JWT authentication)
+	            .requestMatchers(HttpMethod.POST, "/api/real-estates/**").authenticated()
 	            .requestMatchers(HttpMethod.PUT, "/api/real-estates/**").authenticated()
 	            .requestMatchers(HttpMethod.DELETE, "/api/real-estates/**").authenticated()
 	            
-	            // Admin API endpoints (JWT + ROLE_ADMIN)
+	            // 6. Admin API endpoints (JWT + ROLE_ADMIN)
 	            .requestMatchers("/api/admin/**").hasRole("ADMIN")
 	            
-	            // General API protection (JWT)
-	            .requestMatchers("/api/**").authenticated()
-	            
-	            // Admin dashboard endpoints (Session + ROLE_ADMIN)  
+	            // 7. Admin dashboard endpoints (Session + ROLE_ADMIN)  
 	            .requestMatchers("/admin/**").hasRole("ADMIN")
 	            
-	            // Any other request must be authenticated
+	            // 8. General API protection (catch-all for other API endpoints)
+	            .requestMatchers("/api/**").authenticated()
+	            
+	            // 9. Any other request must be authenticated
 	            .anyRequest().authenticated()
 	        )
 	        // Form login ONLY for admin pages (session-based)

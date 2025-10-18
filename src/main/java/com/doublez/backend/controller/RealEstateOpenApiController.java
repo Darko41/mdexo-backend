@@ -3,13 +3,9 @@ package com.doublez.backend.controller;
 import java.math.BigDecimal;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,11 +15,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.doublez.backend.dto.RealEstateResponseDTO;
 import com.doublez.backend.entity.ListingType;
 import com.doublez.backend.entity.PropertyType;
-import com.doublez.backend.response.ApiResponse;
 import com.doublez.backend.service.realestate.RealEstateImageService;
 import com.doublez.backend.service.realestate.RealEstateService;
 
-import org.springframework.data.domain.Sort;
 
 @RestController
 @RequestMapping("/api/real-estates")
@@ -36,7 +30,7 @@ public class RealEstateOpenApiController {
 		this.realEstateService = realEstateService;
 	}
 	
-	// Show all real estates
+	// Show all real estates if without parameters
 	@GetMapping("/search")
     public ResponseEntity<Page<RealEstateResponseDTO>> searchRealEstates(
             @RequestParam(required = false) String searchTerm,
@@ -63,6 +57,16 @@ public class RealEstateOpenApiController {
     public ResponseEntity<RealEstateResponseDTO> getRealEstateById(
             @PathVariable Long propertyId) {
         return ResponseEntity.ok(realEstateService.getRealEstateById(propertyId));
+    }
+    
+    @GetMapping("/features")
+    public ResponseEntity<List<String>> getAllUniqueFeatures() {
+        try {
+            List<String> features = realEstateService.getAllUniqueFeatures();
+            return ResponseEntity.ok(features);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
 }

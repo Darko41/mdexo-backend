@@ -5,6 +5,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
@@ -319,6 +321,19 @@ public class RealEstateService {
     		realEstateImageService.deleteImages(List.of(imageUrl));
     		realEstateRepository.save(property);
     	}
+    }
+    
+    public List<String> getAllUniqueFeatures() {
+        List<RealEstate> allRealEstates = realEstateRepository.findAll();
+        Set<String> uniqueFeatures = new TreeSet<>();
+        
+        for (RealEstate realEstate : allRealEstates) {
+            if (realEstate.getFeatures() != null) {
+                uniqueFeatures.addAll(realEstate.getFeatures());
+            }
+        }
+        
+        return new ArrayList<>(uniqueFeatures);
     }
     
 }
