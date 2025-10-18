@@ -35,7 +35,10 @@ import com.doublez.backend.repository.UserRepository;
 import com.doublez.backend.service.user.UserService;
 
 import jakarta.annotation.Nullable;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 import jakarta.transaction.Transactional;
 
 @Service
@@ -109,14 +112,31 @@ public class RealEstateService {
         return (root, query, cb) -> {
             if (!StringUtils.hasText(searchTerm)) return null;
             
-            String likePattern = "%" + searchTerm.toLowerCase() + "%";
+            String searchTermLower = searchTerm.toLowerCase();
             query.distinct(true);
-            return cb.or(
-                cb.like(cb.lower(root.get("title")), likePattern),
-                cb.like(cb.lower(root.get("description")), likePattern),
-                cb.like(cb.lower(root.get("city")), likePattern),
-                cb.like(cb.lower(root.get("address")), likePattern)
-            );
+            
+            // Create predicates for all searchable fields
+            List<Predicate> predicates = new ArrayList<>();
+            
+            // Standard text fields
+            predicates.add(cb.like(cb.lower(root.get("title")), "%" + searchTermLower + "%"));
+            predicates.add(cb.like(cb.lower(root.get("description")), "%" + searchTermLower + "%"));
+            predicates.add(cb.like(cb.lower(root.get("city")), "%" + searchTermLower + "%"));
+            predicates.add(cb.like(cb.lower(root.get("address")), "%" + searchTermLower + "%"));
+            
+            // For features, we'll use a subquery approach
+            if (root.get("features") != null) {
+                Subquery<String> featureSubquery = query.subquery(String.class);
+                Root<RealEstate> subRoot = featureSubquery.correlate(root);
+                var featureJoin = subRoot.join("features", JoinType.LEFT);
+                
+                featureSubquery.select(featureJoin.as(String.class))
+                    .where(cb.like(cb.lower(featureJoin.as(String.class)), "%" + searchTermLower + "%"));
+                
+                predicates.add(cb.exists(featureSubquery));
+            }
+            
+            return cb.or(predicates.toArray(new Predicate[0]));
         };
     }
     

@@ -83,27 +83,36 @@ public class RealS3Service implements S3Service {
 
 	@Override
 	public void uploadFileStreaming(String presignedUrl, InputStream data, long contentLength, String contentType)
-			throws IOException {
-		HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
+	        throws IOException {
+	    HttpClient client = HttpClient.newBuilder()
+	            .connectTimeout(Duration.ofSeconds(10))
+	            .build();
 
-		HttpRequest request = HttpRequest.newBuilder()
-				.uri(URI.create(presignedUrl))
-				.PUT(HttpRequest.BodyPublishers.ofInputStream(() -> data))
-				.header("Content-Type", contentType)
-				.header("Content-Length", String.valueOf(contentLength))
-				.timeout(Duration.ofSeconds(30))
-				.build();
+	    // Use BodyPublishers.ofByteArray for known content length, or let the client handle it
+	    byte[] dataBytes;
+	    try {
+	        dataBytes = data.readAllBytes();
+	    } catch (IOException e) {
+	        throw new IOException("Failed to read input stream", e);
+	    }
 
-		try {
-			HttpResponse<Void> response = client.send(request, HttpResponse.BodyHandlers.discarding());
-			if (response.statusCode() != 200) {
-				throw new IOException("Upload failed with status: " + response.statusCode());
-			}
-		} catch (InterruptedException e) {
-			Thread.currentThread().interrupt();
-			throw new IOException("Upload interrupted", e);
-		}
+	    HttpRequest request = HttpRequest.newBuilder()
+	            .uri(URI.create(presignedUrl))
+	            .PUT(HttpRequest.BodyPublishers.ofByteArray(dataBytes))
+	            .header("Content-Type", contentType)
+	            // No need for Content-Length header when using ofByteArray
+	            .timeout(Duration.ofSeconds(30))
+	            .build();
 
+	    try {
+	        HttpResponse<Void> response = client.send(request, HttpResponse.BodyHandlers.discarding());
+	        if (response.statusCode() != 200) {
+	            throw new IOException("Upload failed with status: " + response.statusCode());
+	        }
+	    } catch (InterruptedException e) {
+	        Thread.currentThread().interrupt();
+	        throw new IOException("Upload interrupted", e);
+	    }
 	}
 
 	@Override
