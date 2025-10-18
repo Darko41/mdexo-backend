@@ -33,9 +33,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     // Ant-style patterns for public endpoints
     private static final List<String> EXCLUDED_PATHS = Arrays.asList(
-        "/api/authenticate",
-        "/api/real-estates/**",
-        "/v3/api-docs/**",
+    	"/api/auth/authenticate",
+    	"/api/users/register",
+    	"/v3/api-docs/**",
         "/swagger-ui/**",
         "/swagger-resources/**",
         "/webjars/**",
