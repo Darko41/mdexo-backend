@@ -27,16 +27,18 @@ public class FileValidationService {
     
     private final Set<String> allowedExtensions;
     private final List<String> allowedMimeTypes;
-    private final long maxFileSize = 20_971_520L; // Hardcoded 20MB limit
+    private final long maxFileSize; // Hardcoded 20MB limit
 
     public FileValidationService(
             @Value("#{'${app.upload.allowed-extensions}'.split(',')}") List<String> allowedExtensions,
-            @Value("#{'${app.upload.allowed-mime-types}'.split(',')}") List<String> allowedMimeTypes) {
+            @Value("#{'${app.upload.allowed-mime-types}'.split(',')}") List<String> allowedMimeTypes,
+            @Value("${app.upload.max-size}") long maxFileSize) { // Add this parameter
         
         this.allowedExtensions = allowedExtensions.stream()
                 .map(String::toLowerCase)
                 .collect(Collectors.toSet());
         this.allowedMimeTypes = allowedMimeTypes;
+        this.maxFileSize = maxFileSize; // Use the injected value
         
         logger.info("File validation configured - Extensions: {}, MIME types: {}, Max size: {} bytes", 
             allowedExtensions, allowedMimeTypes, maxFileSize);
@@ -89,8 +91,9 @@ public class FileValidationService {
     private void validateSize(MultipartFile file) {
         if (file.getSize() > maxFileSize) {
             throw new FileSizeException(
-                String.format("File '%s' exceeds 20MB limit (%.2f MB)", 
+                String.format("File '%s' exceeds %dMB limit (%.2f MB)", 
                     file.getOriginalFilename(),
+                    maxFileSize / (1024 * 1024), // Show limit in MB
                     file.getSize() / (1024.0 * 1024.0)),
                 maxFileSize
             );
