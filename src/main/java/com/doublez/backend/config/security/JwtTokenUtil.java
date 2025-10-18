@@ -5,6 +5,7 @@ import java.util.List;
 
 import javax.crypto.SecretKey;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import io.jsonwebtoken.Claims;
@@ -14,23 +15,37 @@ import io.jsonwebtoken.security.Keys;
 @Component
 public class JwtTokenUtil {
 	
-	private static final String SECRET_KEY = "your-secure-long-secret-key-here-that-is-at-least-256-bits-long";
-	private static final long EXPIRATION_TIME = 86400000;
+	private final String secretKey;
+	private final long expirationTime;
+	
+	public JwtTokenUtil(
+            @Value("${jwt.secret}") String secretKey,  // No fallback!
+            @Value("${jwt.expiration:86400000}") long expirationTime) {
+        
+        if (secretKey == null || secretKey.trim().isEmpty()) {
+            throw new IllegalStateException("JWT secret key is not configured. Set JWT_SECRET environment variable.");
+        }
+        
+        this.secretKey = secretKey;
+        this.expirationTime = expirationTime;
+        
+        System.out.println("✅ JWT Token Util initialized with secret length: " + secretKey.length());
+    }
 	
 	// Generate JWT Token
 	public String generateToken(String email, List<String> roles) {
-		SecretKey key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+		SecretKey key = Keys.hmacShaKeyFor(this.secretKey.getBytes());
 		return Jwts.builder()
 				.claim("sub", email)
 				.claim("roles", roles)
 				.claim("iat", new Date())	// Issued at time
-				.claim("exp", new Date(System.currentTimeMillis() + EXPIRATION_TIME))	// Expiration time
+				.claim("exp", new Date(System.currentTimeMillis() + this.expirationTime))	// Expiration time
 				.signWith(key)	// Sign the token with the secret key
 				.compact();	// Return the compact token
 	}
 	
 	public Claims extractClaims(String token) {
-		SecretKey key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+		SecretKey key = Keys.hmacShaKeyFor(this.secretKey.getBytes());
 		return Jwts.parser()
 				.verifyWith(key)
 				.build()
