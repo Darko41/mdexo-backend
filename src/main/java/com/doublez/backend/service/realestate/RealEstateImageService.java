@@ -104,32 +104,66 @@ public class RealEstateImageService {
     }
 
     private String uploadSingleImage(MultipartFile file, String uniqueFilename) throws IOException {
+        logger.info("📤 Uploading image to S3 - Key: {}, Size: {}, Type: {}", 
+            uniqueFilename, file.getSize(), file.getContentType());
+        
         String presignedUrl = s3Service.generatePresignedUrl(uniqueFilename);
+        logger.info("🔗 Presigned URL generated for: {}", uniqueFilename);
 
-        if (file.getSize() > 5_000_000) { // Stream if >5MB
-            s3Service.uploadFileStreaming(
-                presignedUrl,
-                file.getInputStream(),
-                file.getSize(),
-                file.getContentType()
-            );
-        } else {
-            s3Service.uploadFile(
-                presignedUrl,
-                file.getBytes(),
-                file.getContentType()
-            );
+        try {
+            if (file.getSize() > 5_000_000) {
+                s3Service.uploadFileStreaming(
+                    presignedUrl,
+                    file.getInputStream(),
+                    file.getSize(),
+                    file.getContentType()
+                );
+            } else {
+                s3Service.uploadFile(
+                    presignedUrl,
+                    file.getBytes(),
+                    file.getContentType()
+                );
+            }
+            logger.info("✅ Successfully uploaded: {}", uniqueFilename);
+            
+            return extractPublicUrl(presignedUrl);
+        } catch (Exception e) {
+            logger.error("❌ Failed to upload {}: {}", uniqueFilename, e.getMessage());
+            throw e;
         }
-
-        return extractPublicUrl(presignedUrl);
     }
 
     private String generateUniqueFilename(MultipartFile file, String customName) {
-        String originalName = customName != null ? customName : file.getOriginalFilename();
-        String extension = originalName != null ? 
-            FilenameUtils.getExtension(originalName) : "jpg";
+        String originalName = file.getOriginalFilename();
+        String extension = originalName != null && originalName.contains(".") 
+            ? FilenameUtils.getExtension(originalName) 
+            : "jpg";
+        
+        // Ensure we have a valid extension
+        if (extension.isEmpty()) {
+            extension = getExtensionFromContentType(file.getContentType());
+        }
+        
         String baseName = UUID.randomUUID().toString();
-        return String.format("%s/%s.%s", s3Folder, baseName, extension.toLowerCase());
+        
+        // Create proper S3 key without trailing slashes
+        return String.format("%s/%s.%s", 
+            s3Folder.replaceAll("/+$", ""), // Remove trailing slashes
+            baseName, 
+            extension.toLowerCase());
+    }
+    
+    private String getExtensionFromContentType(String contentType) {
+        if (contentType == null) return "jpg";
+        
+        switch (contentType) {
+            case "image/jpeg": return "jpg";
+            case "image/png": return "png";
+            case "image/gif": return "gif";
+            case "image/webp": return "webp";
+            default: return "jpg";
+        }
     }
 
     private String extractPublicUrl(String presignedUrl) {

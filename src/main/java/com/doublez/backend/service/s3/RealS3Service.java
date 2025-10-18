@@ -52,6 +52,10 @@ public class RealS3Service implements S3Service {
 	@Override
 	public void uploadFile(String presignedUrl, byte[] data, String contentType) throws IOException {
 		
+		System.out.println("📤 Uploading to S3 - URL: " + presignedUrl);
+        System.out.println("📤 Data length: " + data.length);
+        System.out.println("📤 Content type: " + contentType);
+		
 		HttpRequest request = HttpRequest.newBuilder()
 				.uri(URI.create(presignedUrl))
 				.PUT(HttpRequest.BodyPublishers.ofByteArray(data))
@@ -73,6 +77,8 @@ public class RealS3Service implements S3Service {
 		catch (HttpTimeoutException e) {
 			throw new IOException("Upload timed out after 30 seconds", e);
 		}
+		
+		System.out.println("✅ Upload completed successfully");
 	}
 
 	@Override
