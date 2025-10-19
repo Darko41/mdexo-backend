@@ -49,45 +49,36 @@ public class RealEstateImageService {
 
         validationService.validateFiles(files);
 
-        // Process in smaller batches if many large files
-        if (files.length > 5 && getTotalSize(files) > 20_000_000) { // 20MB total
-            return processInBatches(files, 2); // 2 files per batch
-        }
-
-        return Arrays.stream(files)
-            .map(this::processImage)
-            .collect(Collectors.toList());
-    }
-    
-    private long getTotalSize(MultipartFile[] files) {
-        return Arrays.stream(files)
-            .mapToLong(MultipartFile::getSize)
-            .sum();
-    }
-    
-    private List<String> processInBatches(MultipartFile[] files, int batchSize) {
-        List<String> allUrls = new ArrayList<>();
-        for (int i = 0; i < files.length; i += batchSize) {
-            int end = Math.min(i + batchSize, files.length);
-            MultipartFile[] batch = Arrays.copyOfRange(files, i, end);
-            
-            List<String> batchUrls = Arrays.stream(batch)
-                .map(this::processImage)
-                .collect(Collectors.toList());
-            
-            allUrls.addAll(batchUrls);
-            
-            // Small delay between batches
-            if (end < files.length) {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
-                }
+        // Simple sequential processing - most reliable
+        List<String> urls = new ArrayList<>();
+        for (int i = 0; i < files.length; i++) {
+            try {
+                logger.info("Processing image {}/{}: {}", i + 1, files.length, files[i].getOriginalFilename());
+                String url = processImage(files[i]);
+                urls.add(url);
+                logger.info("✅ Successfully uploaded image {}/{}", i + 1, files.length);
+            } catch (Exception e) {
+                logger.error("❌ Failed to upload image {}/{}: {}", i + 1, files.length, files[i].getOriginalFilename(), e);
+                // Continue with next image even if one fails
             }
         }
-        return allUrls;
+        return urls;
+    }
+
+    private List<String> processSequentially(MultipartFile[] files) {
+        List<String> urls = new ArrayList<>();
+        for (int i = 0; i < files.length; i++) {
+            try {
+                logger.info("Processing image {}/{}: {}", i + 1, files.length, files[i].getOriginalFilename());
+                String url = processImage(files[i]);
+                urls.add(url);
+                logger.info("✅ Successfully uploaded image {}/{}", i + 1, files.length);
+            } catch (Exception e) {
+                logger.error("❌ Failed to upload image {}/{}: {}", i + 1, files.length, files[i].getOriginalFilename(), e);
+                // Continue with next image even if one fails
+            }
+        }
+        return urls;
     }
 
     // Single file upload with custom filename support
