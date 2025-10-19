@@ -28,7 +28,7 @@ import jakarta.transaction.Transactional;
 @Service
 public class RealEstateImageService {
 	private final S3Service s3Service;
-    private final ImageProcessingService imageProcessingService;
+//    private final ImageProcessingService imageProcessingService;
     private final FileValidationService validationService;
     private static final Logger logger = LoggerFactory.getLogger(RealEstateImageService.class);
     
@@ -39,7 +39,7 @@ public class RealEstateImageService {
                                  ImageProcessingService imageProcessingService,
                                  FileValidationService validationService) {
         this.s3Service = s3Service;
-        this.imageProcessingService = imageProcessingService;
+//        this.imageProcessingService = imageProcessingService;
         this.validationService = validationService;
     }
 
@@ -115,13 +115,15 @@ public class RealEstateImageService {
             file.getSize() / (1024 * 1024));
         
         // Process image (resize + compress)
-        byte[] processedImage = imageProcessingService.processImage(file);
+//        byte[] processedImage = imageProcessingService.processImage(file);
         
         String uniqueFilename = generateUniqueFilename(file, null);
         String presignedUrl = s3Service.generatePresignedUrl(uniqueFilename);
         
         // Upload processed image
-        s3Service.uploadFile(presignedUrl, processedImage, getContentType(file));
+//        s3Service.uploadFile(presignedUrl, processedImage, getContentType(file));
+        
+        s3Service.uploadFile(presignedUrl, file.getBytes(), file.getContentType());
         
         logger.info("Image processed: {} MB -> {} KB ({}% reduction)",
             file.getSize() / (1024 * 1024),
