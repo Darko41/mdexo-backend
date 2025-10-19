@@ -1,6 +1,7 @@
 package com.doublez.backend.controller;
 
-//import org.slf4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +28,8 @@ import jakarta.validation.Valid;
 @RequestMapping("/api/real-estates")
 @PreAuthorize("hasAnyRole('ADMIN', 'USER', 'AGENT')")
 public class RealEstateAuthUserApiController {
+    private static final Logger logger = LoggerFactory.getLogger(RealEstateAuthUserApiController.class);
+    
     private final RealEstateService realEstateService;
     private final RealEstateAgentAssignmentService assignmentService;
 
@@ -36,51 +39,89 @@ public class RealEstateAuthUserApiController {
         this.assignmentService = assignmentService;
     }
 
-    // Unified create endpoint - handles both with and without images
+    // Unified create endpoint with image processing
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("@realEstateAuthorizationService.hasRealEstateCreateAccess()")
     public ResponseEntity<RealEstateResponseDTO> createRealEstate(
-            @RequestPart @Valid RealEstateCreateDTO createDto,
-            @RequestPart(required = false) MultipartFile[] images) {
+            @Valid @RequestPart("realEstate") RealEstateCreateDTO createDto,
+            @RequestPart(value = "images", required = false) MultipartFile[] images) {
         
-        RealEstateResponseDTO response = realEstateService.createRealEstate(createDto, images);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .header("Location", "/api/real-estates/" + response.getPropertyId())
-                .body(response);
+        try {
+            logger.info("🏠 Creating new real estate listing with {} images", 
+                images != null ? images.length : 0);
+            
+            RealEstateResponseDTO response = realEstateService.createRealEstate(createDto, images);
+            
+            logger.info("✅ Successfully created real estate with ID: {}", response.getPropertyId());
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .header("Location", "/api/real-estates/" + response.getPropertyId())
+                    .body(response);
+                    
+        } catch (Exception e) {
+            logger.error("❌ Failed to create real estate: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
     
- // Agent/Admin creating listing for other users
+    // Agent/Admin creating listing for other users
     @PostMapping(value = "/for-user", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN') or hasRole('AGENT')")
     public ResponseEntity<RealEstateResponseDTO> createRealEstateForUser(
-            @RequestPart @Valid RealEstateCreateDTO createDto,
-            @RequestPart(required = false) MultipartFile[] images) {
+            @Valid @RequestPart("realEstate") RealEstateCreateDTO createDto,
+            @RequestPart(value = "images", required = false) MultipartFile[] images) {
         
-        RealEstateResponseDTO response = realEstateService.createRealEstateForUser(createDto, images);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .header("Location", "/api/real-estates/" + response.getPropertyId())
-                .body(response);
+        try {
+            logger.info("👤 Creating real estate for user with {} images", 
+                images != null ? images.length : 0);
+            
+            RealEstateResponseDTO response = realEstateService.createRealEstateForUser(createDto, images);
+            
+            logger.info("✅ Successfully created real estate for user with ID: {}", response.getPropertyId());
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .header("Location", "/api/real-estates/" + response.getPropertyId())
+                    .body(response);
+                    
+        } catch (Exception e) {
+            logger.error("❌ Failed to create real estate for user: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
-    // Keep the JSON-only endpoint for backward compatibility
+    // JSON-only endpoint for backward compatibility
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("@realEstateAuthorizationService.hasRealEstateCreateAccess()")
     public ResponseEntity<RealEstateResponseDTO> createRealEstateJson(
             @RequestBody @Valid RealEstateCreateDTO createDto) {
-        // Call the same service method but with no images
-        RealEstateResponseDTO response = realEstateService.createRealEstate(createDto, null);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .header("Location", "/api/real-estates/" + response.getPropertyId())
-                .body(response);
+        
+        try {
+            logger.info("📄 Creating real estate from JSON (no images)");
+            
+            // Call the same service method but with no images
+            RealEstateResponseDTO response = realEstateService.createRealEstate(createDto, null);
+            
+            logger.info("✅ Successfully created real estate from JSON with ID: {}", response.getPropertyId());
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .header("Location", "/api/real-estates/" + response.getPropertyId())
+                    .body(response);
+                    
+        } catch (Exception e) {
+            logger.error("❌ Failed to create real estate from JSON: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
-
-    // Remove the old createWithImages method entirely
 
     @DeleteMapping("/{propertyId}")
     @PreAuthorize("@realEstateAuthorizationService.canDeleteRealEstate(#propertyId)")
     public ResponseEntity<Void> deleteRealEstate(@PathVariable Long propertyId) {
-        realEstateService.deleteRealEstate(propertyId);
-        return ResponseEntity.noContent().build();
+        try {
+            logger.info("🗑️ Deleting real estate with ID: {}", propertyId);
+            realEstateService.deleteRealEstate(propertyId);
+            logger.info("✅ Successfully deleted real estate with ID: {}", propertyId);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            logger.error("❌ Failed to delete real estate {}: {}", propertyId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
     
     @PutMapping("/{propertyId}")
@@ -88,7 +129,15 @@ public class RealEstateAuthUserApiController {
     public ResponseEntity<RealEstateResponseDTO> updateRealEstate(
             @PathVariable Long propertyId,
             @RequestBody @Valid RealEstateUpdateDTO updateDto) {
-        return ResponseEntity.ok(realEstateService.updateRealEstate(propertyId, updateDto));
+        try {
+            logger.info("✏️ Updating real estate with ID: {}", propertyId);
+            RealEstateResponseDTO response = realEstateService.updateRealEstate(propertyId, updateDto);
+            logger.info("✅ Successfully updated real estate with ID: {}", propertyId);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("❌ Failed to update real estate {}: {}", propertyId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
     
     @PostMapping("/{propertyId}/assign-agent/{agentId}")
@@ -96,8 +145,14 @@ public class RealEstateAuthUserApiController {
     public ResponseEntity<Void> assignAgentToProperty(
             @PathVariable Long propertyId,
             @PathVariable Long agentId) {
-        assignmentService.assignAgentToProperty(propertyId, agentId);
-        return ResponseEntity.ok().build();
+        try {
+            logger.info("👨‍💼 Assigning agent {} to property {}", agentId, propertyId);
+            assignmentService.assignAgentToProperty(propertyId, agentId);
+            logger.info("✅ Successfully assigned agent {} to property {}", agentId, propertyId);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            logger.error("❌ Failed to assign agent {} to property {}: {}", agentId, propertyId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 }
-
