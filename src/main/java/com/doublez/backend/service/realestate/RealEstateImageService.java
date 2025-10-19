@@ -5,13 +5,11 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
@@ -41,7 +39,7 @@ public class RealEstateImageService {
         this.validationService = validationService;
     }
 
-    // Bulk upload
+    // Bulk upload - already uses sequential processing
     public List<String> uploadRealEstateImages(MultipartFile[] files) {
         if (files == null || files.length == 0) {
             return Collections.emptyList();
@@ -50,22 +48,6 @@ public class RealEstateImageService {
         validationService.validateFiles(files);
 
         // Simple sequential processing - most reliable
-        List<String> urls = new ArrayList<>();
-        for (int i = 0; i < files.length; i++) {
-            try {
-                logger.info("Processing image {}/{}: {}", i + 1, files.length, files[i].getOriginalFilename());
-                String url = processImage(files[i]);
-                urls.add(url);
-                logger.info("✅ Successfully uploaded image {}/{}", i + 1, files.length);
-            } catch (Exception e) {
-                logger.error("❌ Failed to upload image {}/{}: {}", i + 1, files.length, files[i].getOriginalFilename(), e);
-                // Continue with next image even if one fails
-            }
-        }
-        return urls;
-    }
-
-    private List<String> processSequentially(MultipartFile[] files) {
         List<String> urls = new ArrayList<>();
         for (int i = 0; i < files.length; i++) {
             try {

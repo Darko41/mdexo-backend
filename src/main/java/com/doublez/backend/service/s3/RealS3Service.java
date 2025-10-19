@@ -83,34 +83,38 @@ public class RealS3Service implements S3Service {
 
 	@Override
 	public void uploadFileStreaming(String presignedUrl, InputStream data, long contentLength, String contentType)
-	        throws IOException {
-	    logger.debug("Uploading to presigned URL: {}", presignedUrl);
-	    logger.debug("File size: {}, Content-Type: {}", contentLength, contentType);
-	    
-	    HttpClient client = HttpClient.newBuilder()
-	            .connectTimeout(Duration.ofSeconds(30))
-	            .build();
-
-	    HttpRequest request = HttpRequest.newBuilder()
-	            .uri(URI.create(presignedUrl))
-	            .PUT(HttpRequest.BodyPublishers.ofInputStream(() -> data))
-	            .header("Content-Type", contentType)
-	            .timeout(Duration.ofSeconds(120))
-	            .build();
-
-	    try {
-	        HttpResponse<Void> response = client.send(request, HttpResponse.BodyHandlers.discarding());
-	        logger.debug("S3 response status: {}", response.statusCode());
-	        
-	        if (response.statusCode() != 200) {
-	            // Log additional info about the failed request
-	            logger.error("S3 upload failed with status: {}. URL: {}", response.statusCode(), presignedUrl);
-	            throw new IOException("Upload failed with status: " + response.statusCode());
-	        }
-	    } catch (InterruptedException e) {
-	        Thread.currentThread().interrupt();
-	        throw new IOException("Upload interrupted", e);
-	    }
+			throws IOException {
+		
+		System.out.println("📤 Streaming upload to S3 - URL: " + presignedUrl);
+        System.out.println("📤 Data length: " + contentLength);
+        System.out.println("📤 Content type: " + contentType);
+		
+		// Use simple HttpClient without builder for reliability
+		HttpClient client = HttpClient.newHttpClient();
+		
+		HttpRequest request = HttpRequest.newBuilder()
+				.uri(URI.create(presignedUrl))
+				.PUT(HttpRequest.BodyPublishers.ofInputStream(() -> data))
+				.header("Content-Type", contentType)
+				.timeout(Duration.ofSeconds(30))
+				.build();
+		
+		try {
+			HttpResponse<Void> response = client.send(request, HttpResponse.BodyHandlers.discarding());
+			
+			if (response.statusCode() != 200) {
+				throw new IOException("Upload failed with status: " + response.statusCode());
+			}
+		} 
+		catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			throw new IOException("Upload interrupted", e);
+		}
+		catch (HttpTimeoutException e) {
+			throw new IOException("Upload timed out after 30 seconds", e);
+		}
+		
+		System.out.println("✅ Streaming upload completed successfully");
 	}
 
 	@Override
@@ -125,5 +129,4 @@ public class RealS3Service implements S3Service {
 	        throw new RuntimeException("Failed to delete file: " + key, e);
 	    }
 	}
-
 }
