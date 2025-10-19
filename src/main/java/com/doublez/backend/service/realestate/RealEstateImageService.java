@@ -96,7 +96,7 @@ public class RealEstateImageService {
     
     private int calculateDelay(int currentIndex, int totalImages) {
         // Progressive delays: longer delays as we process more images
-        int baseDelay = 3000; // 3 seconds base delay
+        int baseDelay = 1000; // 1 second base delay
         int progressiveDelay = currentIndex * 1000; // +1 second per image processed
         return baseDelay + progressiveDelay;
     }

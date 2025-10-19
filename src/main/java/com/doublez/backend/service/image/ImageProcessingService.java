@@ -161,8 +161,8 @@ public class ImageProcessingService {
         long maxMemory = runtime.maxMemory();
         long availableMemory = maxMemory - usedMemory;
         
-        // Require at least 100MB available for safe processing
-        long requiredMemory = 100 * 1024 * 1024; // 100MB
+        // Require at least 30MB available for safe processing
+        long requiredMemory = 30 * 1024 * 1024; // 30MB
         boolean hasMemory = availableMemory > requiredMemory;
         
         logger.info("💾 Memory check - Used: {} MB, Available: {} MB, Max: {} MB, Has enough: {}",
