@@ -125,10 +125,10 @@ public class RealEstateImageService {
         
         s3Service.uploadFile(presignedUrl, file.getBytes(), file.getContentType());
         
-        logger.info("Image processed: {} MB -> {} KB ({}% reduction)",
-            file.getSize() / (1024 * 1024),
-            processedImage.length / 1024,
-            (int) ((1 - (double) processedImage.length / file.getSize()) * 100));
+//        logger.info("Image processed: {} MB -> {} KB ({}% reduction)",
+//            file.getSize() / (1024 * 1024),
+//            processedImage.length / 1024,
+//            (int) ((1 - (double) processedImage.length / file.getSize()) * 100));
         
         return extractPublicUrl(presignedUrl);
     }
