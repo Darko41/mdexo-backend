@@ -1,15 +1,15 @@
 package com.doublez.backend.service.realestate;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
@@ -39,7 +39,7 @@ public class RealEstateImageService {
         this.validationService = validationService;
     }
 
-    // Bulk upload - already uses sequential processing
+    // Bulk upload
     public List<String> uploadRealEstateImages(MultipartFile[] files) {
         if (files == null || files.length == 0) {
             return Collections.emptyList();
@@ -47,20 +47,10 @@ public class RealEstateImageService {
 
         validationService.validateFiles(files);
 
-        // Simple sequential processing - most reliable
-        List<String> urls = new ArrayList<>();
-        for (int i = 0; i < files.length; i++) {
-            try {
-                logger.info("Processing image {}/{}: {}", i + 1, files.length, files[i].getOriginalFilename());
-                String url = processImage(files[i]);
-                urls.add(url);
-                logger.info("✅ Successfully uploaded image {}/{}", i + 1, files.length);
-            } catch (Exception e) {
-                logger.error("❌ Failed to upload image {}/{}: {}", i + 1, files.length, files[i].getOriginalFilename(), e);
-                // Continue with next image even if one fails
-            }
-        }
-        return urls;
+        return Arrays.stream(files)
+            .parallel()
+            .map(this::processImage)
+            .collect(Collectors.toList());
     }
 
     // Single file upload with custom filename support
@@ -97,16 +87,9 @@ public class RealEstateImageService {
                 logger.warn("Upload attempt {}/{} failed for {}: {}", 
                     attempt, maxAttempts, file.getOriginalFilename(), e.getMessage());
                 
-                // Check if it's a URL expiration issue (403 or timeout)
-                boolean isUrlExpired = e.getMessage().contains("403") || 
-                                      e.getMessage().contains("Expired") ||
-                                      e.getMessage().contains("Signature");
-                
                 if (attempt < maxAttempts) {
                     try {
-                        // Longer delay for URL expiration issues
-                        long delayMs = isUrlExpired ? 2000 * attempt : 1000 * attempt;
-                        Thread.sleep(delayMs);
+                        Thread.sleep(1000 * attempt);
                     } catch (InterruptedException ie) {
                         Thread.currentThread().interrupt();
                         throw new ImageUploadException("Upload interrupted", ie);
@@ -121,21 +104,15 @@ public class RealEstateImageService {
     }
 
     private String uploadSingleImage(MultipartFile file, String uniqueFilename) throws IOException {
-        logger.info("Starting upload for {} (size: {} MB)", 
-            file.getOriginalFilename(), 
-            file.getSize() / (1024 * 1024));
-        
         String presignedUrl = s3Service.generatePresignedUrl(uniqueFilename);
 
-        if (file.getSize() > 5_000_000) {
-            try (InputStream inputStream = file.getInputStream()) {
-                s3Service.uploadFileStreaming(
-                    presignedUrl,
-                    inputStream,
-                    file.getSize(),
-                    file.getContentType()
-                );
-            }
+        if (file.getSize() > 5_000_000) { // Stream if >5MB
+            s3Service.uploadFileStreaming(
+                presignedUrl,
+                file.getInputStream(),
+                file.getSize(),
+                file.getContentType()
+            );
         } else {
             s3Service.uploadFile(
                 presignedUrl,
@@ -143,8 +120,7 @@ public class RealEstateImageService {
                 file.getContentType()
             );
         }
-        
-        logger.info("Completed upload for {}", file.getOriginalFilename());
+
         return extractPublicUrl(presignedUrl);
     }
 
