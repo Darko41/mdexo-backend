@@ -69,20 +69,17 @@ public class RealEstateImageService {
                 
                 logger.info("✅ Successfully processed and uploaded image {}/{}", i + 1, files.length);
                 
-                // Longer delays between images in production
-                if (i < files.length - 1) { // Don't delay after last image
+                // Memory management between images
+                if (i < files.length - 1) {
                     try {
-                        int delayMs = calculateDelay(i, files.length);
-                        logger.info("⏳ Delaying {}ms before next image...", delayMs);
-                        Thread.sleep(delayMs);
+                        Thread.sleep(1000); // 1 second delay
+                        System.gc(); // Force garbage collection
+                        Thread.sleep(500); // Additional GC time
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                         logger.warn("Delay interrupted");
                     }
                 }
-                
-                // Force garbage collection between images to free memory
-                System.gc();
                 
             } catch (Exception e) {
                 logger.error("❌ Failed to process image {}: {}", file.getOriginalFilename(), e.getMessage());
@@ -92,13 +89,6 @@ public class RealEstateImageService {
 
         logger.info("🎉 Completed processing all {} images", files.length);
         return imageUrls;
-    }
-    
-    private int calculateDelay(int currentIndex, int totalImages) {
-        // Progressive delays: longer delays as we process more images
-        int baseDelay = 1000; // 1 second base delay
-        int progressiveDelay = currentIndex * 1000; // +1 second per image processed
-        return baseDelay + progressiveDelay;
     }
 
     // Single file upload with processing
@@ -126,7 +116,6 @@ public class RealEstateImageService {
         return extractPublicUrl(presignedUrl);
     }
 
-    // ... rest of your existing methods remain the same ...
     // Single file upload with custom filename support
     public String uploadFile(MultipartFile file, String customFilename) throws IOException {
         validationService.validateFile(file);
