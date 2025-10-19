@@ -12,10 +12,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.doublez.backend.exception.ImageUploadException;
 import com.doublez.backend.service.image.ImageProcessingService;
 import com.doublez.backend.service.s3.S3Service;
 import com.doublez.backend.service.validation.FileValidationService;
+
+import jakarta.transaction.Transactional;
 
 @Service
 public class RealEstateImageService {
@@ -161,7 +162,7 @@ public class RealEstateImageService {
         return presignedUrl.split("\\?")[0];
     }
 
-    // Delete images
+    @Transactional
     public void deleteImages(List<String> imageUrls) {
         if (imageUrls == null || imageUrls.isEmpty()) {
             return;
@@ -174,6 +175,7 @@ public class RealEstateImageService {
                 logger.info("🗑️ Deleted image from S3: {}", key);
             } catch (Exception e) {
                 logger.error("Failed to delete image from S3: {}", url, e);
+                // Don't throw exception to allow other deletions to proceed
             }
         });
     }
@@ -190,6 +192,17 @@ public class RealEstateImageService {
             java.util.regex.Matcher matcher = pattern.matcher(imageUrl);
             return matcher.find() ? matcher.group(1) : 
                 imageUrl.substring(imageUrl.lastIndexOf('/') + 1);
+        }
+    }
+
+    // Custom exception
+    public static class ImageUploadException extends RuntimeException {
+        public ImageUploadException(String message) {
+            super(message);
+        }
+        
+        public ImageUploadException(String message, Throwable cause) {
+            super(message, cause);
         }
     }
 }
