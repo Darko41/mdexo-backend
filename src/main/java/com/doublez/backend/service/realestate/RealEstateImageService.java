@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.doublez.backend.exception.ImageUploadException;
 import com.doublez.backend.service.image.ImageProcessingService;
 import com.doublez.backend.service.s3.S3Service;
 import com.doublez.backend.service.validation.FileValidationService;
@@ -68,6 +69,18 @@ public class RealEstateImageService {
                 
                 logger.info("✅ Successfully processed and uploaded image {}/{}", i + 1, files.length);
                 
+                // Longer delays between images in production
+                if (i < files.length - 1) { // Don't delay after last image
+                    try {
+                        int delayMs = calculateDelay(i, files.length);
+                        logger.info("⏳ Delaying {}ms before next image...", delayMs);
+                        Thread.sleep(delayMs);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        logger.warn("Delay interrupted");
+                    }
+                }
+                
                 // Force garbage collection between images to free memory
                 System.gc();
                 
@@ -79,6 +92,13 @@ public class RealEstateImageService {
 
         logger.info("🎉 Completed processing all {} images", files.length);
         return imageUrls;
+    }
+    
+    private int calculateDelay(int currentIndex, int totalImages) {
+        // Progressive delays: longer delays as we process more images
+        int baseDelay = 3000; // 3 seconds base delay
+        int progressiveDelay = currentIndex * 1000; // +1 second per image processed
+        return baseDelay + progressiveDelay;
     }
 
     // Single file upload with processing
@@ -106,6 +126,7 @@ public class RealEstateImageService {
         return extractPublicUrl(presignedUrl);
     }
 
+    // ... rest of your existing methods remain the same ...
     // Single file upload with custom filename support
     public String uploadFile(MultipartFile file, String customFilename) throws IOException {
         validationService.validateFile(file);
@@ -192,17 +213,6 @@ public class RealEstateImageService {
             java.util.regex.Matcher matcher = pattern.matcher(imageUrl);
             return matcher.find() ? matcher.group(1) : 
                 imageUrl.substring(imageUrl.lastIndexOf('/') + 1);
-        }
-    }
-
-    // Custom exception
-    public static class ImageUploadException extends RuntimeException {
-        public ImageUploadException(String message) {
-            super(message);
-        }
-        
-        public ImageUploadException(String message, Throwable cause) {
-            super(message, cause);
         }
     }
 }

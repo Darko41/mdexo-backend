@@ -1,6 +1,5 @@
 package com.doublez.backend.service.image;
 
-import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
@@ -46,8 +45,20 @@ public class ImageProcessingService {
                 file.getOriginalFilename(), 
                 String.format("%.1f", file.getSize() / (1024.0 * 1024.0)));
             
+            // Memory check before processing
+            if (!hasEnoughMemory()) {
+                logger.warn("⚠️ Low memory detected, skipping processing for: {}", file.getOriginalFilename());
+                return file.getBytes(); // Return original as fallback
+            }
+            
             // Read image with memory monitoring
             image = readImageSafely(file);
+            
+            // Memory check after reading
+            if (!hasEnoughMemory()) {
+                logger.warn("⚠️ Low memory after reading image, skipping processing for: {}", file.getOriginalFilename());
+                return file.getBytes(); // Return original as fallback
+            }
             
             // Calculate new dimensions maintaining aspect ratio
             int newWidth = TARGET_WIDTH;
@@ -86,6 +97,12 @@ public class ImageProcessingService {
             // Force garbage collection of original image
             image = null;
             System.gc();
+            
+            // Memory check before compression
+            if (!hasEnoughMemory()) {
+                logger.warn("⚠️ Low memory before compression, skipping processing for: {}", file.getOriginalFilename());
+                return file.getBytes(); // Return original as fallback
+            }
             
             // Convert to WebP or JPEG
             outputStream = new ByteArrayOutputStream();
@@ -136,6 +153,25 @@ public class ImageProcessingService {
                 image.flush();
             }
         }
+    }
+    
+    private boolean hasEnoughMemory() {
+        Runtime runtime = Runtime.getRuntime();
+        long usedMemory = runtime.totalMemory() - runtime.freeMemory();
+        long maxMemory = runtime.maxMemory();
+        long availableMemory = maxMemory - usedMemory;
+        
+        // Require at least 100MB available for safe processing
+        long requiredMemory = 100 * 1024 * 1024; // 100MB
+        boolean hasMemory = availableMemory > requiredMemory;
+        
+        logger.info("💾 Memory check - Used: {} MB, Available: {} MB, Max: {} MB, Has enough: {}",
+            usedMemory / (1024 * 1024),
+            availableMemory / (1024 * 1024),
+            maxMemory / (1024 * 1024),
+            hasMemory);
+        
+        return hasMemory;
     }
     
     private BufferedImage readImageSafely(MultipartFile file) throws IOException {
