@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.doublez.backend.exception.ImageUploadException;
+import com.doublez.backend.service.image.ImageProcessingService;
 import com.doublez.backend.service.s3.S3Service;
 import com.doublez.backend.service.validation.FileValidationService;
 
@@ -26,16 +27,19 @@ import jakarta.transaction.Transactional;
 
 @Service
 public class RealEstateImageService {
-    private final S3Service s3Service;
+	private final S3Service s3Service;
+    private final ImageProcessingService imageProcessingService;
     private final FileValidationService validationService;
     private static final Logger logger = LoggerFactory.getLogger(RealEstateImageService.class);
     
     @Value("${app.s3.folder}")
     private String s3Folder;
 
-    // Constructor
-    public RealEstateImageService(S3Service s3Service, FileValidationService validationService) {
+    public RealEstateImageService(S3Service s3Service, 
+                                 ImageProcessingService imageProcessingService,
+                                 FileValidationService validationService) {
         this.s3Service = s3Service;
+        this.imageProcessingService = imageProcessingService;
         this.validationService = validationService;
     }
 
@@ -102,23 +106,41 @@ public class RealEstateImageService {
                 file.getOriginalFilename(), maxAttempts), 
             lastException);
     }
-
-    private String uploadSingleImage(MultipartFile file, String uniqueFilename) throws IOException {
-        logger.info("Uploading {} ({} MB)", 
+    
+    public String uploadAndProcessImage(MultipartFile file) throws IOException {
+        validationService.validateFile(file);
+        
+        logger.info("Processing image: {} ({} MB)", 
             file.getOriginalFilename(), 
             file.getSize() / (1024 * 1024));
         
-        String presignedUrl = s3Service.generatePresignedUrl(uniqueFilename);
-
-        // Use byte array for ALL files - it's reliable
-        s3Service.uploadFile(
-            presignedUrl,
-            file.getBytes(),
-            file.getContentType()
-        );
+        // Process image (resize + compress)
+        byte[] processedImage = imageProcessingService.processImage(file);
         
-        logger.info("Completed upload for {}", file.getOriginalFilename());
+        String uniqueFilename = generateUniqueFilename(file, null);
+        String presignedUrl = s3Service.generatePresignedUrl(uniqueFilename);
+        
+        // Upload processed image
+        s3Service.uploadFile(presignedUrl, processedImage, getContentType(file));
+        
+        logger.info("Image processed: {} MB -> {} KB ({}% reduction)",
+            file.getSize() / (1024 * 1024),
+            processedImage.length / 1024,
+            (int) ((1 - (double) processedImage.length / file.getSize()) * 100));
+        
         return extractPublicUrl(presignedUrl);
+    }
+
+    private String uploadSingleImage(MultipartFile file, String uniqueFilename) throws IOException {
+        return uploadAndProcessImage(file);
+    }
+    
+    private String getContentType(MultipartFile file) {
+        String originalName = file.getOriginalFilename();
+        if (originalName != null && originalName.toLowerCase().endsWith(".webp")) {
+            return "image/webp";
+        }
+        return "image/jpeg";
     }
 
     private String generateUniqueFilename(MultipartFile file, String customName) {
