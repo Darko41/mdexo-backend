@@ -104,23 +104,20 @@ public class RealEstateImageService {
     }
 
     private String uploadSingleImage(MultipartFile file, String uniqueFilename) throws IOException {
+        logger.info("Uploading {} ({} MB)", 
+            file.getOriginalFilename(), 
+            file.getSize() / (1024 * 1024));
+        
         String presignedUrl = s3Service.generatePresignedUrl(uniqueFilename);
 
-        if (file.getSize() > 5_000_000) { // Stream if >5MB
-            s3Service.uploadFileStreaming(
-                presignedUrl,
-                file.getInputStream(),
-                file.getSize(),
-                file.getContentType()
-            );
-        } else {
-            s3Service.uploadFile(
-                presignedUrl,
-                file.getBytes(),
-                file.getContentType()
-            );
-        }
-
+        // Use byte array for ALL files - it's reliable
+        s3Service.uploadFile(
+            presignedUrl,
+            file.getBytes(),
+            file.getContentType()
+        );
+        
+        logger.info("Completed upload for {}", file.getOriginalFilename());
         return extractPublicUrl(presignedUrl);
     }
 
