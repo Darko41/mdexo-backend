@@ -40,7 +40,7 @@ public class RealS3Service implements S3Service {
 	public String generatePresignedUrl(String fileName) {
 		
 		PutObjectPresignRequest request = PutObjectPresignRequest.builder()
-				.signatureDuration(Duration.ofMinutes(15))
+				.signatureDuration(Duration.ofMinutes(30))
 				.putObjectRequest(p -> p.bucket(bucketName).key(fileName))
 				.build();
 		
@@ -85,23 +85,14 @@ public class RealS3Service implements S3Service {
 	public void uploadFileStreaming(String presignedUrl, InputStream data, long contentLength, String contentType)
 	        throws IOException {
 	    HttpClient client = HttpClient.newBuilder()
-	            .connectTimeout(Duration.ofSeconds(10))
+	            .connectTimeout(Duration.ofSeconds(15)) // Increased from 10
 	            .build();
-
-	    // Use BodyPublishers.ofByteArray for known content length, or let the client handle it
-	    byte[] dataBytes;
-	    try {
-	        dataBytes = data.readAllBytes();
-	    } catch (IOException e) {
-	        throw new IOException("Failed to read input stream", e);
-	    }
 
 	    HttpRequest request = HttpRequest.newBuilder()
 	            .uri(URI.create(presignedUrl))
-	            .PUT(HttpRequest.BodyPublishers.ofByteArray(dataBytes))
+	            .PUT(HttpRequest.BodyPublishers.ofInputStream(() -> data))
 	            .header("Content-Type", contentType)
-	            // No need for Content-Length header when using ofByteArray
-	            .timeout(Duration.ofSeconds(30))
+	            .timeout(Duration.ofSeconds(60)) // Increased from 30 for large files
 	            .build();
 
 	    try {
