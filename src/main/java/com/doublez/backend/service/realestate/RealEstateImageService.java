@@ -2,9 +2,11 @@ package com.doublez.backend.service.realestate;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,48 +49,171 @@ public class RealEstateImageService {
         validationService.validateFiles(files);
         List<String> imageUrls = new ArrayList<>();
 
-        logger.info("🔄 Starting sequential processing of {} images", files.length);
+        logger.info("🔄 Starting smart processing of {} images", files.length);
 
-        // Process images SEQUENTIALLY to avoid memory issues
-        for (int i = 0; i < files.length; i++) {
-            MultipartFile file = files[i];
-            
-            if (file.isEmpty()) {
-                logger.warn("⚠️ Skipping empty file at index {}", i);
-                continue;
-            }
+        // Sort files by size (largest first) to process biggest memory hogs first
+        List<MultipartFile> sortedFiles = Arrays.stream(files)
+            .filter(file -> !file.isEmpty())
+            .sorted((f1, f2) -> Long.compare(f2.getSize(), f1.getSize())) // Descending by size
+            .collect(Collectors.toList());
 
+        int processedCount = 0;
+        int skippedCount = 0;
+        
+        for (MultipartFile file : sortedFiles) {
             try {
-                logger.info("📦 Processing image {}/{}: {} ({} MB)", 
-                    i + 1, files.length, file.getOriginalFilename(),
-                    String.format("%.1f", file.getSize() / (1024.0 * 1024.0)));
+                long fileSizeMB = file.getSize() / (1024 * 1024);
+                
+                // Smart decision: Only process large images (>2MB) and when we have enough memory
+                boolean shouldProcess = shouldProcessImage(file, processedCount);
+                
+                if (shouldProcess) {
+                    logger.info("📦 Processing large image {}/{}: {} ({} MB)", 
+                        processedCount + 1, sortedFiles.size(), file.getOriginalFilename(),
+                        String.format("%.1f", fileSizeMB));
 
-                // Process and upload image one at a time
-                String imageUrl = uploadAndProcessImage(file);
-                imageUrls.add(imageUrl);
-                
-                logger.info("✅ Successfully processed and uploaded image {}/{}", i + 1, files.length);
-                
-                // Memory management between images
-                if (i < files.length - 1) {
-                    try {
-                        Thread.sleep(1000); // 1 second delay
-                        System.gc(); // Force garbage collection
-                        Thread.sleep(500); // Additional GC time
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        logger.warn("Delay interrupted");
+                    String imageUrl = uploadAndProcessImage(file);
+                    imageUrls.add(imageUrl);
+                    processedCount++;
+                    
+                    logger.info("✅ Successfully processed image {}/{}", processedCount, sortedFiles.size());
+                    
+                    // Memory management
+                    if (processedCount < sortedFiles.size()) {
+                        performMemoryCleanup();
                     }
+                    
+                } else {
+                    // Upload as original
+                    logger.info("📤 Skipping processing for image {} ({} MB) - uploading original", 
+                        file.getOriginalFilename(), String.format("%.1f", fileSizeMB));
+                    
+                    String imageUrl = uploadOriginalImage(file);
+                    imageUrls.add(imageUrl);
+                    skippedCount++;
                 }
                 
             } catch (Exception e) {
                 logger.error("❌ Failed to process image {}: {}", file.getOriginalFilename(), e.getMessage());
-                // Continue with next image instead of failing entire batch
+                
+                // Fallback: upload as original
+                try {
+                    String imageUrl = uploadOriginalImage(file);
+                    imageUrls.add(imageUrl);
+                    skippedCount++;
+                    logger.info("🔄 Uploaded original after failure: {}", file.getOriginalFilename());
+                } catch (Exception ex) {
+                    logger.error("❌ Failed to upload original image: {}", file.getOriginalFilename());
+                }
             }
         }
 
-        logger.info("🎉 Completed processing all {} images", files.length);
+        logger.info("🎉 Completed: {} images processed, {} uploaded as original", processedCount, skippedCount);
         return imageUrls;
+    }
+    
+    private boolean shouldProcessImage(MultipartFile file, int alreadyProcessed) {
+        long fileSize = file.getSize();
+        long fileSizeMB = fileSize / (1024 * 1024);
+        
+        // Rule 1: Only process images larger than 1MB (small ones don't need much compression)
+        if (fileSizeMB < 1) {
+            logger.debug("🔄 Skip processing - image too small: {} MB", fileSizeMB);
+            return false;
+        }
+        
+        // Rule 2: Check current memory availability
+        if (!hasSufficientMemoryForProcessing()) {
+            logger.debug("🔄 Skip processing - insufficient memory");
+            return false;
+        }
+        
+        // Rule 3: Limit number of processed images based on memory conditions
+        int maxProcessable = calculateMaxProcessableImages();
+        if (alreadyProcessed >= maxProcessable) {
+            logger.debug("🔄 Skip processing - reached max processable limit: {}", maxProcessable);
+            return false;
+        }
+        
+        // Rule 4: For very large files (>5MB), be more conservative
+        if (fileSizeMB > 5 && alreadyProcessed > 2) {
+            logger.debug("🔄 Skip processing - large file after several processed");
+            return false;
+        }
+        
+        return true;
+    }
+    
+    private boolean hasSufficientMemoryForProcessing() {
+        Runtime runtime = Runtime.getRuntime();
+        long usedMemory = runtime.totalMemory() - runtime.freeMemory();
+        long maxMemory = runtime.maxMemory();
+        long availableMemory = maxMemory - usedMemory;
+        
+        // Require at least 40MB available for safe processing
+        long requiredMemory = 40 * 1024 * 1024;
+        boolean hasMemory = availableMemory > requiredMemory;
+        
+        logger.debug("💾 Memory check - Available: {} MB, Required: {} MB, Has enough: {}",
+            availableMemory / (1024 * 1024),
+            requiredMemory / (1024 * 1024),
+            hasMemory);
+        
+        return hasMemory;
+    }
+
+    private int calculateMaxProcessableImages() {
+        Runtime runtime = Runtime.getRuntime();
+        long maxMemory = runtime.maxMemory();
+        
+        // Dynamic calculation based on available memory
+        if (maxMemory <= 128 * 1024 * 1024) { // 128MB or less
+            return 3; // Very conservative for low-memory environments
+        } else if (maxMemory <= 256 * 1024 * 1024) { // 256MB or less  
+            return 5; // Moderate for medium-memory environments
+        } else {
+            return 8; // More generous for higher memory
+        }
+    }
+
+    private void performMemoryCleanup() {
+        try {
+            Thread.sleep(800); // Shorter delay
+            System.gc(); // Force garbage collection
+            Thread.sleep(200); // Additional GC time
+            
+            // Log memory state after cleanup
+            Runtime runtime = Runtime.getRuntime();
+            long usedMemory = runtime.totalMemory() - runtime.freeMemory();
+            long maxMemory = runtime.maxMemory();
+            long availableMemory = maxMemory - usedMemory;
+            
+            logger.debug("🧹 Memory after cleanup - Used: {} MB, Available: {} MB",
+                usedMemory / (1024 * 1024),
+                availableMemory / (1024 * 1024));
+                
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+    
+ // Upload original file without processing (same as before)
+    private String uploadOriginalImage(MultipartFile file) throws IOException {
+        validationService.validateFile(file);
+        
+        logger.info("📤 Uploading original image: {} ({} MB)", 
+            file.getOriginalFilename(), 
+            String.format("%.1f", file.getSize() / (1024.0 * 1024.0)));
+        
+        String uniqueFilename = generateUniqueFilename(file, null);
+        String presignedUrl = s3Service.generatePresignedUrl(uniqueFilename);
+        
+        s3Service.uploadFile(presignedUrl, file.getBytes(), file.getContentType());
+        
+        logger.info("✅ Original image uploaded: {} MB", 
+            String.format("%.1f", file.getSize() / (1024.0 * 1024.0)));
+        
+        return extractPublicUrl(presignedUrl);
     }
 
     // Single file upload with processing
