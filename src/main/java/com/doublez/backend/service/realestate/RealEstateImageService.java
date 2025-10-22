@@ -114,7 +114,7 @@ public class RealEstateImageService {
     
     private boolean shouldProcessImage(MultipartFile file, int alreadyProcessed) {
         long fileSize = file.getSize();
-        long fileSizeMB = fileSize / (1024 * 1024);
+        long fileSizeMB = fileSize / (1024 * 1024L);
         
         // Rule 1: Only process images larger than 1MB (small ones don't need much compression)
         if (fileSizeMB < 1) {
@@ -151,12 +151,12 @@ public class RealEstateImageService {
         long availableMemory = maxMemory - usedMemory;
         
         // Require at least 40MB available for safe processing
-        long requiredMemory = 40 * 1024 * 1024;
+        long requiredMemory = 40 * 1024 * 1024L;
         boolean hasMemory = availableMemory > requiredMemory;
         
         logger.debug("💾 Memory check - Available: {} MB, Required: {} MB, Has enough: {}",
-            availableMemory / (1024 * 1024),
-            requiredMemory / (1024 * 1024),
+            availableMemory / (1024 * 1024L),
+            requiredMemory / (1024 * 1024L),
             hasMemory);
         
         return hasMemory;
@@ -297,22 +297,28 @@ public class RealEstateImageService {
         return presignedUrl.split("\\?")[0];
     }
 
-    @Transactional
     public void deleteImages(List<String> imageUrls) {
         if (imageUrls == null || imageUrls.isEmpty()) {
             return;
         }
 
-        imageUrls.forEach(url -> {
+        List<String> failedDeletions = new ArrayList<>();
+        
+        for (String url : imageUrls) {
             try {
                 String key = extractS3Key(url);
                 s3Service.deleteFile(key);
-                logger.info("🗑️ Deleted image from S3: {}", key);
+                logger.info("🗑️ Successfully deleted image from S3: {}", key);
             } catch (Exception e) {
-                logger.error("Failed to delete image from S3: {}", url, e);
-                // Don't throw exception to allow other deletions to proceed
+                logger.error("❌ Failed to delete image from S3: {}", url, e);
+                failedDeletions.add(url);
             }
-        });
+        }
+        
+        if (!failedDeletions.isEmpty()) {
+            logger.warn("⚠️ Failed to delete {} images from S3: {}", failedDeletions.size(), failedDeletions);
+            // You might want to send this to a monitoring service or retry queue
+        }
     }
 
     private String extractS3Key(String imageUrl) {

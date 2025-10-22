@@ -9,6 +9,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -44,6 +46,8 @@ import jakarta.transaction.Transactional;
 @Service
 @Transactional
 public class RealEstateService {
+	private static final Logger logger = LoggerFactory.getLogger(RealEstateService.class);
+	
     private final RealEstateRepository realEstateRepository;
     private final UserService userService;
     private final RealEstateImageService realEstateImageService;
@@ -282,15 +286,17 @@ public class RealEstateService {
     }
 
     public void deleteRealEstate(Long propertyId) {
-    	RealEstate entity = getValidatedRealEstate(propertyId);
+        RealEstate entity = getValidatedRealEstate(propertyId);
         
-        // Delete associated images first
+        // Delete associated images from S3 FIRST
         if (entity.getImages() != null && !entity.getImages().isEmpty()) {
+            logger.info("🗑️ Deleting {} images from S3 for property {}", entity.getImages().size(), propertyId);
             realEstateImageService.deleteImages(entity.getImages());
         }
         
-        // Then delete the property
+        // Then delete the property from database
         realEstateRepository.delete(entity);
+        logger.info("✅ Successfully deleted real estate with ID: {}", propertyId);
     }
 
     public long getRealEstateCount() {
