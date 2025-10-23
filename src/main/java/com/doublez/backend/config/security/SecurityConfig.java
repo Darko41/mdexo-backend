@@ -15,6 +15,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -65,18 +66,17 @@ public class SecurityConfig {
 	        	// 1. Public static resources - public URLs (no authentication required)
 	            .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 	            .requestMatchers(
-	                "/",
-	                "/static/**",
-	                "/assets/**", 
-	                "/css/**",
+	            	"/dist/**",
+	            	"/pages/**",
+	            	"/plugins/**",
+	            	"/css/**",
 	                "/js/**",
 	                "/images/**",
+	                "/static/**",
+	                "/assets/**",
 	                "/favicon.ico",
 	                "/manifest.json", 
 	                "/robots.txt",
-	                "/dist/**",           
-	                "/plugins/**",          
-	                "/pages/**",
 	                "/v3/api-docs/**",
 	                "/swagger-ui/**",
 	                "/swagger-resources/**",
@@ -199,5 +199,6 @@ public class SecurityConfig {
             );
         };
     }
+	
 
 }

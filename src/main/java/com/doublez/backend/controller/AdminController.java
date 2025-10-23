@@ -3,6 +3,8 @@ package com.doublez.backend.controller;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,7 +15,6 @@ import com.doublez.backend.dto.UserResponseDTO;
 import com.doublez.backend.service.realestate.RealEstateService;
 import com.doublez.backend.service.user.UserService;
 
-import jakarta.servlet.http.HttpServletRequest;
 
 
 @Controller
@@ -25,57 +26,39 @@ public class AdminController {
     @Autowired
     private UserService userService;
 
-    // Show admin login page (uses existing auth/login.html)
+    // Show admin login page - use existing auth/login template
     @GetMapping("/login")
     public String showAdminLoginPage(Model model) {
-        model.addAttribute("adminLogin", true);
-        return "auth/login"; // Use existing login page
-    }
-
-    // Process admin login - redirects to form login
-    @GetMapping("/access")
-    public String adminAccessRedirect() {
-        return "redirect:/admin/login";
-    }
-
-    // Secure all admin pages with session check
-    @GetMapping("/dashboard")
-    public String showAdminDashboard(Model model, HttpServletRequest request) {
-        if (!isAdminAuthenticated(request)) {
-            return "redirect:/admin/login";
+        // If already authenticated as admin, redirect to dashboard
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && 
+            auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+            return "redirect:/admin/dashboard";
         }
         
-        String adminUser = (String) request.getSession().getAttribute("adminUser");
-        System.out.println("🛠️ Admin dashboard accessed by: " + adminUser);
+        model.addAttribute("adminLogin", true);
+        return "auth/login"; // Use existing login template
+    }
+
+    // Remove the manual authentication checks from other methods
+    @GetMapping("/dashboard")
+    public String showAdminDashboard(Model model) {
+        System.out.println("🛠️ Admin dashboard accessed");
         return setupDashboard(model);
     }
 
     @GetMapping("/users")
-    public String showUserData(Model model, HttpServletRequest request) {
-        if (!isAdminAuthenticated(request)) {
-            return "redirect:/admin/login";
-        }
-        
+    public String showUserData(Model model) {
         List<UserResponseDTO> users = userService.getAllUsers();
         model.addAttribute("users", users);
         return "admin/userdata";
     }
 
     @GetMapping("/real-estates")
-    public String showRealEstatesData(Model model, HttpServletRequest request) {
-        if (!isAdminAuthenticated(request)) {
-            return "redirect:/admin/login";
-        }
-        
+    public String showRealEstatesData(Model model) {
         List<RealEstateResponseDTO> realEstates = realEstateService.getAllRealEstates();
         model.addAttribute("realEstates", realEstates);
         return "admin/realestatedata";
-    }
-
-    // Helper methods
-    private boolean isAdminAuthenticated(HttpServletRequest request) {
-        String adminUser = (String) request.getSession().getAttribute("adminUser");
-        return adminUser != null && userService.hasAdminRole(adminUser);
     }
 
     private String setupDashboard(Model model) {

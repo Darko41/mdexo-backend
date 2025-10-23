@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -146,6 +147,16 @@ public class AdminApiController {
             return ResponseEntity.internalServerError()
                     .body(ApiResponse.error("Failed to delete user: " + e.getMessage()));
         }
+    }
+    
+    @GetMapping("/verify")
+    public ResponseEntity<?> verifyAdminAccess(Authentication authentication) {
+        if (authentication != null && 
+            authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+            return ResponseEntity.ok().build();
+        }
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
     }
     
     
