@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>AdminLTE 3 | Dashboard</title>
+  <title>Mdexo Admin | Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   
   <!-- Font Awesome -->
@@ -41,7 +41,7 @@
         <a th:href="@{/admin/dashboard}" class="nav-link">Home</a>
       </li>
       <li class="nav-item d-none d-sm-inline-block">
-        <a href="#" class="nav-link">Contact</a>
+        <a href="/" class="nav-link" target="_blank">Main Site</a>
       </li>
     </ul>
 
@@ -59,7 +59,15 @@
 
     <!-- Right navbar links -->
     <ul class="navbar-nav ml-auto">
-
+      <!-- Logout in navbar -->
+      <li class="nav-item">
+        <form th:action="@{/auth/logout}" method="post" class="nav-link">
+          <button type="submit" class="btn btn-link nav-link" style="border: none; background: none; color: inherit;">
+            <i class="fas fa-sign-out-alt"></i> Logout
+          </button>
+        </form>
+      </li>
+      
       <li class="nav-item">
         <a class="nav-link" data-widget="control-sidebar" data-slide="true" href="#" role="button">
           <i class="fas fa-th-large"></i>
@@ -72,10 +80,10 @@
   <!-- Main Sidebar Container -->
   <aside class="main-sidebar sidebar-dark-primary elevation-4">
     <!-- Brand Logo -->
-    <a href="index3.html" class="brand-link">
-      <img th:src="@{/dist/imgLTELogo.png}" alt="AdminLTE Logo" class="brand-image img-circle elevation-3"
+    <a th:href="@{/admin/dashboard}" class="brand-link">
+      <img th:src="@{/dist/img/AdminLTELogo.png}" alt="Mdexo Logo" class="brand-image img-circle elevation-3"
            style="opacity: .8">
-      <span class="brand-text font-weight-light">AdminLTE 3</span>
+      <span class="brand-text font-weight-light">Mdexo Admin</span>
     </a>
 
     <!-- Sidebar -->
@@ -86,8 +94,20 @@
           <img th:src="@{/dist/img/user2-160x160.jpg}" class="img-circle elevation-2" alt="User Image">
         </div>
         <div class="info">
-          <a href="#" class="d-block">Alexander Pierce</a>
-        </div>
+		    <a href="#" class="d-block" th:text="${username}">Admin User</a>
+		    <small class="text-success">
+		        <i class="fas fa-circle text-success"></i> Online
+		    </small>
+		</div>
+      </div>
+
+      <!-- Logout Button in Sidebar -->
+      <div class="sidebar-footer mb-2">
+        <form th:action="@{/auth/logout}" method="post" class="w-100">
+          <button type="submit" class="btn btn-danger btn-block btn-sm">
+            <i class="fas fa-sign-out-alt mr-1"></i> Logout
+          </button>
+        </form>
       </div>
 
       <!-- Sidebar Menu -->
@@ -299,6 +319,13 @@
     <!-- Main content -->
     <section class="content">
       <div class="container-fluid">
+        <!-- Welcome Alert -->
+        <div class="alert alert-info alert-dismissible">
+		    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+		    <h5><i class="icon fas fa-info"></i> Welcome, <span th:text="${username}">Admin</span>!</h5>
+		    You are logged into the Mdexo Admin Dashboard.
+		</div>
+
         <!-- Small boxes (Stat box) -->
         <div class="row">
           <div class="col-lg-3 col-6">
@@ -937,5 +964,24 @@
 <script th:src="@{/dist/js/pages/dashboard.js}"></script>
 <!-- AdminLTE for demo purposes -->
 <script th:src="@{/dist/js/demo.js}"></script>
+
+<!-- Auto-logout detection script -->
+<script>
+// Check session status periodically
+setInterval(() => {
+    fetch('/api/admin/verify', {
+        credentials: 'include'
+    })
+    .then(response => {
+        if (!response.ok) {
+            // Session expired or invalid
+            window.location.href = '/auth/login?admin=true&session=expired';
+        }
+    })
+    .catch(() => {
+        // Ignore network errors
+    });
+}, 300000); // Check every 5 minutes
+</script>
 </body>
 </html>

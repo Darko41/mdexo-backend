@@ -34,6 +34,7 @@ import com.doublez.backend.exception.IllegalOperationException;
 import com.doublez.backend.exception.SelfDeletionException;
 import com.doublez.backend.exception.UserNotFoundException;
 import com.doublez.backend.response.ApiResponse;
+import com.doublez.backend.service.realestate.AdminRealEstateService;
 import com.doublez.backend.service.realestate.RealEstateService;
 import com.doublez.backend.service.user.UserService;
 
@@ -43,14 +44,17 @@ import jakarta.validation.Valid;
 @RequestMapping("/api/admin")
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminApiController {
+	private final AdminRealEstateService adminRealEstateService;
     private final RealEstateService realEstateService;
     private final UserService userService;
     
-    public AdminApiController(RealEstateService realEstateService, 
-                            UserService userService) {
-        this.realEstateService = realEstateService;
-        this.userService = userService;
-    }
+    public AdminApiController(AdminRealEstateService adminRealEstateService, 
+            UserService userService,
+            RealEstateService realEstateService) {
+			this.adminRealEstateService = adminRealEstateService;
+			this.userService = userService;
+			this.realEstateService = realEstateService;
+}
 
     // Real Estate Endpoints
     
@@ -59,7 +63,6 @@ public class AdminApiController {
             @RequestPart @Valid RealEstateCreateDTO createDto,
             @RequestPart(required = false) MultipartFile[] images) {
         
-        // Use the new unified method instead of the deleted createWithImages
         RealEstateResponseDTO response = realEstateService.createRealEstateForUser(createDto, images);
         return ResponseEntity
             .status(HttpStatus.CREATED)
@@ -97,17 +100,21 @@ public class AdminApiController {
     public ResponseEntity<RealEstateResponseDTO> updateRealEstate(
             @PathVariable Long propertyId,
             @RequestBody @Valid RealEstateUpdateDTO updateDto) {
-    	RealEstateResponseDTO response = realEstateService.updateRealEstate(propertyId, updateDto);
+        RealEstateResponseDTO response = adminRealEstateService.updateRealEstate(propertyId, updateDto);
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/real-estates/{propertyId}")
     public ResponseEntity<Void> deleteRealEstate(@PathVariable Long propertyId) {
-        realEstateService.deleteRealEstate(propertyId);
+        adminRealEstateService.deleteRealEstate(propertyId);
         return ResponseEntity.noContent().build();
     }
     
-    
+    @GetMapping("/real-estates/{propertyId}")
+    public ResponseEntity<RealEstateResponseDTO> getRealEstate(@PathVariable Long propertyId) {
+        RealEstateResponseDTO realEstate = adminRealEstateService.getRealEstateById(propertyId);
+        return ResponseEntity.ok(realEstate);
+    }
 
     // User Management Endpoints
     @PostMapping("/users")
