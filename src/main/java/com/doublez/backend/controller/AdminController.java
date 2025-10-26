@@ -26,24 +26,9 @@ public class AdminController {
     @Autowired
     private UserService userService;
 
-    // Show admin login page - use existing auth/login template
-    @GetMapping("/login")
-    public String showAdminLoginPage(Model model) {
-        // If already authenticated as admin, redirect to dashboard
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.isAuthenticated() && 
-            auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
-            return "redirect:/admin/dashboard";
-        }
-        
-        model.addAttribute("adminLogin", true);
-        return "auth/login"; // Use existing login template
-    }
-
     // Remove the manual authentication checks from other methods
     @GetMapping("/dashboard")
     public String showAdminDashboard(Model model) {
-        System.out.println("🛠️ Admin dashboard accessed");
         return setupDashboard(model);
     }
 

@@ -24,7 +24,9 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addViewControllers(ViewControllerRegistry registry) {
-        registry.addViewController("/admin/login").setViewName("admin/login");
+        registry.addViewController("/admin/login").setViewName("redirect:/auth/login?admin=true");
+        registry.addViewController("/admin").setViewName("redirect:/auth/login?admin=true");
+        
         
         //  React routes
         registry.addViewController("/").setViewName("forward:/index.html");

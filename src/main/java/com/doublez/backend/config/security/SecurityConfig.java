@@ -63,31 +63,29 @@ public class SecurityConfig {
 	SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 	    http
 	        .authorizeHttpRequests((authz) -> authz
-	        	// 1. Public static resources - public URLs (no authentication required)
+	            // 1. Public static resources - public URLs (no authentication required)
 	            .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 	            .requestMatchers(
-	            	"/dist/**",
-	            	"/pages/**",
-	            	"/plugins/**",
-	            	"/css/**",
+	                "/dist/**",
+	                "/pages/**", 
+	                "/plugins/**",
+	                "/css/**",
 	                "/js/**",
 	                "/images/**",
 	                "/static/**",
 	                "/assets/**",
 	                "/favicon.ico",
-	                "/manifest.json", 
+	                "/manifest.json",
 	                "/robots.txt",
 	                "/v3/api-docs/**",
-	                "/swagger-ui/**",
+	                "/swagger-ui/**", 
 	                "/swagger-resources/**",
 	                "/webjars/**"
 	            ).permitAll()
 	            
-	            // 2. Public auth endpoints
+	            // 2. Public auth endpoints (UPDATED - removed /admin/login since it's now handled by /auth/login)
 	            .requestMatchers(
-	                "/auth/**",
-	                "/admin/login", 
-	                "/admin/access"
+	                "/auth/**"  // Now handles both regular and admin login
 	            ).permitAll()
 	            
 	            // 3. Public API endpoints (EXPLICITLY LIST ALL PUBLIC API ENDPOINTS)
@@ -104,7 +102,7 @@ public class SecurityConfig {
 	            
 	            // 5. Protected real estate endpoints (JWT authentication)
 	            .requestMatchers(HttpMethod.POST, "/api/real-estates/**").authenticated()
-	            .requestMatchers(HttpMethod.PUT, "/api/real-estates/**").authenticated()
+	            .requestMatchers(HttpMethod.PUT, "/api/real-estates/**").authenticated() 
 	            .requestMatchers(HttpMethod.DELETE, "/api/real-estates/**").authenticated()
 	            
 	            // 6. Admin API endpoints (JWT + ROLE_ADMIN)
@@ -119,20 +117,21 @@ public class SecurityConfig {
 	            // 9. Any other request must be authenticated
 	            .anyRequest().authenticated()
 	        )
-	        // Form login ONLY for admin pages (session-based)
+	        // Form login for both regular users and admin (session-based)
 	        .formLogin(form -> form
 	            .loginPage("/auth/login")
 	            .loginProcessingUrl("/auth/login") 
-	            .defaultSuccessUrl("/auth/success")
-	            .failureUrl("/auth/login?error")
+	            .defaultSuccessUrl("/auth/success", true) // Let controller handle redirect
+	            .failureUrl("/auth/login?error=true")
 	            .permitAll()
 	        )
-	        // Logout ONLY for admin pages (session-based)
+	        // Logout for both regular users and admin (session-based)
 	        .logout(logout -> logout
 	            .logoutUrl("/auth/logout")
-	            .logoutSuccessUrl("/auth/login")
+	            .logoutSuccessUrl("/auth/login?logout=true")
 	            .invalidateHttpSession(true)
 	            .deleteCookies("JSESSIONID")
+	            .permitAll()
 	        )
 	        .sessionManagement(sess -> sess
 	            .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
@@ -149,7 +148,12 @@ public class SecurityConfig {
 	                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
 	                } else {
 	                    // Web pages get redirect to login (Session)
-	                    response.sendRedirect("/auth/login");
+	                    // For admin pages, add admin flag to redirect
+	                    if (requestUri.startsWith("/admin/")) {
+	                        response.sendRedirect("/auth/login?admin=true");
+	                    } else {
+	                        response.sendRedirect("/auth/login");
+	                    }
 	                }
 	            })
 	        );

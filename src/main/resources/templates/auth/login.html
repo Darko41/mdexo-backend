@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Login</title>
+    <title th:text="${adminLogin != null ? 'Admin Login' : 'Login'}">Login</title>
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" th:href="@{/plugins/bootstrap/css/bootstrap.min.css}">
     <!-- Font Awesome -->
@@ -14,7 +14,7 @@
 <body class="hold-transition login-page">
 <div class="login-box">
     <div class="login-logo">
-        <b>Admin</b>Portal
+        <b th:text="${adminLogin != null ? 'Admin ' : ''}"></b>Portal
     </div>
     
     <div class="card">
@@ -46,9 +46,6 @@
                         </button>
                     </div>
                 </div>
-                
-                <!-- Hidden field to indicate admin login -->
-                <input type="hidden" name="adminLogin" th:value="${adminLogin}">
             </form>
 
             <!-- Error message -->
@@ -57,14 +54,14 @@
             </div>
             
             <div th:if="${param.logout}" class="alert alert-success mt-3" role="alert">
-			    You have been logged out successfully
-			</div>
+                You have been logged out successfully
+            </div>
 
+            <!-- FIXED NAVIGATION -->
             <p class="mb-1 mt-3">
-                <a th:href="${adminLogin != null ? '/' : '/admin/login'}">
-                    <span th:text="${adminLogin != null ? 'Back to Main Site' : 'Admin Login'}"></span>
-                </a>
-            </p>
+			    <a th:if="${adminLogin != null}" th:href="@{${@environment.getProperty('frontend.url')}}">← Back to Main Site</a>
+			    <a th:unless="${adminLogin != null}" th:href="@{/auth/login(admin=true)}">Admin Login →</a>
+			</p>
         </div>
     </div>
 </div>
