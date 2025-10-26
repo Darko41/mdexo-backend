@@ -29,7 +29,6 @@ public class JwtTokenUtil {
         this.secretKey = secretKey;
         this.expirationTime = expirationTime;
         
-        System.out.println("✅ JWT Token Util initialized with secret length: " + secretKey.length());
     }
 	
 	// Generate JWT Token

@@ -21,7 +21,7 @@ public class AuthController {
         if (logout != null) {
             model.addAttribute("message", "You have been logged out successfully");
         }
-        return "auth/login"; // Your existing login.html template
+        return "auth/login"; 
     }
     
 }
