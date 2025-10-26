@@ -164,14 +164,20 @@ public class SecurityConfig {
 	@Bean
 	CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
-		configuration.setAllowedOrigins(Arrays.asList(
+		configuration.setAllowedOriginPatterns(Arrays.asList(
 		        "http://localhost:5173", 
 		        "https://mdexo-frontend.onrender.com",
 		        "http://localhost:8080"
 		    ));
-		configuration.setAllowedMethods(Arrays.asList("*"));
+		
+		// Specific with methods for security
+		configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+		// Wildcard for headers (this is fine with credentials)
 		configuration.setAllowedHeaders(Arrays.asList("*"));
+		// For cross-domain cookies/sessions
 		configuration.setAllowCredentials(true);
+		// Expose cookies to the frontend
+	    configuration.setExposedHeaders(Arrays.asList("Set-Cookie", "Authorization"));
 		configuration.setMaxAge(3600L);
 		
 		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
