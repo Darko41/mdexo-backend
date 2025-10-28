@@ -5,8 +5,10 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <title>AdminLTE 3 | <span th:text="${isEdit ? 'Edit' : 'Add'}">Add</span> Real Estate</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="_csrf" th:content="${_csrf.token}"/>
-  <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+  
+  <!-- Use safe navigation with ?. operator -->
+  <meta name="_csrf" th:content="${_csrf?.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf?.headerName}"/>
   
   <!-- Font Awesome -->
   <link rel="stylesheet" th:href="@{/plugins/fontawesome-free/css/all.min.css}">
@@ -14,10 +16,57 @@
   <link rel="stylesheet" th:href="@{/dist/css/adminlte.min.css}">
   <!-- Google Font: Source Sans Pro -->
   <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
+  <style>
+    .feature-tag {
+      display: inline-flex;
+      align-items: center;
+      background-color: #dbeafe;
+      color: #1e40af;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.875rem;
+      margin: 0.25rem;
+    }
+    .feature-remove {
+      margin-left: 0.5rem;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .feature-remove:hover {
+      color: #dc2626;
+    }
+    .image-preview {
+      position: relative;
+      display: inline-block;
+      margin: 0.5rem;
+    }
+    .image-preview img {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 0.5rem;
+      border: 2px solid #e5e7eb;
+    }
+    .image-remove {
+      position: absolute;
+      top: -0.5rem;
+      right: -0.5rem;
+      background: #dc2626;
+      color: white;
+      border-radius: 50%;
+      width: 1.5rem;
+      height: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+  </style>
 </head>
 <body class="hold-transition sidebar-mini">
 <div class="wrapper">
-  <!-- Navbar (same as above, shortened for brevity) -->
+  <!-- Navbar -->
   <nav class="main-header navbar navbar-expand navbar-white navbar-light">
     <ul class="navbar-nav">
       <li class="nav-item">
@@ -29,7 +78,7 @@
     </ul>
   </nav>
 
-  <!-- Main Sidebar Container (same as above) -->
+  <!-- Main Sidebar Container -->
   <aside class="main-sidebar sidebar-dark-primary elevation-4">
     <a th:href="@{/admin/dashboard}" class="brand-link">
       <img th:src="@{/dist/img/AdminLTELogo.png}" alt="AdminLTE Logo" class="brand-image img-circle elevation-3">
@@ -94,38 +143,53 @@
                   Enter Real Estate Details
                 </h3>
               </div>
-              <form th:action="${isEdit ? @{'/api/admin/real-estates/' + ${realEstate.propertyId}} : @{/api/admin/real-estates}}" 
-                    th:method="${isEdit ? 'PUT' : 'POST'}" 
+              <!-- Fixed form action with correct Thymeleaf syntax -->
+              <form th:action="${isEdit} ? @{/api/admin/real-estates/} + ${realEstate.propertyId} : @{/api/admin/real-estates}" 
+                    th:method="${isEdit} ? 'PUT' : 'POST'" 
                     id="realEstateForm" 
                     enctype="multipart/form-data">
+                
+                <!-- CSRF Token as hidden input -->
+                <input type="hidden" th:name="${_csrf?.parameterName}" th:value="${_csrf?.token}" id="csrfToken">
+                
+                <!-- Hidden field for features -->
+                <input type="hidden" id="featuresData" name="features">
+                
                 <div class="card-body">
+                  <!-- Basic Information Section -->
+                  <div class="row mb-4">
+                    <div class="col-12">
+                      <h5 class="text-primary"><i class="fas fa-info-circle mr-2"></i>Basic Information</h5>
+                      <hr>
+                    </div>
+                  </div>
+
                   <div class="row">
                     <div class="col-md-6">
                       <div class="form-group">
                         <label for="title">Title *</label>
                         <input type="text" class="form-control" id="title" name="title" 
-                               th:value="${realEstate?.title}" required>
+                               th:value="${realEstate?.title}" placeholder="Enter property title" required>
                       </div>
                       <div class="form-group">
                         <label for="description">Description</label>
                         <textarea class="form-control" id="description" name="description" rows="3"
-                                  th:text="${realEstate?.description}"></textarea>
+                                  th:text="${realEstate?.description}" placeholder="Describe your property..."></textarea>
                       </div>
+                    </div>
+                    <div class="col-md-6">
                       <div class="form-group">
                         <label for="propertyType">Property Type *</label>
                         <select class="form-control" id="propertyType" name="propertyType" required>
                           <option value="">Select Property Type</option>
-                          <option value="APARTMENT" th:selected="${realEstate?.propertyType == 'APARTMENT'}">Apartment</option>
                           <option value="HOUSE" th:selected="${realEstate?.propertyType == 'HOUSE'}">House</option>
-                          <option value="VILLA" th:selected="${realEstate?.propertyType == 'VILLA'}">Villa</option>
-                          <option value="COMMERCIAL" th:selected="${realEstate?.propertyType == 'COMMERCIAL'}">Commercial</option>
+                          <option value="APARTMENT" th:selected="${realEstate?.propertyType == 'APARTMENT'}">Apartment</option>
+                          <option value="CONDO" th:selected="${realEstate?.propertyType == 'CONDO'}">Condo</option>
                           <option value="LAND" th:selected="${realEstate?.propertyType == 'LAND'}">Land</option>
+                          <option value="GARAGE" th:selected="${realEstate?.propertyType == 'GARAGE'}">Garage</option>
+                          <option value="COMMERCIAL" th:selected="${realEstate?.propertyType == 'COMMERCIAL'}">Commercial</option>
+                          <option value="OTHER" th:selected="${realEstate?.propertyType == 'OTHER'}">Other</option>
                         </select>
-                      </div>
-                      <div class="form-group">
-                        <label for="price">Price *</label>
-                        <input type="number" class="form-control" id="price" name="price" 
-                               th:value="${realEstate?.price}" step="0.01" min="0" required>
                       </div>
                       <div class="form-group">
                         <label for="listingType">Listing Type *</label>
@@ -136,39 +200,168 @@
                         </select>
                       </div>
                     </div>
-                    <div class="col-md-6">
+                  </div>
+
+                  <!-- Price, Size, and Features Section -->
+                  <div class="row mb-4">
+                    <div class="col-12">
+                      <h5 class="text-primary mt-4"><i class="fas fa-tag mr-2"></i>Pricing & Features</h5>
+                      <hr>
+                    </div>
+                  </div>
+
+                  <div class="row">
+                    <div class="col-md-4">
                       <div class="form-group">
-                        <label for="address">Address</label>
-                        <input type="text" class="form-control" id="address" name="address"
-                               th:value="${realEstate?.address}">
+                        <label for="price">Price *</label>
+                        <div class="input-group">
+                          <div class="input-group-prepend">
+                            <span class="input-group-text">$</span>
+                          </div>
+                          <input type="number" class="form-control" id="price" name="price" 
+                                 th:value="${realEstate?.price}" step="0.01" min="0" placeholder="0.00" required>
+                        </div>
                       </div>
+                    </div>
+                    <div class="col-md-4">
                       <div class="form-group">
-                        <label for="city">City</label>
-                        <input type="text" class="form-control" id="city" name="city"
-                               th:value="${realEstate?.city}">
-                      </div>
-                      <div class="form-group">
-                        <label for="state">State</label>
-                        <input type="text" class="form-control" id="state" name="state"
-                               th:value="${realEstate?.state}">
-                      </div>
-                      <div class="form-group">
-                        <label for="zipCode">Zip Code</label>
-                        <input type="text" class="form-control" id="zipCode" name="zipCode"
-                               th:value="${realEstate?.zipCode}">
-                      </div>
-                      <div class="form-group">
-                        <label for="sizeInSqMt">Size (in SqMt)</label>
+                        <label for="sizeInSqMt">Size (m²)</label>
                         <input type="number" class="form-control" id="sizeInSqMt" name="sizeInSqMt"
-                               th:value="${realEstate?.sizeInSqMt}" step="0.01" min="0">
+                               th:value="${realEstate?.sizeInSqMt}" step="0.01" min="0" placeholder="Square meters">
                       </div>
-                      <div class="form-group" th:unless="${isEdit}">
-                        <label for="images">Images</label>
-                        <input type="file" class="form-control" id="images" name="images" multiple accept="image/*">
-                        <small class="form-text text-muted">You can select multiple images</small>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-group">
+                        <label>Features (max 10)</label>
+                        <div class="input-group">
+                          <input type="text" class="form-control" id="newFeature" placeholder="Add feature...">
+                          <div class="input-group-append">
+                            <button type="button" class="btn btn-primary" onclick="addFeature()">
+                              <i class="fas fa-plus"></i> Add
+                            </button>
+                          </div>
+                        </div>
+                        <small class="form-text text-muted">Press Enter or click Add to include features</small>
                       </div>
                     </div>
                   </div>
+
+                  <!-- Features Display -->
+                  <div class="row">
+                    <div class="col-12">
+                      <div id="featuresContainer" class="mb-3">
+                        <!-- Existing features will be populated here for edit -->
+                        <th:block th:if="${realEstate?.features}">
+						    <th:block th:each="feature : ${realEstate.features}">
+						        <span class="feature-tag">
+						            <span th:text="${feature}"></span>
+						            <span class="feature-remove" th:attr="data-feature=${feature}" onclick="removeFeatureFromEvent(this)">×</span>
+						        </span>
+						    </th:block>
+						</th:block>
+                      </div>
+                      <div id="featuresLimit" class="text-sm text-muted" style="display: none;">
+                        Maximum 10 features reached
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Location Information Section -->
+                  <div class="row mb-4">
+                    <div class="col-12">
+                      <h5 class="text-primary mt-4"><i class="fas fa-map-marker-alt mr-2"></i>Location Information</h5>
+                      <hr>
+                    </div>
+                  </div>
+
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label for="address">Address *</label>
+                        <input type="text" class="form-control" id="address" name="address"
+                               th:value="${realEstate?.address}" placeholder="Full street address" required>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-group">
+                        <label for="city">City *</label>
+                        <input type="text" class="form-control" id="city" name="city"
+                               th:value="${realEstate?.city}" placeholder="City" required>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-group">
+                        <label for="state">State *</label>
+                        <input type="text" class="form-control" id="state" name="state"
+                               th:value="${realEstate?.state}" placeholder="State" required>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="row">
+                    <div class="col-md-3">
+                      <div class="form-group">
+                        <label for="zipCode">ZIP Code *</label>
+                        <input type="text" class="form-control" id="zipCode" name="zipCode"
+                               th:value="${realEstate?.zipCode}" placeholder="ZIP Code" required>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Images Section -->
+				<div class="row mb-4">
+				    <div class="col-12">
+				        <h5 class="text-primary mt-4"><i class="fas fa-images mr-2"></i>Property Images</h5>
+				        <hr>
+				        <p class="text-muted">
+				            Upload high-quality photos of your property. The first image will be used as the cover photo.
+				            <span th:if="${!isEdit}">Images are automatically optimized for web viewing.</span>
+				        </p>
+				    </div>
+				</div>
+				
+				<div class="row">
+				    <div class="col-12">
+				        <div class="form-group">
+				            <label for="images">Upload Images</label>
+				            <input type="file" class="form-control" id="images" name="images" multiple accept="image/*">
+				            <small class="form-text text-muted" th:if="${!isEdit}">
+				                You can select multiple images. First image will be the cover photo.
+				            </small>
+				            <small class="form-text text-muted" th:if="${isEdit}">
+				                Select new images to add to existing ones.
+				            </small>
+				        </div>
+				        
+				        <!-- Existing Images for Edit -->
+				        <th:block th:if="${isEdit}">
+				            <th:block th:if="${realEstate?.images != null}">
+				                <div class="mb-3">
+				                    <label>Existing Images:</label>
+				                    <div id="existingImages">
+				                        <th:block th:each="image, iter : ${realEstate.images}">
+				                            <div class="image-preview">
+				                                <img th:src="${image}" alt="Property image" style="cursor: pointer;" 
+				                                     onclick="window.open(this.src, '_blank')">
+				                                <div class="image-remove" th:attr="data-property-id=${realEstate.propertyId}, data-image-url=${image}" onclick="removeImageFromEvent(this)">
+				                                    ×
+				                                </div>
+				                            </div>
+				                        </th:block>
+				                    </div>
+				                </div>
+				            </th:block>
+				        </th:block>
+				
+				        <!-- Image Upload Status -->
+				        <div id="imageUploadStatus" class="mt-2" style="display: none;">
+				            <div class="alert alert-success">
+				                <i class="fas fa-check-circle"></i>
+				                <span id="uploadedCount">0</span> image(s) ready for your listing
+				            </div>
+				        </div>
+				    </div>
+				</div>
                 </div>
                 <div class="card-footer">
                   <button type="submit" class="btn btn-primary" th:text="${isEdit ? 'Update' : 'Create'}">Create</button>
@@ -197,6 +390,106 @@
 <!-- AdminLTE App -->
 <script th:src="@{/dist/js/adminlte.min.js}"></script>
 <!-- Custom JS -->
-<script th:src="@{/dist/js/real-estate-form.js}"></script>
+<script>
+  // Features management
+  // Features management
+let features = new Set([<th:block th:if="${realEstate?.features}"><th:block th:each="feature : ${realEstate.features}">"<th:block th:text="${feature}"/>",</th:block></th:block>]);
+
+function updateFeaturesDisplay() {
+    const container = document.getElementById('featuresContainer');
+    const limitMessage = document.getElementById('featuresLimit');
+    container.innerHTML = '';
+    
+    features.forEach(feature => {
+        const featureTag = document.createElement('span');
+        featureTag.className = 'feature-tag';
+        featureTag.innerHTML = `
+            <span>${feature}</span>
+            <span class="feature-remove" data-feature="${feature}" onclick="removeFeatureFromEvent(this)">×</span>
+        `;
+        container.appendChild(featureTag);
+    });
+    
+    // Update hidden field
+    document.getElementById('featuresData').value = Array.from(features).join(',');
+    
+    // Show/hide limit message
+    limitMessage.style.display = features.size >= 10 ? 'block' : 'none';
+}
+
+function addFeature() {
+    const input = document.getElementById('newFeature');
+    const feature = input.value.trim();
+    
+    if (feature && features.size < 10) {
+        features.add(feature);
+        updateFeaturesDisplay();
+        input.value = '';
+    }
+}
+
+function removeFeature(feature) {
+    features.delete(feature);
+    updateFeaturesDisplay();
+}
+
+// New function to handle removal from event
+function removeFeatureFromEvent(element) {
+    const feature = element.getAttribute('data-feature');
+    removeFeature(feature);
+}
+
+// Handle Enter key in features input
+document.getElementById('newFeature').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        addFeature();
+    }
+});
+
+  // Image upload handling
+  document.getElementById('images').addEventListener('change', function(e) {
+    const status = document.getElementById('imageUploadStatus');
+    const uploadedCount = document.getElementById('uploadedCount');
+    
+    if (this.files.length > 0) {
+      uploadedCount.textContent = this.files.length;
+      status.style.display = 'block';
+    } else {
+      status.style.display = 'none';
+    }
+  });
+
+  // Remove existing image (for edit mode)
+  function removeImage(propertyId, imageUrl) {
+    if (confirm('Are you sure you want to remove this image?')) {
+      fetch(`/api/admin/real-estates/${propertyId}/images`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': document.getElementById('csrfToken').value
+        },
+        body: JSON.stringify({ imageUrl: imageUrl })
+      })
+      .then(response => {
+        if (response.ok) {
+          // Remove the image preview
+          event.target.closest('.image-preview').remove();
+        } else {
+          alert('Failed to remove image');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error removing image');
+      });
+    }
+  }
+
+  // Initialize features display
+  document.addEventListener('DOMContentLoaded', function() {
+    updateFeaturesDisplay();
+  });
+</script>
 </body>
 </html>

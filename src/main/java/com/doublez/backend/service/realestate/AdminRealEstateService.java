@@ -1,11 +1,13 @@
 package com.doublez.backend.service.realestate;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.doublez.backend.dto.RealEstateResponseDTO;
 import com.doublez.backend.dto.RealEstateUpdateDTO;
@@ -38,11 +40,26 @@ public class AdminRealEstateService {
         this.realEstateImageService = realEstateImageService;
     }
 
-    public RealEstateResponseDTO updateRealEstate(Long propertyId, RealEstateUpdateDTO updateDto) {
+    public RealEstateResponseDTO updateRealEstate(Long propertyId, RealEstateUpdateDTO updateDto, MultipartFile[] images) {
         RealEstate realEstate = realEstateRepository.findById(propertyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Real estate not found"));
         
-        // Admin can update any property without ownership check
+        // Handle new image uploads if provided and not empty
+        if (images != null && images.length > 0) {
+            // Filter out empty files
+            List<MultipartFile> nonEmptyImages = Arrays.stream(images)
+                    .filter(file -> !file.isEmpty())
+                    .collect(Collectors.toList());
+            
+            if (!nonEmptyImages.isEmpty()) {
+                List<String> newImageUrls = realEstateImageService.uploadRealEstateImages(
+                    nonEmptyImages.toArray(new MultipartFile[0])
+                );
+                realEstate.getImages().addAll(newImageUrls);
+            }
+        }
+        
+        // Handle owner update
         if (updateDto.getOwnerId() != null) {
             User owner = userRepository.findById(updateDto.getOwnerId())
                     .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + updateDto.getOwnerId()));

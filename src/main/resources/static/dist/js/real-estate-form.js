@@ -12,7 +12,7 @@ document.getElementById('realEstateForm').addEventListener('submit', async funct
     e.preventDefault();
     
     const form = this;
-    const isEdit = form.method === 'PUT';
+    const isEdit = form.getAttribute('th:method') === 'PUT';
     const submitButton = form.querySelector('button[type="submit"]');
     const originalText = submitButton.innerHTML;
     
@@ -24,35 +24,43 @@ document.getElementById('realEstateForm').addEventListener('submit', async funct
         let response;
         
         if (isEdit) {
-            // For edit, use JSON
+            // For edit, use JSON (no file uploads)
             const formData = {
-                title: form.title.value,
-                description: form.description.value,
-                propertyType: form.propertyType.value,
-                price: parseFloat(form.price.value),
-                address: form.address.value,
-                city: form.city.value,
-                state: form.state.value,
-                zipCode: form.zipCode.value,
-                sizeInSqMt: form.sizeInSqMt.value ? parseFloat(form.sizeInSqMt.value) : null,
-                listingType: form.listingType.value
+                title: document.getElementById('title').value,
+                description: document.getElementById('description').value,
+                propertyType: document.getElementById('propertyType').value,
+                price: parseFloat(document.getElementById('price').value),
+                address: document.getElementById('address').value,
+                city: document.getElementById('city').value,
+                state: document.getElementById('state').value,
+                zipCode: document.getElementById('zipCode').value,
+                sizeInSqMt: document.getElementById('sizeInSqMt').value ? parseFloat(document.getElementById('sizeInSqMt').value) : null,
+                listingType: document.getElementById('listingType').value,
+                features: document.getElementById('featuresData').value ? document.getElementById('featuresData').value.split(',') : []
             };
             
             response = await fetch(form.action, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
-                    [getCsrfHeader()]: getCsrfToken()
+                    'X-CSRF-TOKEN': document.getElementById('csrfToken').value
                 },
                 body: JSON.stringify(formData)
             });
         } else {
-            // For create, use FormData (for file upload)
+            // For create, use FormData (for file uploads)
             const formData = new FormData(form);
+            
+            // Add features to FormData
+            const featuresValue = document.getElementById('featuresData').value;
+            if (featuresValue) {
+                formData.append('features', featuresValue);
+            }
+            
             response = await fetch(form.action, {
                 method: 'POST',
                 headers: {
-                    [getCsrfHeader()]: getCsrfToken()
+                    'X-CSRF-TOKEN': document.getElementById('csrfToken').value
                 },
                 body: formData
             });

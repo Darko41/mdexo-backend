@@ -1,6 +1,7 @@
 package com.doublez.backend.controller;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -12,6 +13,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -23,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.doublez.backend.dto.RealEstateCreateDTO;
+import com.doublez.backend.dto.RealEstateFormUpdateDTO;
 import com.doublez.backend.dto.RealEstateResponseDTO;
 import com.doublez.backend.dto.RealEstateUpdateDTO;
 import com.doublez.backend.dto.UserCreateDTO;
@@ -38,6 +41,7 @@ import com.doublez.backend.service.realestate.AdminRealEstateService;
 import com.doublez.backend.service.realestate.RealEstateService;
 import com.doublez.backend.service.user.UserService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 @RestController
@@ -96,11 +100,27 @@ public class AdminApiController {
             pageable));
     }
 
-    @PutMapping("/real-estates/{propertyId}")
+    @PutMapping(value = "/real-estates/{propertyId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<RealEstateResponseDTO> updateRealEstate(
             @PathVariable Long propertyId,
-            @RequestBody @Valid RealEstateUpdateDTO updateDto) {
-        RealEstateResponseDTO response = adminRealEstateService.updateRealEstate(propertyId, updateDto);
+            @ModelAttribute RealEstateUpdateDTO updateDto,
+            @RequestParam(required = false) MultipartFile[] images,
+            HttpServletRequest request) {
+        
+        System.out.println("=== FORM DATA DEBUG ===");
+        System.out.println("UpdateDTO: " + updateDto);
+        System.out.println("Is updateDto null? " + (updateDto == null));
+        
+        // Log all form parameters
+        request.getParameterMap().forEach((key, values) -> {
+            System.out.println("Form parameter '" + key + "': " + Arrays.toString(values));
+        });
+        
+        if (updateDto == null) {
+            throw new IllegalArgumentException("UpdateDTO cannot be null");
+        }
+        
+        RealEstateResponseDTO response = adminRealEstateService.updateRealEstate(propertyId, updateDto, images);
         return ResponseEntity.ok(response);
     }
 

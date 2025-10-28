@@ -19,7 +19,6 @@ public class RealEstateUpdateDTO {
     private String zipCode;
     private String sizeInSqMt;
     private List<String> features;
-    private List<String> images;
     private Long ownerId;
     
 	public Long getOwnerId() {
@@ -93,12 +92,6 @@ public class RealEstateUpdateDTO {
 	}
 	public void setFeatures(List<String> features) {
 		this.features = features;
-	}
-	public List<String> getImages() {
-		return images;
-	}
-	public void setImages(List<String> images) {
-		this.images = images;
 	}
     
 

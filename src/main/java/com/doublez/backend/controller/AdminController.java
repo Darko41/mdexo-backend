@@ -70,9 +70,14 @@ public class AdminController {
         return "admin/realestate-form";
     }
 
+    // KEEP ONLY THIS ONE - remove the other version
     @GetMapping("/real-estates/{propertyId}/edit")
     public String showEditRealEstateForm(@PathVariable Long propertyId, Model model) {
         addAuthenticationToModel(model);
+        
+        // The @ModelAttribute method above already adds CSRF token automatically
+        // No need for HttpServletRequest parameter here
+        
         RealEstateResponseDTO realEstate = realEstateService.getRealEstateById(propertyId);
         model.addAttribute("realEstate", realEstate);
         model.addAttribute("isEdit", true);

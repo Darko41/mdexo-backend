@@ -57,7 +57,6 @@ public class RealEstateMapper {
         Optional.ofNullable(updateDto.getZipCode()).ifPresent(entity::setZipCode);
         Optional.ofNullable(updateDto.getSizeInSqMt()).ifPresent(entity::setSizeInSqMt);
         Optional.ofNullable(updateDto.getFeatures()).ifPresent(entity::setFeatures);
-        Optional.ofNullable(updateDto.getImages()).ifPresent(entity::setImages);
         
         entity.setUpdatedAt(LocalDate.now());
     }
@@ -74,6 +73,5 @@ public class RealEstateMapper {
         target.setZipCode(source.getZipCode());
         target.setSizeInSqMt(source.getSizeInSqMt());
         target.setFeatures(source.getFeatures() != null ? source.getFeatures() : new ArrayList<>());
-        target.setImages(source.getImages() != null ? source.getImages() : new ArrayList<>());
     }
 }

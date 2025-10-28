@@ -50,7 +50,7 @@ public class RealEstateCreateDTO {
     @Size(max = 10)
     private List<String> features = new ArrayList<>();
     
-    private List<String> images = new ArrayList<>();
+//    private List<String> images = new ArrayList<>();
     
     public RealEstateCreateDTO() {
     }
@@ -67,7 +67,6 @@ public class RealEstateCreateDTO {
             String zipCode,
             String sizeInSqMt,
             List<String> features,
-            List<String> images,
             Long ownerId) {
         
         this.title = title;
@@ -81,7 +80,6 @@ public class RealEstateCreateDTO {
         this.zipCode = zipCode;
         this.sizeInSqMt = sizeInSqMt;
         this.features = features != null ? features : new ArrayList<>();
-        this.images = images != null ? images : new ArrayList<>();
         this.ownerId = ownerId;
     }
 
@@ -171,14 +169,6 @@ public class RealEstateCreateDTO {
 
 	public void setFeatures(List<String> features) {
 		this.features = features;
-	}
-
-	public List<String> getImages() {
-		return images;
-	}
-
-	public void setImages(List<String> images) {
-		this.images = images;
 	}
 
 	public Long getOwnerId() {
