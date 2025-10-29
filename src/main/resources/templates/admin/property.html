@@ -159,11 +159,13 @@
               <div class="card-footer" th:if="${property.images != null && property.images.size() > 1}">
                 <div class="d-flex flex-wrap">
                   <th:block th:each="image, iter : ${property.images}">
-                    <img th:src="${image}" alt="Thumbnail"
-                         class="thumbnail-image"
-                         th:classappend="${iter.index == 0} ? 'active' : ''"
-                         th:onclick="|changeMainImage('${image}', this)|">
-                  </th:block>
+				    <img th:src="${image}" 
+				         alt="Thumbnail"
+				         class="thumbnail-image"
+				         th:classappend="${iter.index == 0} ? 'active' : ''"
+				         th:attr="data-image=${image}"
+				         onclick="changeMainImage(this.dataset.image, this)">
+				</th:block>
                 </div>
               </div>
             </div>
