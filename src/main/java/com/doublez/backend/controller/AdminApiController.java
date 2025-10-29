@@ -2,7 +2,9 @@ package com.doublez.backend.controller;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -101,27 +103,27 @@ public class AdminApiController {
     }
 
     @PutMapping(value = "/real-estates/{propertyId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<RealEstateResponseDTO> updateRealEstate(
+    public ResponseEntity<Map<String, Object>> updateRealEstate(
             @PathVariable Long propertyId,
             @ModelAttribute RealEstateUpdateDTO updateDto,
             @RequestParam(required = false) MultipartFile[] images,
             HttpServletRequest request) {
-        
-        System.out.println("=== FORM DATA DEBUG ===");
-        System.out.println("UpdateDTO: " + updateDto);
-        System.out.println("Is updateDto null? " + (updateDto == null));
-        
-        // Log all form parameters
-        request.getParameterMap().forEach((key, values) -> {
-            System.out.println("Form parameter '" + key + "': " + Arrays.toString(values));
-        });
         
         if (updateDto == null) {
             throw new IllegalArgumentException("UpdateDTO cannot be null");
         }
         
         RealEstateResponseDTO response = adminRealEstateService.updateRealEstate(propertyId, updateDto, images);
-        return ResponseEntity.ok(response);
+        
+        // Return redirect information instead of the response directly
+        Map<String, Object> result = new HashMap<>();
+        result.put("success", true);
+        result.put("message", "Real estate updated successfully");
+        result.put("redirectUrl", "/admin/real-estates/" + propertyId + "/view");
+        result.put("propertyId", propertyId);
+        result.put("property", response);
+        
+        return ResponseEntity.ok(result);
     }
 
     @DeleteMapping("/real-estates/{propertyId}")

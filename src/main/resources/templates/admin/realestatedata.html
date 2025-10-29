@@ -19,6 +19,11 @@
   <link rel="stylesheet" th:href="@{/plugins/datatables-bs4/css/dataTables.bootstrap4.css}">
   <!-- Google Font: Source Sans Pro -->
   <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
+  
+	  <style>
+	  	.clickable-row { cursor: pointer; }
+	  	.clickable-row:hover { background-color: #f8f9fa; }
+	  </style>
 </head>
 <body class="hold-transition sidebar-mini">
 <div class="wrapper">
@@ -260,7 +265,12 @@
                 </thead>
                 <tbody>
                 <tr th:each="realEstate : ${realEstates}">
-                  <td th:text="${realEstate.title}"></td>
+                  <td>
+					  <a th:href="@{/admin/real-estates/{id}/view(id=${realEstate.propertyId})}"
+					     th:text="${realEstate.title}"
+					     class="text-primary font-weight-bold">
+					  </a>
+					</td>
                   <td th:text="${realEstate.description}"></td>
                   <td th:text="${realEstate.propertyType}"></td>
                   <td th:text="${'$' + realEstate.price}"></td>

@@ -144,10 +144,10 @@
                 </h3>
               </div>
               <!-- Fixed form action with correct Thymeleaf syntax -->
-              <form th:action="${isEdit} ? @{/api/admin/real-estates/} + ${realEstate.propertyId} : @{/api/admin/real-estates}" 
-                    th:method="${isEdit} ? 'PUT' : 'POST'" 
-                    id="realEstateForm" 
-                    enctype="multipart/form-data">
+              <form th:action="${isEdit} ? @{/admin/real-estates/{id}/update(id=${realEstate.propertyId})} : @{/admin/real-estates}"
+			      method="post"
+			      enctype="multipart/form-data"
+			      id="realEstateForm">
                 
                 <!-- CSRF Token as hidden input -->
                 <input type="hidden" th:name="${_csrf?.parameterName}" th:value="${_csrf?.token}" id="csrfToken">
@@ -343,9 +343,11 @@
 				                            <div class="image-preview">
 				                                <img th:src="${image}" alt="Property image" style="cursor: pointer;" 
 				                                     onclick="window.open(this.src, '_blank')">
-				                                <div class="image-remove" th:attr="data-property-id=${realEstate.propertyId}, data-image-url=${image}" onclick="removeImageFromEvent(this)">
-				                                    ×
-				                                </div>
+				                                <div class="image-remove" 
+												     th:attr="data-property-id=${realEstate.propertyId}, data-image-url=${image}" 
+												     onclick="removeImageFromEvent(this)">
+												    ×
+												</div>
 				                            </div>
 				                        </th:block>
 				                    </div>

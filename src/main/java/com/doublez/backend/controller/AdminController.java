@@ -13,11 +13,18 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.doublez.backend.dto.RealEstateCreateDTO;
 import com.doublez.backend.dto.RealEstateResponseDTO;
+import com.doublez.backend.dto.RealEstateUpdateDTO;
 import com.doublez.backend.dto.UserResponseDTO;
+import com.doublez.backend.service.realestate.AdminRealEstateService;
 import com.doublez.backend.service.realestate.RealEstateService;
 import com.doublez.backend.service.user.UserService;
 
@@ -28,11 +35,18 @@ import jakarta.servlet.http.HttpServletRequest;
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
     
-    @Autowired
-    private RealEstateService realEstateService;
-    
-    @Autowired
-    private UserService userService;
+	private final RealEstateService realEstateService;
+    private final AdminRealEstateService adminRealEstateService;
+    private final UserService userService;
+
+    public AdminController(
+            RealEstateService realEstateService,
+            AdminRealEstateService adminRealEstateService,
+            UserService userService) {
+        this.realEstateService = realEstateService;
+        this.adminRealEstateService = adminRealEstateService;
+        this.userService = userService;
+    }
 
     @ModelAttribute
     public void addCsrfToken(Model model, HttpServletRequest request) {
@@ -105,4 +119,45 @@ public class AdminController {
         RealEstateResponseDTO realEstate = realEstateService.getRealEstateById(propertyId);
         return ResponseEntity.ok(realEstate);
     }
+    
+    @GetMapping("/real-estates/{propertyId}/view")
+    public String viewRealEstate(@PathVariable Long propertyId, Model model) {
+        addAuthenticationToModel(model);
+        
+        RealEstateResponseDTO realEstate = realEstateService.getRealEstateById(propertyId);
+        model.addAttribute("property", realEstate);
+        
+        return "admin/property";
+    }
+    
+    @PostMapping("/real-estates/{propertyId}/update")
+    public String updateRealEstateAndRedirect(@PathVariable Long propertyId,
+                                              @ModelAttribute RealEstateUpdateDTO updateDto,
+                                              @RequestParam(required = false) MultipartFile[] images,
+                                              RedirectAttributes redirectAttributes) {
+        try {
+            adminRealEstateService.updateRealEstate(propertyId, updateDto, images);
+            redirectAttributes.addFlashAttribute("success", "Real estate updated successfully!");
+            return "redirect:/admin/real-estates/" + propertyId + "/view";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Failed to update real estate: " + e.getMessage());
+            return "redirect:/admin/real-estates/" + propertyId + "/edit";
+        }
+    }
+    
+    @PostMapping("/real-estates")
+    public String createRealEstateAndRedirect(
+            @ModelAttribute RealEstateCreateDTO createDto,
+            @RequestParam(required = false) MultipartFile[] images,
+            RedirectAttributes redirectAttributes) {
+        try {
+            RealEstateResponseDTO response = realEstateService.createRealEstateForUser(createDto, images);
+            redirectAttributes.addFlashAttribute("success", "Real estate created successfully!");
+            return "redirect:/admin/real-estates/" + response.getPropertyId() + "/view";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Failed to create real estate: " + e.getMessage());
+            return "redirect:/admin/real-estates/new";
+        }
+    }
+
 }

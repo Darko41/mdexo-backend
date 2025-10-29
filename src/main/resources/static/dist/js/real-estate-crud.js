@@ -1,184 +1,112 @@
-// CSRF token for Spring Security with fallback
-function getCsrfToken() {
-    const csrfMeta = document.querySelector('meta[name="_csrf"]');
-    return csrfMeta ? csrfMeta.getAttribute('content') : '';
+// ---- Features handling ----
+let features = new Set();
+
+// Initialize existing features on load
+document.addEventListener('DOMContentLoaded', () => {
+    const existing = document.querySelectorAll('#featuresContainer .feature-tag span:first-child');
+    existing.forEach(f => features.add(f.textContent.trim()));
+    updateFeaturesDisplay();
+});
+
+// Add a feature
+function addFeature() {
+    const input = document.getElementById('newFeature');
+    const feature = input.value.trim();
+    if (feature && features.size < 10 && !features.has(feature)) {
+        features.add(feature);
+        updateFeaturesDisplay();
+        input.value = '';
+    }
 }
 
-function getCsrfHeader() {
-    const csrfHeaderMeta = document.querySelector('meta[name="_csrf_header"]');
-    return csrfHeaderMeta ? csrfHeaderMeta.getAttribute('content') : 'X-CSRF-TOKEN';
+// Remove feature from event
+function removeFeatureFromEvent(el) {
+    const feature = el.getAttribute('data-feature');
+    features.delete(feature);
+    updateFeaturesDisplay();
 }
 
-// Global variable to store the current property ID to delete
-let currentPropertyIdToDelete = null;
+// Update DOM + hidden field
+function updateFeaturesDisplay() {
+    const container = document.getElementById('featuresContainer');
+    const limitMsg = document.getElementById('featuresLimit');
+    const hiddenField = document.getElementById('featuresData');
 
-function setupDeleteHandlers() {
-    // Event delegation for delete buttons
-    document.addEventListener('click', function(e) {
-        if (e.target.closest('.delete-btn')) {
-            const button = e.target.closest('.delete-btn');
-            const propertyId = button.getAttribute('data-property-id');
-            const propertyTitle = button.getAttribute('data-property-title');
-            const propertyType = button.getAttribute('data-property-type');
-            const propertyPrice = button.getAttribute('data-property-price');
-            const propertyAddress = button.getAttribute('data-property-address');
-            
-            deleteRealEstate(propertyId, propertyTitle, propertyType, propertyPrice, propertyAddress);
-        }
+    container.innerHTML = '';
+    features.forEach(f => {
+        const tag = document.createElement('span');
+        tag.className = 'feature-tag';
+        tag.innerHTML = `
+            <span>${f}</span>
+            <span class="feature-remove" data-feature="${f}" onclick="removeFeatureFromEvent(this)">×</span>
+        `;
+        container.appendChild(tag);
     });
+
+    hiddenField.value = Array.from(features).join(',');
+    limitMsg.style.display = features.size >= 10 ? 'block' : 'none';
 }
 
-// Update the deleteRealEstate function to accept parameters
-function deleteRealEstate(propertyId, propertyTitle, propertyType, propertyPrice, propertyAddress) {
-    currentPropertyIdToDelete = propertyId;
-    
-    // Populate property details in modal if elements exist
-    const propertyTitleEl = document.getElementById('propertyTitle');
-    const propertyTypeEl = document.getElementById('propertyType');
-    const propertyPriceEl = document.getElementById('propertyPrice');
-    const propertyAddressEl = document.getElementById('propertyAddress');
-    
-    if (propertyTitleEl) propertyTitleEl.textContent = propertyTitle || 'Unknown Property';
-    if (propertyTypeEl) propertyTypeEl.textContent = propertyType || 'N/A';
-    if (propertyPriceEl) propertyPriceEl.textContent = propertyPrice ? '$' + propertyPrice : 'N/A';
-    if (propertyAddressEl) propertyAddressEl.textContent = propertyAddress || 'No address';
-    
-    // Reset the confirmation input and button
-    document.getElementById('confirmationInput').value = '';
-    document.getElementById('confirmDeleteBtn').disabled = true;
-    
-    // Show the modal
-    $('#deleteConfirmationModal').modal('show');
-}
-
-// Initialize event handlers when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    setupDeleteHandlers();
-    
-    // Confirmation input validation
-    const confirmationInput = document.getElementById('confirmationInput');
-    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
-    
-    if (confirmationInput && confirmDeleteBtn) {
-        confirmationInput.addEventListener('input', function() {
-            confirmDeleteBtn.disabled = this.value.toUpperCase() !== 'DELETE';
-        });
-        
-        // Enter key support
-        confirmationInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter' && !confirmDeleteBtn.disabled) {
-                confirmDeleteBtn.click();
-            }
-        });
-        
-        // Confirm delete button click
-        confirmDeleteBtn.addEventListener('click', performDelete);
-        
-        // Clear input when modal is hidden (added this for better UX)
-        $('#deleteConfirmationModal').on('hidden.bs.modal', function() {
-            confirmationInput.value = '';
-            confirmDeleteBtn.disabled = true;
-            currentPropertyIdToDelete = null;
-        });
+// Handle Enter key to add feature
+document.getElementById('newFeature')?.addEventListener('keypress', e => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        addFeature();
     }
 });
 
-// Perform the actual deletion
-async function performDelete() {
-    if (!currentPropertyIdToDelete) return;
-    
-    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
-    const originalText = confirmDeleteBtn.innerHTML;
-    
-    // Show loading state
-    confirmDeleteBtn.disabled = true;
-    confirmDeleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Deleting...';
-    
-    try {
-        const headers = {
-            'Content-Type': 'application/json'
-        };
-        
-        // Only add CSRF token if available
-        const csrfToken = getCsrfToken();
-        const csrfHeader = getCsrfHeader();
-        if (csrfToken) {
-            headers[csrfHeader] = csrfToken;
-        }
-        
-        const response = await fetch(`/api/admin/real-estates/${currentPropertyIdToDelete}`, {
+// ---- Image upload preview ----
+document.getElementById('images')?.addEventListener('change', e => {
+    const count = e.target.files.length;
+    const status = document.getElementById('imageUploadStatus');
+    const uploadedCount = document.getElementById('uploadedCount');
+    if (count > 0) {
+        uploadedCount.textContent = count;
+        status.style.display = 'block';
+    } else {
+        status.style.display = 'none';
+    }
+});
+
+// ---- Image delete (for edit mode) ----
+function removeImageFromEvent(element) {
+    const propertyId = element.getAttribute('data-property-id');
+    const imageUrl = element.getAttribute('data-image-url');
+    const csrfToken = document.getElementById('csrfToken')?.value;
+
+    if (confirm('Remove this image?')) {
+        fetch(`/api/admin/real-estates/${propertyId}/images`, {
             method: 'DELETE',
-            headers: headers
-        });
-        
-        if (response.ok) {
-            // Close modal first
-            $('#deleteConfirmationModal').modal('hide');
-            
-            // Show success message
-            showAlert('Real estate deleted successfully!', 'success');
-            
-            // Reload the page after a short delay
-            setTimeout(() => {
-                window.location.reload();
-            }, 1500);
-            
-        } else if (response.status === 403) {
-            throw new Error('Permission denied. Please check if you are logged in.');
-        } else {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to delete real estate');
-        }
-    } catch (error) {
-        // Close modal on error
-        $('#deleteConfirmationModal').modal('hide');
-        showAlert('Error deleting real estate: ' + error.message, 'error');
-    } finally {
-        // Reset button state
-        confirmDeleteBtn.disabled = false;
-        confirmDeleteBtn.innerHTML = originalText;
-        currentPropertyIdToDelete = null;
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken
+            },
+            body: JSON.stringify({ imageUrl })
+        })
+        .then(r => {
+            if (r.ok) {
+                element.closest('.image-preview').remove();
+                showAlert('Image removed successfully', 'success');
+            } else {
+                showAlert('Failed to remove image', 'error');
+            }
+        })
+        .catch(() => showAlert('Error removing image', 'error'));
     }
 }
 
-// Alert function for success/error messages
-function showAlert(message, type) {
-    // Remove existing alerts
-    const existingAlert = document.querySelector('.alert-dismissible:not(.modal .alert)');
-    if (existingAlert) {
-        existingAlert.remove();
-    }
-    
+// ---- Simple alert helper ----
+function showAlert(message, type = 'success') {
     const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
-    const iconClass = type === 'success' ? 'fa-check' : 'fa-exclamation-triangle';
-    const title = type === 'success' ? 'Success!' : 'Error!';
-    
-    const alertHtml = `
-        <div class="alert ${alertClass} alert-dismissible fade show" role="alert" style="margin: 20px;">
-            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-            <h5><i class="icon fas ${iconClass}"></i> ${title}</h5>
-            ${message}
+    const icon = type === 'success' ? 'fa-check' : 'fa-exclamation-triangle';
+
+    const html = `
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert" style="margin:10px 0;">
+            <i class="fas ${icon} mr-2"></i>${message}
+            <button type="button" class="close" data-dismiss="alert">&times;</button>
         </div>
     `;
-    
-    const contentHeader = document.querySelector('.content-header');
-    if (contentHeader) {
-        contentHeader.insertAdjacentHTML('afterend', alertHtml);
-    }
-    
-    // Auto remove alert after 5 seconds
-    setTimeout(() => {
-        const alert = document.querySelector('.alert-dismissible:not(.modal .alert)');
-        if (alert) {
-            alert.remove();
-        }
-    }, 5000);
-}
+    document.querySelector('.content-header')?.insertAdjacentHTML('afterend', html);
 
-// Optional: Add keyboard shortcuts
-document.addEventListener('keydown', function(e) {
-    // ESC key to close modal
-    if (e.key === 'Escape' && $('#deleteConfirmationModal').is(':visible')) {
-        $('#deleteConfirmationModal').modal('hide');
-    }
-});
+    setTimeout(() => document.querySelector('.alert')?.remove(), 4000);
+}

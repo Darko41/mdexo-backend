@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title th:text="'Property Details | ' + ${property.title}">Property Details</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" th:href="@{/plugins/fontawesome-free/css/all.min.css}">
+  <!-- Theme style -->
+  <link rel="stylesheet" th:href="@{/dist/css/adminlte.min.css}">
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
+
+  <style>
+    .property-image {
+      width: 100%;
+      height: 400px;
+      object-fit: cover;
+      border-radius: 10px;
+    }
+    .thumbnail-image {
+      width: 100px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 5px;
+      cursor: pointer;
+      border: 2px solid transparent;
+    }
+    .thumbnail-image.active { border-color: #007bff; }
+    .feature-badge {
+      background: #e9ecef;
+      color: #495057;
+      padding: 0.4rem 0.8rem;
+      border-radius: 20px;
+      margin: 0.25rem;
+      display: inline-block;
+    }
+    .price-tag {
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: #28a745;
+    }
+    .info-card {
+      border-left: 4px solid #007bff;
+      background-color: #f8f9fa;
+    }
+  </style>
+</head>
+
+<body class="hold-transition sidebar-mini layout-fixed">
+<div class="wrapper">
+
+  <!-- Navbar -->
+  <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+    <ul class="navbar-nav">
+      <li class="nav-item">
+        <a class="nav-link" data-widget="pushmenu" href="#" role="button">
+          <i class="fas fa-bars"></i>
+        </a>
+      </li>
+      <li class="nav-item d-none d-sm-inline-block">
+        <a th:href="@{/admin/dashboard}" class="nav-link">Home</a>
+      </li>
+    </ul>
+
+    <ul class="navbar-nav ml-auto">
+      <li class="nav-item">
+        <a th:href="@{/logout}" class="nav-link text-danger">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- Main Sidebar -->
+  <aside class="main-sidebar sidebar-dark-primary elevation-4">
+    <!-- Brand Logo -->
+    <a th:href="@{/admin/dashboard}" class="brand-link">
+      <img th:src="@{/dist/img/AdminLTELogo.png}" alt="Admin Logo" class="brand-image img-circle elevation-3" style="opacity: .8">
+      <span class="brand-text font-weight-light">Admin Panel</span>
+    </a>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <!-- Sidebar user -->
+      <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+        <div class="image">
+          <img th:src="@{/dist/img/user2-160x160.jpg}" class="img-circle elevation-2" alt="User Image">
+        </div>
+        <div class="info">
+          <a href="#" class="d-block" th:text="${username}">Admin User</a>
+        </div>
+      </div>
+
+      <!-- Sidebar Menu -->
+      <nav class="mt-2">
+        <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu">
+          <li class="nav-item">
+            <a th:href="@{/admin/dashboard}" class="nav-link">
+              <i class="nav-icon fas fa-tachometer-alt"></i>
+              <p>Dashboard</p>
+            </a>
+          </li>
+          <li class="nav-item has-treeview menu-open">
+            <a href="#" class="nav-link active">
+              <i class="nav-icon fas fa-table"></i>
+              <p>Data<i class="fas fa-angle-left right"></i></p>
+            </a>
+            <ul class="nav nav-treeview">
+              <li class="nav-item">
+                <a th:href="@{/admin/real-estates}" class="nav-link active">
+                  <i class="far fa-circle nav-icon"></i>
+                  <p>Real Estates</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a th:href="@{/admin/users}" class="nav-link">
+                  <i class="far fa-circle nav-icon"></i>
+                  <p>Users</p>
+                </a>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </aside>
+
+  <!-- Content Wrapper -->
+  <div class="content-wrapper">
+    <div class="content-header">
+      <div class="container-fluid d-flex justify-content-between align-items-center">
+        <h1 class="m-0" th:text="${property.title}">Property Title</h1>
+        <a th:href="@{/admin/real-estates}" class="btn btn-outline-secondary">
+          <i class="fas fa-arrow-left mr-2"></i>Back to List
+        </a>
+      </div>
+    </div>
+
+    <section class="content">
+      <div class="container-fluid">
+        <div th:if="${success}" class="alert alert-success alert-dismissible fade show">
+          <i class="icon fas fa-check"></i>
+          <span th:text="${success}"></span>
+          <button type="button" class="close" data-dismiss="alert">&times;</button>
+        </div>
+
+        <div class="row">
+          <!-- Main content -->
+          <div class="col-md-8">
+            <div class="card mb-4">
+              <div class="card-body p-0">
+                <img id="mainImage"
+                     th:src="${property.images != null && !property.images.empty} ? ${property.images[0]} : @{/dist/img/default-property.jpg}"
+                     class="property-image" alt="Main Property Image">
+              </div>
+              <div class="card-footer" th:if="${property.images != null && property.images.size() > 1}">
+                <div class="d-flex flex-wrap">
+                  <th:block th:each="image, iter : ${property.images}">
+                    <img th:src="${image}" alt="Thumbnail"
+                         class="thumbnail-image"
+                         th:classappend="${iter.index == 0} ? 'active' : ''"
+                         th:onclick="|changeMainImage('${image}', this)|">
+                  </th:block>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Property Details</h3>
+              </div>
+              <div class="card-body">
+                <p th:text="${property.description} ?: 'No description available.'"></p>
+
+                <div th:if="${property.features != null && !property.features.empty}">
+                  <h5>Features & Amenities</h5>
+                  <div>
+                    <th:block th:each="feature : ${property.features}">
+                      <span class="feature-badge" th:text="${feature}">Feature</span>
+                    </th:block>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sidebar info -->
+          <div class="col-md-4">
+            <div class="card">
+              <div class="card-body text-center">
+                <div class="price-tag" th:text="'$' + ${#numbers.formatDecimal(property.price, 1, 2, 'COMMA')}">$0.00</div>
+                <div class="text-muted" th:text="${property.listingType == 'FOR_SALE' ? 'For Sale' : 'For Rent'}"></div>
+              </div>
+            </div>
+
+            <div class="card mt-3">
+              <div class="card-header"><h3 class="card-title">Quick Facts</h3></div>
+              <div class="card-body">
+                <div class="info-card p-3 mb-3"><strong>Type:</strong> <span class="float-right" th:text="${property.propertyType}"></span></div>
+                <div class="info-card p-3 mb-3" th:if="${property.sizeInSqMt != null}">
+                  <strong>Size:</strong> <span class="float-right" th:text="${property.sizeInSqMt + ' m²'}"></span>
+                </div>
+                <div class="info-card p-3 mb-3"><strong>ID:</strong> <span class="float-right" th:text="${property.propertyId}"></span></div>
+              </div>
+            </div>
+
+            <div class="card mt-3">
+              <div class="card-header"><h3 class="card-title">Location</h3></div>
+              <div class="card-body">
+                <p th:text="${property.address}"></p>
+                <p th:text="${property.city + ', ' + property.state}"></p>
+                <p th:text="${property.zipCode}"></p>
+              </div>
+            </div>
+
+            <div class="card mt-3">
+              <div class="card-body">
+                <a th:href="@{'/admin/real-estates/' + ${property.propertyId} + '/edit'}" class="btn btn-primary btn-block mb-2">
+                  <i class="fas fa-edit mr-2"></i>Edit Property
+                </a>
+                <a th:href="@{/admin/real-estates}" class="btn btn-outline-secondary btn-block">
+                  <i class="fas fa-list mr-2"></i>Back to List
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Footer -->
+  <footer class="main-footer text-sm">
+    <div class="float-right d-none d-sm-inline"><b>Version</b> 1.0.0</div>
+    <strong>© 2024 Your Company.</strong> All rights reserved.
+  </footer>
+</div>
+
+<!-- Scripts -->
+<script th:src="@{/plugins/jquery/jquery.min.js}"></script>
+<script th:src="@{/plugins/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/dist/js/adminlte.min.js}"></script>
+
+<script>
+  function changeMainImage(src, el) {
+    document.getElementById('mainImage').src = src;
+    document.querySelectorAll('.thumbnail-image').forEach(i => i.classList.remove('active'));
+    el.classList.add('active');
+  }
+</script>
+
+</body>
+</html>
