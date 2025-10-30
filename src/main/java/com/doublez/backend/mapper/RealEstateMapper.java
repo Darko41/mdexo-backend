@@ -34,6 +34,16 @@ public class RealEstateMapper {
         entity.setOwner(owner);
         entity.setImages(images != null ? images : new ArrayList<>());
         
+        entity.setLatitude(createDto.getLatitude());
+        entity.setLongitude(createDto.getLongitude());
+        entity.setRoomCount(createDto.getRoomCount());
+        entity.setFloor(createDto.getFloor());
+        entity.setTotalFloors(createDto.getTotalFloors());
+        entity.setConstructionYear(createDto.getConstructionYear());
+        entity.setMunicipality(createDto.getMunicipality());
+        entity.setHeatingType(createDto.getHeatingType());
+        entity.setPropertyCondition(createDto.getPropertyCondition());
+        
         return entity;
     }
 
@@ -57,6 +67,16 @@ public class RealEstateMapper {
         Optional.ofNullable(updateDto.getZipCode()).ifPresent(entity::setZipCode);
         Optional.ofNullable(updateDto.getSizeInSqMt()).ifPresent(entity::setSizeInSqMt);
         Optional.ofNullable(updateDto.getFeatures()).ifPresent(entity::setFeatures);
+        
+        Optional.ofNullable(updateDto.getLatitude()).ifPresent(entity::setLatitude);
+        Optional.ofNullable(updateDto.getLongitude()).ifPresent(entity::setLongitude);
+        Optional.ofNullable(updateDto.getRoomCount()).ifPresent(entity::setRoomCount);
+        Optional.ofNullable(updateDto.getFloor()).ifPresent(entity::setFloor);
+        Optional.ofNullable(updateDto.getTotalFloors()).ifPresent(entity::setTotalFloors);
+        Optional.ofNullable(updateDto.getConstructionYear()).ifPresent(entity::setConstructionYear);
+        Optional.ofNullable(updateDto.getMunicipality()).ifPresent(entity::setMunicipality);
+        Optional.ofNullable(updateDto.getHeatingType()).ifPresent(entity::setHeatingType);
+        Optional.ofNullable(updateDto.getPropertyCondition()).ifPresent(entity::setPropertyCondition);
         
         entity.setUpdatedAt(LocalDate.now());
     }

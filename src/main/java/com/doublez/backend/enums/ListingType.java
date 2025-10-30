@@ -1,4 +1,4 @@
-package com.doublez.backend.entity;
+package com.doublez.backend.enums;
 
 public enum ListingType {
 	FOR_SALE,

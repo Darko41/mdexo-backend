@@ -4,8 +4,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-import com.doublez.backend.entity.ListingType;
-import com.doublez.backend.entity.PropertyType;
+import com.doublez.backend.enums.ListingType;
+import com.doublez.backend.enums.PropertyType;
 
 public class RealEstateRequest {
 	

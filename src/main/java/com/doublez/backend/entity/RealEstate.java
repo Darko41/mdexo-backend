@@ -2,12 +2,18 @@ package com.doublez.backend.entity;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.Year;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.springframework.format.annotation.NumberFormat;
+
+import com.doublez.backend.enums.HeatingType;
+import com.doublez.backend.enums.ListingType;
+import com.doublez.backend.enums.PropertyCondition;
+import com.doublez.backend.enums.PropertyType;
 
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -121,6 +127,41 @@ public class RealEstate {
 			inverseJoinColumns = @JoinColumn(name = "user_id")
 			)
 	private Set<User> assignedAgents = new HashSet<>();
+	
+	
+	// NEW: Geographic coordinates
+    @Column(name = "latitude", precision = 9, scale = 6)
+    private BigDecimal latitude;
+    
+    @Column(name = "longitude", precision = 9, scale = 6)
+    private BigDecimal longitude;
+    
+    // 🆕 NEW: Room and floor information
+    @Column(name = "room_count", precision = 3, scale = 1)
+    private BigDecimal roomCount; // Supports 0.5, 1, 1.5, 2, etc.
+    
+    @Column(name = "floor")
+    private Integer floor;
+    
+    @Column(name = "total_floors")
+    private Integer totalFloors;
+    
+    // 🆕 NEW: Property characteristics
+    @Column(name = "construction_year")
+    private Integer constructionYear;
+    
+    @Column(name = "municipality", length = 100)
+    private String municipality;
+    
+    // 🆕 NEW: ENUM fields
+    @Enumerated(EnumType.STRING)
+    @Column(name = "heating_type", length = 50)
+    private HeatingType heatingType;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(name = "property_condition", length = 50)
+    private PropertyCondition propertyCondition;
+	
 	
 	public void assignAgent(User agent) {
 		this.assignedAgents.add(agent);
@@ -271,5 +312,107 @@ public class RealEstate {
 	public void setOwner(User owner) {
 		this.owner = owner;
 	}
+
+	public BigDecimal getLatitude() {
+		return latitude;
+	}
+
+	public void setLatitude(BigDecimal latitude) {
+		this.latitude = latitude;
+	}
+
+	public BigDecimal getLongitude() {
+		return longitude;
+	}
+
+	public void setLongitude(BigDecimal longitude) {
+		this.longitude = longitude;
+	}
+
+	public BigDecimal getRoomCount() {
+		return roomCount;
+	}
+
+	public void setRoomCount(BigDecimal roomCount) {
+		this.roomCount = roomCount;
+	}
+
+	public Integer getFloor() {
+		return floor;
+	}
+
+	public void setFloor(Integer floor) {
+		this.floor = floor;
+	}
+
+	public Integer getTotalFloors() {
+		return totalFloors;
+	}
+
+	public void setTotalFloors(Integer totalFloors) {
+		this.totalFloors = totalFloors;
+	}
+
+	public Integer getConstructionYear() {
+		return constructionYear;
+	}
+
+	public void setConstructionYear(Integer constructionYear) {
+		this.constructionYear = constructionYear;
+	}
+
+	public String getMunicipality() {
+		return municipality;
+	}
+
+	public void setMunicipality(String municipality) {
+		this.municipality = municipality;
+	}
+
+	public HeatingType getHeatingType() {
+		return heatingType;
+	}
+
+	public void setHeatingType(HeatingType heatingType) {
+		this.heatingType = heatingType;
+	}
+
+	public PropertyCondition getPropertyCondition() {
+		return propertyCondition;
+	}
+
+	public void setPropertyCondition(PropertyCondition propertyCondition) {
+		this.propertyCondition = propertyCondition;
+	}
+	
+	public String getFloorDisplay() {
+        if (floor == null || totalFloors == null) return "N/A";
+        
+        // Handle ground floor (0) and basement (-1, -2, etc.)
+        if (floor == 0) return "Ground floor";
+        if (floor < 0) return Math.abs(floor) + ". basement";
+        
+        return floor + ". floor of " + totalFloors;
+    }
+    
+    public String getRoomCountDisplay() {
+        if (roomCount == null) return "N/A";
+        
+        // Convert 0.5 to "Studio", 1.0 to "1 room", etc.
+        if (roomCount.compareTo(BigDecimal.valueOf(0.5)) == 0) {
+            return "Studio";
+        }
+        
+        if (roomCount.stripTrailingZeros().scale() <= 0) {
+            return roomCount.intValue() + " room" + (roomCount.intValue() > 1 ? "s" : "");
+        } else {
+            return roomCount + " rooms";
+        }
+    }
+    
+    public Integer getPropertyAge() {
+        if (constructionYear == null) return null;
+        return Year.now().getValue() - constructionYear;
+    }
 		
 }
