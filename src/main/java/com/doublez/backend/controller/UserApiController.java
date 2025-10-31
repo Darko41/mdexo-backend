@@ -2,8 +2,6 @@ package com.doublez.backend.controller;
 
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,24 +16,22 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.doublez.backend.dto.AdminUserCreateDTO;
-import com.doublez.backend.dto.UserCreateDTO;
-import com.doublez.backend.dto.UserResponseDTO;
-import com.doublez.backend.dto.UserUpdateDTO;
+import com.doublez.backend.dto.user.UserCreateDTO;
+import com.doublez.backend.dto.user.UserProfileDTO;
+import com.doublez.backend.dto.user.UserResponseDTO;
+import com.doublez.backend.dto.user.UserUpdateDTO;
 import com.doublez.backend.exception.EmailExistsException;
 import com.doublez.backend.exception.UserNotFoundException;
-import com.doublez.backend.response.ApiResponse;
 import com.doublez.backend.service.user.UserService;
 
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/users")
-public class UserController {
+public class UserApiController {
 
     @Autowired
     private UserService userService;
-//    private static final Logger logger = LoggerFactory.getLogger(RealEstateAuthUserApiController.class);
     
     // creation of new user
     @PostMapping("/register")
@@ -103,5 +99,50 @@ public class UserController {
             return ResponseEntity.notFound().build();
         }
     }
-	
+
+    // Get user profile details
+    @GetMapping("/{id}/profile")
+    @PreAuthorize("(hasRole('USER') and #id == authentication.principal.id) or hasRole('ADMIN')") // ← ADDED ADMIN ACCESS
+    public ResponseEntity<UserProfileDTO> getUserProfileDetails(@PathVariable Long id) {
+        try {
+            UserProfileDTO profile = userService.getUserProfile(id);
+            return ResponseEntity.ok(profile);
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    // Update only profile details (separate from user account info)
+    @PutMapping("/{id}/profile")
+    @PreAuthorize("(hasRole('USER') and #id == authentication.principal.id) or hasRole('ADMIN')") // ← ADDED ADMIN ACCESS
+    public ResponseEntity<UserResponseDTO> updateUserProfileDetails(
+            @PathVariable Long id,
+            @Valid @RequestBody UserProfileDTO profileDTO) {
+        
+        try {
+            UserResponseDTO updatedUser = userService.updateUserProfileDetails(id, profileDTO);
+            return ResponseEntity.ok(updatedUser);
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    // Complete profile update (including email and roles - for admin use)
+    @PutMapping("/{id}/complete")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponseDTO> updateUserComplete(
+            @PathVariable Long id,
+            @Valid @RequestBody UserUpdateDTO updateDTO) {
+        
+        try {
+            UserResponseDTO updatedUser = userService.updateUserProfile(id, updateDTO);
+            return ResponseEntity.ok(updatedUser);
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
 }

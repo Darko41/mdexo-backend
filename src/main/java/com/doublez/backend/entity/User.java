@@ -14,6 +14,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
@@ -22,102 +23,125 @@ import jakarta.validation.constraints.NotNull;
 @Entity
 @Table(name = "users")
 public class User {
-	
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
-	@NotNull(message = "Email cannot be null")
-	@Email(message = "Please provide a valid email address")
-	@Column(unique = true, nullable = false)
-	private String email;
-	@NotNull(message = "Password cannot be null")
-	@Column(nullable = false)
-	private String password;
-	
-	@ManyToMany(fetch = FetchType.LAZY,cascade = CascadeType.PERSIST)
-	@JoinTable(
-			name = "user_roles",
-			joinColumns = @JoinColumn(name = "user_id"),
-			inverseJoinColumns = @JoinColumn(name = "role_id"))
-	private List<Role> roles;
-	
-	@Column(name = "created_at", nullable = false, updatable = false)
-	private LocalDate createdAt;
-	
-	@Column(name = "updated_at")
-	private LocalDate updatedAt;
-	
-	@PrePersist
-	public void prePersist() {
-		this.createdAt = LocalDate.now();
-	}
+    
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    
+    @NotNull(message = "Email cannot be null")
+    @Email(message = "Please provide a valid email address")
+    @Column(unique = true, nullable = false)
+    private String email;
+    
+    @NotNull(message = "Password cannot be null")
+    @Column(nullable = false)
+    private String password;
+    
+    @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
+    @JoinTable(
+            name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id"))
+    private List<Role> roles;
+    
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDate createdAt;
+    
+    @Column(name = "updated_at")
+    private LocalDate updatedAt;
+    
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private UserProfile userProfile;
 
-	public Long getId() {
-		return id;
-	}
+    // No constructors - using default constructor only
 
-	public void setId(Long id) {
-		this.id = id;
-	}
+    @PrePersist
+    public void prePersist() {
+        this.createdAt = LocalDate.now();
+    }
 
-	public String getPassword() {
-		return password;
-	}
+    public void preUpdate() {
+        this.updatedAt = LocalDate.now();
+    }
 
-	public void setPassword(String password) {
-		this.password = password;
-	}
+    // Getters and Setters
+    public Long getId() {
+        return id;
+    }
 
-	public List<Role> getRoles() {
-		return roles;
-	}
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-	public void setRoles(List<Role> roles) {
-		this.roles = roles;
-	}
+    public String getEmail() {
+        return email;
+    }
 
-	public LocalDate getCreatedAt() {
-		return createdAt;
-	}
+    public void setEmail(String email) {
+        this.email = email;
+    }
 
-	public void setCreatedAt(LocalDate createdAt) {
-		this.createdAt = createdAt;
-	}
+    public String getPassword() {
+        return password;
+    }
 
-	public LocalDate getUpdatedAt() {
-		return updatedAt;
-	}
+    public void setPassword(String password) {
+        this.password = password;
+    }
 
-	public void setUpdatedAt(LocalDate updatedAt) {
-		this.updatedAt = updatedAt;
-	}
-	
-	public void preUpdate() {
-		this.updatedAt = LocalDate.now();
-	}
+    public List<Role> getRoles() {
+        return roles;
+    }
 
-	public String getEmail() {
-		return email;
-	}
+    public void setRoles(List<Role> roles) {
+        this.roles = roles;
+    }
 
-	public void setEmail(String email) {
-		this.email = email;
-	}
-	
-	public boolean isAdmin() {
-	    return this.roles.stream()
-	            .anyMatch(role -> role.getName().equals("ROLE_ADMIN"));
-	}
-	
-	public boolean hasAnyRole(String... roleNames) {
-		return this.roles.stream()
-				.map(Role::getName)
-				.anyMatch(role -> Arrays.asList(roleNames).contains(role));
-	}
-	
-	public boolean hasRole(String roleName) {
-	    return this.roles.stream()
-	            .anyMatch(role -> role.getName().equals(roleName));
-	}
+    public LocalDate getCreatedAt() {
+        return createdAt;
+    }
 
+    public void setCreatedAt(LocalDate createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDate getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDate updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public UserProfile getUserProfile() {
+        return userProfile;
+    }
+
+    public void setUserProfile(UserProfile userProfile) {
+        this.userProfile = userProfile;
+    }
+
+    // Helper method to ensure profile exists
+    public UserProfile getOrCreateProfile() {
+        if (this.userProfile == null) {
+            this.userProfile = new UserProfile(this);
+        }
+        return this.userProfile;
+    }
+
+    public boolean isAdmin() {
+        return this.roles.stream()
+                .anyMatch(role -> role.getName().equals("ROLE_ADMIN"));
+    }
+    
+    public boolean hasAnyRole(String... roleNames) {
+        return this.roles.stream()
+                .map(Role::getName)
+                .anyMatch(role -> Arrays.asList(roleNames).contains(role));
+    }
+    
+    public boolean hasRole(String roleName) {
+        return this.roles.stream()
+                .anyMatch(role -> role.getName().equals(roleName));
+    }
 }

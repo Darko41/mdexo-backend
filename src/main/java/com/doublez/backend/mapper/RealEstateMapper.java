@@ -8,10 +8,10 @@ import java.util.Optional;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.Mapping;
 
-import com.doublez.backend.dto.RealEstateCreateDTO;
-import com.doublez.backend.dto.RealEstateDTO;
-import com.doublez.backend.dto.RealEstateResponseDTO;
-import com.doublez.backend.dto.RealEstateUpdateDTO;
+import com.doublez.backend.dto.realestate.RealEstateCreateDTO;
+import com.doublez.backend.dto.realestate.RealEstateDTO;
+import com.doublez.backend.dto.realestate.RealEstateResponseDTO;
+import com.doublez.backend.dto.realestate.RealEstateUpdateDTO;
 import com.doublez.backend.entity.RealEstate;
 import com.doublez.backend.entity.User;
 import com.doublez.backend.repository.UserRepository;

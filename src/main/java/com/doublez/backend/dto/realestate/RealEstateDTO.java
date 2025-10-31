@@ -1,4 +1,4 @@
-package com.doublez.backend.dto;
+package com.doublez.backend.dto.realestate;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;

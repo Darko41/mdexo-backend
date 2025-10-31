@@ -10,8 +10,8 @@ import java.util.stream.Collectors;
 
 import javax.management.relation.RoleNotFoundException;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+//import org.slf4j.Logger;
+//import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.Authentication;
@@ -20,10 +20,11 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.doublez.backend.dto.AdminUserCreateDTO;
-import com.doublez.backend.dto.UserCreateDTO;
-import com.doublez.backend.dto.UserResponseDTO;
-import com.doublez.backend.dto.UserUpdateDTO;
+import com.doublez.backend.dto.user.AdminUserCreateDTO;
+import com.doublez.backend.dto.user.UserCreateDTO;
+import com.doublez.backend.dto.user.UserProfileDTO;
+import com.doublez.backend.dto.user.UserResponseDTO;
+import com.doublez.backend.dto.user.UserUpdateDTO;
 import com.doublez.backend.entity.Role;
 import com.doublez.backend.entity.User;
 import com.doublez.backend.exception.CustomAuthenticationException;
@@ -64,7 +65,7 @@ public class UserService {
         this.realEstateRepository = realEstateRepository;
     }
 	
-	private static final Logger logger = LoggerFactory.getLogger(RealEstateImageService.class);
+//	private static final Logger logger = LoggerFactory.getLogger(RealEstateImageService.class);
 	
 	@Transactional
     public String registerUser(UserCreateDTO createDto) {
@@ -232,6 +233,8 @@ public class UserService {
         }
     }
     
+    // === UPDATED METHOD - Replace your existing updateUserProfile ===
+    @Transactional
     public UserResponseDTO updateUserProfile(Long id, UserUpdateDTO updateDto) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
@@ -239,13 +242,14 @@ public class UserService {
         boolean wasUpdated = updateUserFields(user, updateDto);
         
         if (wasUpdated) {
-            user.setUpdatedAt(LocalDate.now());
+            user.preUpdate(); // Changed from setUpdatedAt
             userRepository.save(user);
         }
         
         return userMapper.toResponseDto(user);
     }
 
+    // === UPDATED METHOD - Replace your existing updateUserFields ===
     private boolean updateUserFields(User user, UserUpdateDTO updateDto) {
         boolean wasUpdated = false;
         
@@ -255,18 +259,23 @@ public class UserService {
         }
         
         if (updateDto.getRoles() != null) {
-            // Convert role names to Role entities with proper typing
             List<Role> newRoles = updateDto.getRoles().stream()
                 .map(roleName -> roleRepository.findByName(roleName)
                     .orElseThrow(() -> new IllegalArgumentException("Role not found: " + roleName)))
                 .collect(Collectors.toList());
             
-            // Check if roles actually changed
             if (!newRoles.equals(user.getRoles())) {
                 user.setRoles(newRoles);
                 wasUpdated = true;
             }
         }
+        
+        // === NEW: Profile updates ===
+        if (updateDto.getProfile() != null) {
+            userMapper.updateEntity(updateDto, user);
+            wasUpdated = true;
+        }
+        
         return wasUpdated;
     }
     
@@ -310,7 +319,7 @@ public class UserService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
         
-        return userRepository.findByEmail(email) // Now works!
+        return userRepository.findByEmail(email)
             .orElseThrow(() -> new UsernameNotFoundException("User '" + email + "' not found"))
             .getId();
     }
@@ -335,5 +344,33 @@ public class UserService {
     public User getUserEntityByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+    }
+    
+    // === NEW METHODS - Add these at the end ===
+    
+    // Update profile separately
+    @Transactional
+    public UserResponseDTO updateUserProfileDetails(Long id, UserProfileDTO profileDto) {
+    	User user = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException(id));
+        
+        // This will create profile if it doesn't exist
+        userMapper.updateUserProfile(profileDto, user);
+        user.preUpdate();
+        userRepository.save(user);
+        
+        return userMapper.toResponseDto(user);
+    }
+
+    // Get user profile
+    public UserProfileDTO getUserProfile(Long userId) {
+    	User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+        
+        if (user.getUserProfile() == null) {
+            return new UserProfileDTO(); // Return empty DTO
+        }
+        
+        return userMapper.toProfileDto(user.getUserProfile());
     }
 }

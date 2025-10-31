@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.doublez.backend.dto.RealEstateResponseDTO;
+import com.doublez.backend.dto.realestate.RealEstateResponseDTO;
 import com.doublez.backend.enums.ListingType;
 import com.doublez.backend.enums.PropertyType;
 import com.doublez.backend.service.realestate.RealEstateImageService;

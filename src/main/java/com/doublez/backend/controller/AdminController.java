@@ -20,10 +20,10 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.doublez.backend.dto.RealEstateCreateDTO;
-import com.doublez.backend.dto.RealEstateResponseDTO;
-import com.doublez.backend.dto.RealEstateUpdateDTO;
-import com.doublez.backend.dto.UserResponseDTO;
+import com.doublez.backend.dto.realestate.RealEstateCreateDTO;
+import com.doublez.backend.dto.realestate.RealEstateResponseDTO;
+import com.doublez.backend.dto.realestate.RealEstateUpdateDTO;
+import com.doublez.backend.dto.user.UserResponseDTO;
 import com.doublez.backend.service.realestate.AdminRealEstateService;
 import com.doublez.backend.service.realestate.RealEstateService;
 import com.doublez.backend.service.user.UserService;

@@ -16,9 +16,9 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.doublez.backend.dto.RealEstateCreateDTO;
-import com.doublez.backend.dto.RealEstateResponseDTO;
-import com.doublez.backend.dto.RealEstateUpdateDTO;
+import com.doublez.backend.dto.realestate.RealEstateCreateDTO;
+import com.doublez.backend.dto.realestate.RealEstateResponseDTO;
+import com.doublez.backend.dto.realestate.RealEstateUpdateDTO;
 import com.doublez.backend.service.realestate.RealEstateAgentAssignmentService;
 import com.doublez.backend.service.realestate.RealEstateService;
 

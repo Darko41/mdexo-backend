@@ -1,4 +1,4 @@
-package com.doublez.backend.dto;
+package com.doublez.backend.dto.user;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

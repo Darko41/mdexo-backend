@@ -1,4 +1,4 @@
-package com.doublez.backend.dto;
+package com.doublez.backend.dto.realestate;
 
 import org.springframework.web.multipart.MultipartFile;
 

@@ -21,9 +21,9 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import com.doublez.backend.dto.UserCreateDTO;
-import com.doublez.backend.dto.UserResponseDTO;
-import com.doublez.backend.dto.UserUpdateDTO;
+import com.doublez.backend.dto.user.UserCreateDTO;
+import com.doublez.backend.dto.user.UserResponseDTO;
+import com.doublez.backend.dto.user.UserUpdateDTO;
 import com.doublez.backend.entity.Role;
 import com.doublez.backend.entity.User;
 import com.doublez.backend.exception.CustomAuthenticationException;

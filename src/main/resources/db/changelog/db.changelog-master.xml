@@ -8,5 +8,6 @@
     <include file="0001-new-baseline.xml" relativeToChangelogFile="true"/>
     <include file="20250425-add-real-estate-agents.xml" relativeToChangelogFile="true"/>
     <include file="20250427-changes.xml" relativeToChangelogFile="true"/>
+    <include file="20250427-userprofile.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

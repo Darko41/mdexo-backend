@@ -9,8 +9,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.doublez.backend.dto.RealEstateResponseDTO;
-import com.doublez.backend.dto.RealEstateUpdateDTO;
+import com.doublez.backend.dto.realestate.RealEstateResponseDTO;
+import com.doublez.backend.dto.realestate.RealEstateUpdateDTO;
 import com.doublez.backend.entity.RealEstate;
 import com.doublez.backend.entity.User;
 import com.doublez.backend.exception.ResourceNotFoundException;

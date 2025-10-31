@@ -20,9 +20,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.doublez.backend.dto.RealEstateCreateDTO;
-import com.doublez.backend.dto.RealEstateResponseDTO;
-import com.doublez.backend.dto.RealEstateUpdateDTO;
+import com.doublez.backend.dto.realestate.RealEstateCreateDTO;
+import com.doublez.backend.dto.realestate.RealEstateResponseDTO;
+import com.doublez.backend.dto.realestate.RealEstateUpdateDTO;
 import com.doublez.backend.entity.RealEstate;
 import com.doublez.backend.entity.User;
 import com.doublez.backend.enums.ListingType;
