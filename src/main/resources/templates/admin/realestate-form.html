@@ -62,6 +62,14 @@
       cursor: pointer;
       font-size: 0.875rem;
     }
+    .section-header {
+      border-bottom: 2px solid #007bff;
+      padding-bottom: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .coordinate-input {
+      font-family: monospace;
+    }
   </style>
 </head>
 <body class="hold-transition sidebar-mini">
@@ -159,8 +167,7 @@
                   <!-- Basic Information Section -->
                   <div class="row mb-4">
                     <div class="col-12">
-                      <h5 class="text-primary"><i class="fas fa-info-circle mr-2"></i>Basic Information</h5>
-                      <hr>
+                      <h5 class="text-primary section-header"><i class="fas fa-info-circle mr-2"></i>Basic Information</h5>
                     </div>
                   </div>
 
@@ -202,11 +209,101 @@
                     </div>
                   </div>
 
+                  <!-- 🆕 NEW: Property Specifications Section -->
+                  <div class="row mb-4">
+                    <div class="col-12">
+                      <h5 class="text-primary mt-4 section-header"><i class="fas fa-home mr-2"></i>Property Specifications</h5>
+                    </div>
+                  </div>
+
+                  <div class="row">
+                    <div class="col-md-3">
+                      <div class="form-group">
+                        <label for="roomCount">Room Count</label>
+                        <select class="form-control" id="roomCount" name="roomCount">
+                          <option value="">Select Room Count</option>
+                          <option value="0.5" th:selected="${realEstate?.roomCount == 0.5}">Studio (0.5)</option>
+                          <option value="1" th:selected="${realEstate?.roomCount == 1}">1 Room</option>
+                          <option value="1.5" th:selected="${realEstate?.roomCount == 1.5}">1.5 Rooms</option>
+                          <option value="2" th:selected="${realEstate?.roomCount == 2}">2 Rooms</option>
+                          <option value="2.5" th:selected="${realEstate?.roomCount == 2.5}">2.5 Rooms</option>
+                          <option value="3" th:selected="${realEstate?.roomCount == 3}">3 Rooms</option>
+                          <option value="3.5" th:selected="${realEstate?.roomCount == 3.5}">3.5 Rooms</option>
+                          <option value="4" th:selected="${realEstate?.roomCount == 4}">4 Rooms</option>
+                          <option value="4.5" th:selected="${realEstate?.roomCount == 4.5}">4.5 Rooms</option>
+                          <option value="5" th:selected="${realEstate?.roomCount == 5}">5+ Rooms</option>
+                        </select>
+                        <small class="form-text text-muted">0.5 = Studio apartment</small>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-group">
+                        <label for="floor">Floor</label>
+                        <input type="number" class="form-control" id="floor" name="floor"
+                               th:value="${realEstate?.floor}" min="-5" max="200" placeholder="Floor number">
+                        <small class="form-text text-muted">Use negative for basement (-1, -2, etc.)</small>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-group">
+                        <label for="totalFloors">Total Floors</label>
+                        <input type="number" class="form-control" id="totalFloors" name="totalFloors"
+                               th:value="${realEstate?.totalFloors}" min="1" max="200" placeholder="Total floors in building">
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-group">
+                        <label for="constructionYear">Construction Year</label>
+                        <input type="number" class="form-control" id="constructionYear" name="constructionYear"
+                               th:value="${realEstate?.constructionYear}" min="1500" max="2030" 
+                               placeholder="e.g., 2020">
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 🆕 NEW: Property Characteristics Section -->
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label for="heatingType">Heating Type</label>
+                        <select class="form-control" id="heatingType" name="heatingType">
+                          <option value="">Select Heating Type</option>
+                          <option value="CENTRAL" th:selected="${realEstate?.heatingType == 'CENTRAL'}">Central Heating</option>
+                          <option value="DISTRICT" th:selected="${realEstate?.heatingType == 'DISTRICT'}">District Heating</option>
+                          <option value="ELECTRIC" th:selected="${realEstate?.heatingType == 'ELECTRIC'}">Electric Heating</option>
+                          <option value="GAS" th:selected="${realEstate?.heatingType == 'GAS'}">Gas Heating</option>
+                          <option value="HEAT_PUMP" th:selected="${realEstate?.heatingType == 'HEAT_PUMP'}">Heat Pump</option>
+                          <option value="SOLAR" th:selected="${realEstate?.heatingType == 'SOLAR'}">Solar Heating</option>
+                          <option value="WOOD_PELLET" th:selected="${realEstate?.heatingType == 'WOOD_PELLET'}">Wood Pellet</option>
+                          <option value="OIL" th:selected="${realEstate?.heatingType == 'OIL'}">Oil Heating</option>
+                          <option value="NONE" th:selected="${realEstate?.heatingType == 'NONE'}">No Heating</option>
+                          <option value="OTHER" th:selected="${realEstate?.heatingType == 'OTHER'}">Other</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label for="propertyCondition">Property Condition</label>
+                        <select class="form-control" id="propertyCondition" name="propertyCondition">
+                          <option value="">Select Condition</option>
+                          <option value="NEW_CONSTRUCTION" th:selected="${realEstate?.propertyCondition == 'NEW_CONSTRUCTION'}">New Construction</option>
+                          <option value="RENOVATED" th:selected="${realEstate?.propertyCondition == 'RENOVATED'}">Renovated</option>
+                          <option value="MODERNIZED" th:selected="${realEstate?.propertyCondition == 'MODERNIZED'}">Modernized</option>
+                          <option value="GOOD" th:selected="${realEstate?.propertyCondition == 'GOOD'}">Good Condition</option>
+                          <option value="NEEDS_RENOVATION" th:selected="${realEstate?.propertyCondition == 'NEEDS_RENOVATION'}">Needs Renovation</option>
+                          <option value="ORIGINAL" th:selected="${realEstate?.propertyCondition == 'ORIGINAL'}">Original Condition</option>
+                          <option value="LUXURY" th:selected="${realEstate?.propertyCondition == 'LUXURY'}">Luxury</option>
+                          <option value="SHELL" th:selected="${realEstate?.propertyCondition == 'SHELL'}">Shell Condition</option>
+                          <option value="OTHER" th:selected="${realEstate?.propertyCondition == 'OTHER'}">Other</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
                   <!-- Price, Size, and Features Section -->
                   <div class="row mb-4">
                     <div class="col-12">
-                      <h5 class="text-primary mt-4"><i class="fas fa-tag mr-2"></i>Pricing & Features</h5>
-                      <hr>
+                      <h5 class="text-primary mt-4 section-header"><i class="fas fa-tag mr-2"></i>Pricing & Features</h5>
                     </div>
                   </div>
 
@@ -269,8 +366,7 @@
                   <!-- Location Information Section -->
                   <div class="row mb-4">
                     <div class="col-12">
-                      <h5 class="text-primary mt-4"><i class="fas fa-map-marker-alt mr-2"></i>Location Information</h5>
-                      <hr>
+                      <h5 class="text-primary mt-4 section-header"><i class="fas fa-map-marker-alt mr-2"></i>Location Information</h5>
                     </div>
                   </div>
 
@@ -306,13 +402,37 @@
                                th:value="${realEstate?.zipCode}" placeholder="ZIP Code" required>
                       </div>
                     </div>
+                    <div class="col-md-3">
+                      <div class="form-group">
+                        <label for="municipality">Municipality</label>
+                        <input type="text" class="form-control" id="municipality" name="municipality"
+                               th:value="${realEstate?.municipality}" placeholder="Municipality">
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-group">
+                        <label for="latitude">Latitude</label>
+                        <input type="number" class="form-control coordinate-input" id="latitude" name="latitude"
+                               th:value="${realEstate?.latitude}" step="0.000001" min="-90" max="90" 
+                               placeholder="e.g., 44.786568">
+                        <small class="form-text text-muted">Format: -90.000000 to 90.000000</small>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-group">
+                        <label for="longitude">Longitude</label>
+                        <input type="number" class="form-control coordinate-input" id="longitude" name="longitude"
+                               th:value="${realEstate?.longitude}" step="0.000001" min="-180" max="180"
+                               placeholder="e.g., 20.448922">
+                        <small class="form-text text-muted">Format: -180.000000 to 180.000000</small>
+                      </div>
+                    </div>
                   </div>
 
                   <!-- Images Section -->
 				<div class="row mb-4">
 				    <div class="col-12">
-				        <h5 class="text-primary mt-4"><i class="fas fa-images mr-2"></i>Property Images</h5>
-				        <hr>
+				        <h5 class="text-primary mt-4 section-header"><i class="fas fa-images mr-2"></i>Property Images</h5>
 				        <p class="text-muted">
 				            Upload high-quality photos of your property. The first image will be used as the cover photo.
 				            <span th:if="${!isEdit}">Images are automatically optimized for web viewing.</span>
@@ -394,60 +514,59 @@
 <!-- Custom JS -->
 <script>
   // Features management
-  // Features management
-let features = new Set([<th:block th:if="${realEstate?.features}"><th:block th:each="feature : ${realEstate.features}">"<th:block th:text="${feature}"/>",</th:block></th:block>]);
+  let features = new Set([<th:block th:if="${realEstate?.features}"><th:block th:each="feature : ${realEstate.features}">"<th:block th:text="${feature}"/>",</th:block></th:block>]);
 
-function updateFeaturesDisplay() {
-    const container = document.getElementById('featuresContainer');
-    const limitMessage = document.getElementById('featuresLimit');
-    container.innerHTML = '';
-    
-    features.forEach(feature => {
-        const featureTag = document.createElement('span');
-        featureTag.className = 'feature-tag';
-        featureTag.innerHTML = `
-            <span>${feature}</span>
-            <span class="feature-remove" data-feature="${feature}" onclick="removeFeatureFromEvent(this)">×</span>
-        `;
-        container.appendChild(featureTag);
-    });
-    
-    // Update hidden field
-    document.getElementById('featuresData').value = Array.from(features).join(',');
-    
-    // Show/hide limit message
-    limitMessage.style.display = features.size >= 10 ? 'block' : 'none';
-}
+  function updateFeaturesDisplay() {
+      const container = document.getElementById('featuresContainer');
+      const limitMessage = document.getElementById('featuresLimit');
+      container.innerHTML = '';
+      
+      features.forEach(feature => {
+          const featureTag = document.createElement('span');
+          featureTag.className = 'feature-tag';
+          featureTag.innerHTML = `
+              <span>${feature}</span>
+              <span class="feature-remove" data-feature="${feature}" onclick="removeFeatureFromEvent(this)">×</span>
+          `;
+          container.appendChild(featureTag);
+      });
+      
+      // Update hidden field
+      document.getElementById('featuresData').value = Array.from(features).join(',');
+      
+      // Show/hide limit message
+      limitMessage.style.display = features.size >= 10 ? 'block' : 'none';
+  }
 
-function addFeature() {
-    const input = document.getElementById('newFeature');
-    const feature = input.value.trim();
-    
-    if (feature && features.size < 10) {
-        features.add(feature);
-        updateFeaturesDisplay();
-        input.value = '';
-    }
-}
+  function addFeature() {
+      const input = document.getElementById('newFeature');
+      const feature = input.value.trim();
+      
+      if (feature && features.size < 10) {
+          features.add(feature);
+          updateFeaturesDisplay();
+          input.value = '';
+      }
+  }
 
-function removeFeature(feature) {
-    features.delete(feature);
-    updateFeaturesDisplay();
-}
+  function removeFeature(feature) {
+      features.delete(feature);
+      updateFeaturesDisplay();
+  }
 
-// New function to handle removal from event
-function removeFeatureFromEvent(element) {
-    const feature = element.getAttribute('data-feature');
-    removeFeature(feature);
-}
+  // New function to handle removal from event
+  function removeFeatureFromEvent(element) {
+      const feature = element.getAttribute('data-feature');
+      removeFeature(feature);
+  }
 
-// Handle Enter key in features input
-document.getElementById('newFeature').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        e.preventDefault();
-        addFeature();
-    }
-});
+  // Handle Enter key in features input
+  document.getElementById('newFeature').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+          e.preventDefault();
+          addFeature();
+      }
+  });
 
   // Image upload handling
   document.getElementById('images').addEventListener('change', function(e) {
@@ -491,7 +610,28 @@ document.getElementById('newFeature').addEventListener('keypress', function(e) {
   // Initialize features display
   document.addEventListener('DOMContentLoaded', function() {
     updateFeaturesDisplay();
+    
+    // 🆕 NEW: Auto-calculate property age when construction year changes
+    const constructionYearInput = document.getElementById('constructionYear');
+    if (constructionYearInput) {
+      constructionYearInput.addEventListener('change', function() {
+        const year = parseInt(this.value);
+        const currentYear = new Date().getFullYear();
+        if (year && year <= currentYear) {
+          const age = currentYear - year;
+          // You could display this in a tooltip or helper text
+          console.log(`Property age: ${age} years`);
+        }
+      });
+    }
   });
+
+  // 🆕 NEW: Function to handle image removal from event
+  function removeImageFromEvent(element) {
+    const propertyId = element.getAttribute('data-property-id');
+    const imageUrl = element.getAttribute('data-image-url');
+    removeImage(propertyId, imageUrl);
+  }
 </script>
 </body>
 </html>

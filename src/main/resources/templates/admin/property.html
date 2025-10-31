@@ -46,6 +46,19 @@
       border-left: 4px solid #007bff;
       background-color: #f8f9fa;
     }
+    .badge-enum {
+      font-size: 0.8rem;
+      padding: 0.4rem 0.8rem;
+    }
+    .coordinate-badge {
+      font-family: monospace;
+      background: #e9ecef;
+    }
+    .section-divider {
+      border-bottom: 2px solid #e9ecef;
+      padding-bottom: 1rem;
+      margin-bottom: 1.5rem;
+    }
   </style>
 </head>
 
@@ -165,25 +178,115 @@
 				         th:classappend="${iter.index == 0} ? 'active' : ''"
 				         th:attr="data-image=${image}"
 				         onclick="changeMainImage(this.dataset.image, this)">
-				</th:block>
+				  </th:block>
                 </div>
               </div>
             </div>
 
-            <div class="card">
+            <!-- 🆕 NEW: Enhanced Property Details Section -->
+            <div class="card mb-4">
               <div class="card-header">
-                <h3 class="card-title">Property Details</h3>
+                <h3 class="card-title">Property Specifications</h3>
               </div>
               <div class="card-body">
-                <p th:text="${property.description} ?: 'No description available.'"></p>
-
-                <div th:if="${property.features != null && !property.features.empty}">
-                  <h5>Features & Amenities</h5>
-                  <div>
-                    <th:block th:each="feature : ${property.features}">
-                      <span class="feature-badge" th:text="${feature}">Feature</span>
-                    </th:block>
+                <div class="row">
+                  <!-- Basic Information -->
+                  <div class="col-md-6">
+                    <h5 class="section-divider">Basic Information</h5>
+                    <div class="info-card p-3 mb-3">
+                      <strong>Property Type:</strong> 
+                      <span class="float-right badge badge-primary badge-enum" th:text="${property.propertyType}"></span>
+                    </div>
+                    <div class="info-card p-3 mb-3">
+                      <strong>Listing Type:</strong> 
+                      <span class="float-right badge badge-info badge-enum" th:text="${property.listingType}"></span>
+                    </div>
+                    <div class="info-card p-3 mb-3" th:if="${property.sizeInSqMt != null}">
+                      <strong>Size:</strong> 
+                      <span class="float-right" th:text="${property.sizeInSqMt + ' m²'}"></span>
+                    </div>
+                    <div class="info-card p-3 mb-3" th:if="${property.roomCount != null}">
+                      <strong>Room Count:</strong> 
+                      <span class="float-right" th:text="${property.roomCountDisplay ?: property.roomCount}"></span>
+                    </div>
                   </div>
+
+                  <!-- 🆕 NEW: Property Characteristics -->
+                  <div class="col-md-6">
+                    <h5 class="section-divider">Property Characteristics</h5>
+                    <div class="info-card p-3 mb-3" th:if="${property.floor != null && property.totalFloors != null}">
+                      <strong>Floor:</strong> 
+                      <span class="float-right" th:text="${property.floorDisplay ?: (property.floor + '/' + property.totalFloors)}"></span>
+                    </div>
+                    <div class="info-card p-3 mb-3" th:if="${property.constructionYear != null}">
+                      <strong>Construction Year:</strong> 
+                      <span class="float-right">
+                        <span th:text="${property.constructionYear}"></span>
+                        <span th:if="${property.propertyAge != null}" class="text-muted ml-1">
+                          (age: <span th:text="${property.propertyAge}"></span> years)
+                        </span>
+                      </span>
+                    </div>
+                    <div class="info-card p-3 mb-3" th:if="${property.heatingType != null}">
+                      <strong>Heating Type:</strong> 
+                      <span class="float-right badge badge-warning badge-enum" th:text="${property.heatingType}"></span>
+                    </div>
+                    <div class="info-card p-3 mb-3" th:if="${property.propertyCondition != null}">
+                      <strong>Property Condition:</strong> 
+                      <span class="float-right badge badge-secondary badge-enum" th:text="${property.propertyCondition}"></span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 🆕 NEW: Geographic Information -->
+                <div class="row mt-3" th:if="${property.latitude != null || property.longitude != null || property.municipality != null}">
+                  <div class="col-12">
+                    <h5 class="section-divider">Geographic Information</h5>
+                    <div class="row">
+                      <div class="col-md-4" th:if="${property.municipality != null}">
+                        <div class="info-card p-3 mb-3">
+                          <strong>Municipality:</strong> 
+                          <span class="float-right" th:text="${property.municipality}"></span>
+                        </div>
+                      </div>
+                      <div class="col-md-4" th:if="${property.latitude != null}">
+                        <div class="info-card p-3 mb-3">
+                          <strong>Latitude:</strong> 
+                          <span class="float-right coordinate-badge" th:text="${#numbers.formatDecimal(property.latitude, 1, 6)}"></span>
+                        </div>
+                      </div>
+                      <div class="col-md-4" th:if="${property.longitude != null}">
+                        <div class="info-card p-3 mb-3">
+                          <strong>Longitude:</strong> 
+                          <span class="float-right coordinate-badge" th:text="${#numbers.formatDecimal(property.longitude, 1, 6)}"></span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Description Section -->
+            <div class="card mb-4">
+              <div class="card-header">
+                <h3 class="card-title">Description</h3>
+              </div>
+              <div class="card-body">
+                <p th:text="${property.description} ?: 'No description available.'" style="white-space: pre-line;"></p>
+              </div>
+            </div>
+
+            <!-- Features Section -->
+            <div class="card" th:if="${property.features != null && !property.features.empty}">
+              <div class="card-header">
+                <h3 class="card-title">Features & Amenities</h3>
+              </div>
+              <div class="card-body">
+                <div class="d-flex flex-wrap">
+                  <th:block th:each="feature : ${property.features}">
+                    <span class="feature-badge" th:text="${feature}">Feature</span>
+                  </th:block>
                 </div>
               </div>
             </div>
@@ -191,6 +294,7 @@
 
           <!-- Sidebar info -->
           <div class="col-md-4">
+            <!-- Price Card -->
             <div class="card">
               <div class="card-body text-center">
                 <div class="price-tag" th:text="'$' + ${#numbers.formatDecimal(property.price, 1, 2, 'COMMA')}">$0.00</div>
@@ -198,26 +302,94 @@
               </div>
             </div>
 
+            <!-- Quick Facts Card -->
             <div class="card mt-3">
               <div class="card-header"><h3 class="card-title">Quick Facts</h3></div>
               <div class="card-body">
-                <div class="info-card p-3 mb-3"><strong>Type:</strong> <span class="float-right" th:text="${property.propertyType}"></span></div>
-                <div class="info-card p-3 mb-3" th:if="${property.sizeInSqMt != null}">
-                  <strong>Size:</strong> <span class="float-right" th:text="${property.sizeInSqMt + ' m²'}"></span>
+                <div class="info-card p-3 mb-3">
+                  <strong>Property ID:</strong> 
+                  <span class="float-right" th:text="${property.propertyId}"></span>
                 </div>
-                <div class="info-card p-3 mb-3"><strong>ID:</strong> <span class="float-right" th:text="${property.propertyId}"></span></div>
+                <div class="info-card p-3 mb-3">
+                  <strong>Status:</strong> 
+                  <span class="float-right badge" 
+                        th:classappend="${property.listingType == 'FOR_SALE'} ? 'badge-success' : 'badge-info'"
+                        th:text="${property.listingType == 'FOR_SALE'} ? 'For Sale' : 'For Rent'">
+                  </span>
+                </div>
+                <div class="info-card p-3 mb-3" th:if="${property.roomCount != null}">
+                  <strong>Rooms:</strong> 
+                  <span class="float-right" th:text="${property.roomCountDisplay ?: property.roomCount}"></span>
+                </div>
+                <div class="info-card p-3 mb-3" th:if="${property.sizeInSqMt != null}">
+                  <strong>Size:</strong> 
+                  <span class="float-right" th:text="${property.sizeInSqMt + ' m²'}"></span>
+                </div>
+                <div class="info-card p-3 mb-3" th:if="${property.constructionYear != null}">
+                  <strong>Built:</strong> 
+                  <span class="float-right" th:text="${property.constructionYear}"></span>
+                </div>
               </div>
             </div>
 
+            <!-- Location Card -->
             <div class="card mt-3">
-              <div class="card-header"><h3 class="card-title">Location</h3></div>
+              <div class="card-header"><h3 class="card-title">Location Details</h3></div>
               <div class="card-body">
-                <p th:text="${property.address}"></p>
-                <p th:text="${property.city + ', ' + property.state}"></p>
-                <p th:text="${property.zipCode}"></p>
+                <div class="info-card p-3 mb-3">
+                  <strong>Address:</strong>
+                  <span class="float-right text-right" th:text="${property.address}"></span>
+                </div>
+                <div class="info-card p-3 mb-3">
+                  <strong>City:</strong>
+                  <span class="float-right" th:text="${property.city}"></span>
+                </div>
+                <div class="info-card p-3 mb-3">
+                  <strong>State:</strong>
+                  <span class="float-right" th:text="${property.state}"></span>
+                </div>
+                <div class="info-card p-3 mb-3">
+                  <strong>ZIP Code:</strong>
+                  <span class="float-right" th:text="${property.zipCode}"></span>
+                </div>
+                <div class="info-card p-3 mb-3" th:if="${property.municipality != null}">
+                  <strong>Municipality:</strong>
+                  <span class="float-right" th:text="${property.municipality}"></span>
+                </div>
               </div>
             </div>
 
+            <!-- 🆕 NEW: Owner Information Card -->
+            <div class="card mt-3" th:if="${property.ownerId != null}">
+              <div class="card-header"><h3 class="card-title">Owner Information</h3></div>
+              <div class="card-body">
+                <div class="info-card p-3 mb-3">
+                  <strong>Owner ID:</strong>
+                  <span class="float-right" th:text="${property.ownerId}"></span>
+                </div>
+                <div class="info-card p-3 mb-3" th:if="${property.ownerEmail != null}">
+                  <strong>Email:</strong>
+                  <span class="float-right" th:text="${property.ownerEmail}"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Timestamps Card -->
+            <div class="card mt-3">
+              <div class="card-header"><h3 class="card-title">Timestamps</h3></div>
+              <div class="card-body">
+                <div class="info-card p-3 mb-3">
+                  <strong>Created:</strong>
+                  <span class="float-right" th:text="${#temporals.format(property.createdAt, 'dd/MM/yyyy')}"></span>
+                </div>
+                <div class="info-card p-3 mb-3" th:if="${property.updatedAt != null}">
+                  <strong>Updated:</strong>
+                  <span class="float-right" th:text="${#temporals.format(property.updatedAt, 'dd/MM/yyyy')}"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
             <div class="card mt-3">
               <div class="card-body">
                 <a th:href="@{'/admin/real-estates/' + ${property.propertyId} + '/edit'}" class="btn btn-primary btn-block mb-2">

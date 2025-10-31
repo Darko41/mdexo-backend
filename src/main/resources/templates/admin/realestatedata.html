@@ -20,10 +20,30 @@
   <!-- Google Font: Source Sans Pro -->
   <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
   
-	  <style>
-	  	.clickable-row { cursor: pointer; }
-	  	.clickable-row:hover { background-color: #f8f9fa; }
-	  </style>
+  <style>
+    .clickable-row { cursor: pointer; }
+    .clickable-row:hover { background-color: #f8f9fa; }
+    .badge-enum {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.5rem;
+    }
+    .room-count-badge { background-color: #6f42c1; }
+    .floor-badge { background-color: #20c997; }
+    .size-badge { background-color: #fd7e14; }
+    .year-badge { background-color: #e83e8c; }
+    .coordinate-badge {
+      font-family: monospace;
+      font-size: 0.7rem;
+      background-color: #6c757d;
+    }
+    .table th { background-color: #f8f9fa; }
+    .property-title { 
+      max-width: 200px; 
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  </style>
 </head>
 <body class="hold-transition sidebar-mini">
 <div class="wrapper">
@@ -248,56 +268,197 @@
               <table id="realEstatesTable" class="table table-bordered table-hover">
                 <thead>
                 <tr>
+                  <th>ID</th>
                   <th>Title</th>
-                  <th>Description</th>
                   <th>Property Type</th>
-                  <th>Price</th>
-                  <th>Address</th>
-                  <th>City</th>
-                  <th>State</th>
-                  <th>Zip Code</th>
-                  <th>Size (in SqMt)</th>
                   <th>Listing Type</th>
-                  <th>Created At</th>
-                  <th>Updated At</th>
+                  <th>Price</th>
+                  <!-- 🆕 NEW: Enhanced Property Details -->
+                  <th>Rooms</th>
+                  <th>Floor</th>
+                  <th>Size (m²)</th>
+                  <th>Built Year</th>
+                  <th>Condition</th>
+                  <th>Heating</th>
+                  <!-- Location Details -->
+                  <th>City</th>
+                  <th>Municipality</th>
+                  <th>Coordinates</th>
+                  <th>Created</th>
                   <th>Actions</th>
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="realEstate : ${realEstates}">
+                <tr th:each="realEstate : ${realEstates}" class="clickable-row">
+                  <!-- ID -->
                   <td>
-					  <a th:href="@{/admin/real-estates/{id}/view(id=${realEstate.propertyId})}"
-					     th:text="${realEstate.title}"
-					     class="text-primary font-weight-bold">
-					  </a>
-					</td>
-                  <td th:text="${realEstate.description}"></td>
-                  <td th:text="${realEstate.propertyType}"></td>
-                  <td th:text="${'$' + realEstate.price}"></td>
-                  <td th:text="${realEstate.address}"></td>
-                  <td th:text="${realEstate.city}"></td>
-                  <td th:text="${realEstate.state}"></td>
-                  <td th:text="${realEstate.zipCode}"></td>
-                  <td th:text="${realEstate.sizeInSqMt}"></td>
-                  <td th:text="${realEstate.listingType}"></td>
-                  <td th:text="${#temporals.format(realEstate.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
-                  <td th:text="${#temporals.format(realEstate.updatedAt, 'yyyy-MM-dd HH:mm')}"></td>
+                    <span class="badge badge-secondary" th:text="${realEstate.propertyId}"></span>
+                  </td>
+                  
+                  <!-- Title with Link -->
                   <td>
-				    <div class="btn-group">
-				        <a th:href="@{/admin/real-estates/{id}/edit(id=${realEstate.propertyId})}" 
-				           class="btn btn-warning btn-sm">
-				            <i class="fas fa-edit"></i> Edit
-				        </a>
-				        <button type="button" class="btn btn-danger btn-sm delete-btn"
-				                th:data-property-id="${realEstate.propertyId}"
-				                th:data-property-title="${realEstate.title}"
-				                th:data-property-type="${realEstate.propertyType}"
-				                th:data-property-price="${realEstate.price}"
-				                th:data-property-address="${realEstate.address}">
-				            <i class="fas fa-trash"></i> Delete
-				        </button>
-				    </div>
-				</td>
+                    <div class="property-title" title="Click to view details">
+                      <a th:href="@{/admin/real-estates/{id}/view(id=${realEstate.propertyId})}"
+                         th:text="${realEstate.title}"
+                         class="text-primary font-weight-bold">
+                      </a>
+                    </div>
+                    <div th:if="${realEstate.address}" class="text-muted small" th:text="${realEstate.address}"></div>
+                  </td>
+                  
+                  <!-- Property Type -->
+                  <td>
+                    <span class="badge badge-primary badge-enum" th:text="${realEstate.propertyType}"></span>
+                  </td>
+                  
+                  <!-- Listing Type -->
+                  <td>
+                    <span th:classappend="${realEstate.listingType == 'FOR_SALE'} ? 'badge badge-success' : 'badge badge-info'"
+                          class="badge-enum"
+                          th:text="${realEstate.listingType == 'FOR_SALE'} ? 'For Sale' : 'For Rent'">
+                    </span>
+                  </td>
+                  
+                  <!-- Price -->
+                  <td>
+                    <strong class="text-success" th:text="'$' + ${#numbers.formatDecimal(realEstate.price, 1, 2, 'COMMA')}"></strong>
+                  </td>
+                  
+                  <!-- 🆕 NEW: Room Count -->
+                  <td>
+                    <th:block th:if="${realEstate.roomCount != null}">
+                      <span class="badge room-count-badge text-white badge-enum">
+                        <i class="fas fa-door-open mr-1"></i>
+                        <span th:text="${realEstate.roomCount}"></span>
+                      </span>
+                    </th:block>
+                    <th:block th:unless="${realEstate.roomCount != null}">
+                      <span class="text-muted">-</span>
+                    </th:block>
+                  </td>
+                  
+                  <!-- 🆕 NEW: Floor Information -->
+                  <td>
+                    <th:block th:if="${realEstate.floor != null && realEstate.totalFloors != null}">
+                      <span class="badge floor-badge text-white badge-enum">
+                        <i class="fas fa-building mr-1"></i>
+                        <span th:text="${realEstate.floor}"></span>/<span th:text="${realEstate.totalFloors}"></span>
+                      </span>
+                    </th:block>
+                    <th:block th:unless="${realEstate.floor != null && realEstate.totalFloors != null}">
+                      <span class="text-muted">-</span>
+                    </th:block>
+                  </td>
+                  
+                  <!-- Size -->
+                  <td>
+                    <th:block th:if="${realEstate.sizeInSqMt != null}">
+                      <span class="badge size-badge text-white badge-enum">
+                        <i class="fas fa-vector-square mr-1"></i>
+                        <span th:text="${realEstate.sizeInSqMt}"></span>
+                      </span>
+                    </th:block>
+                    <th:block th:unless="${realEstate.sizeInSqMt != null}">
+                      <span class="text-muted">-</span>
+                    </th:block>
+                  </td>
+                  
+                  <!-- 🆕 NEW: Construction Year -->
+                  <td>
+                    <th:block th:if="${realEstate.constructionYear != null}">
+                      <span class="badge year-badge text-white badge-enum">
+                        <i class="fas fa-calendar-alt mr-1"></i>
+                        <span th:text="${realEstate.constructionYear}"></span>
+                      </span>
+                      <th:block th:if="${realEstate.propertyAge != null}">
+                        <small class="text-muted d-block" th:text="'(' + ${realEstate.propertyAge} + ' yrs)'"></small>
+                      </th:block>
+                    </th:block>
+                    <th:block th:unless="${realEstate.constructionYear != null}">
+                      <span class="text-muted">-</span>
+                    </th:block>
+                  </td>
+                  
+                  <!-- 🆕 NEW: Property Condition -->
+                  <td>
+                    <th:block th:if="${realEstate.propertyCondition != null}">
+                      <span class="badge badge-secondary badge-enum" th:text="${realEstate.propertyCondition}"></span>
+                    </th:block>
+                    <th:block th:unless="${realEstate.propertyCondition != null}">
+                      <span class="text-muted">-</span>
+                    </th:block>
+                  </td>
+                  
+                  <!-- 🆕 NEW: Heating Type -->
+                  <td>
+                    <th:block th:if="${realEstate.heatingType != null}">
+                      <span class="badge badge-warning badge-enum" th:text="${realEstate.heatingType}"></span>
+                    </th:block>
+                    <th:block th:unless="${realEstate.heatingType != null}">
+                      <span class="text-muted">-</span>
+                    </th:block>
+                  </td>
+                  
+                  <!-- City -->
+                  <td>
+                    <span th:text="${realEstate.city}"></span>
+                    <th:block th:if="${realEstate.state}">
+                      <small class="text-muted d-block" th:text="${realEstate.state}"></small>
+                    </th:block>
+                  </td>
+                  
+                  <!-- 🆕 NEW: Municipality -->
+                  <td>
+                    <th:block th:if="${realEstate.municipality != null}">
+                      <span class="text-muted" th:text="${realEstate.municipality}"></span>
+                    </th:block>
+                    <th:block th:unless="${realEstate.municipality != null}">
+                      <span class="text-muted">-</span>
+                    </th:block>
+                  </td>
+                  
+                  <!-- 🆕 NEW: Coordinates -->
+                  <td>
+                    <th:block th:if="${realEstate.latitude != null && realEstate.longitude != null}">
+                      <span class="coordinate-badge badge" 
+                            title="Latitude: ${realEstate.latitude}, Longitude: ${realEstate.longitude}">
+                        <i class="fas fa-map-marker-alt mr-1"></i>
+                        <span th:text="${#numbers.formatDecimal(realEstate.latitude, 1, 4)}"></span>,
+                        <span th:text="${#numbers.formatDecimal(realEstate.longitude, 1, 4)}"></span>
+                      </span>
+                    </th:block>
+                    <th:block th:unless="${realEstate.latitude != null && realEstate.longitude != null}">
+                      <span class="text-muted">-</span>
+                    </th:block>
+                  </td>
+                  
+                  <!-- Created Date -->
+                  <td>
+                    <small class="text-muted" th:text="${#temporals.format(realEstate.createdAt, 'yyyy-MM-dd')}"></small>
+                  </td>
+                  
+                  <!-- Actions -->
+                  <td>
+                    <div class="btn-group">
+                      <a th:href="@{/admin/real-estates/{id}/view(id=${realEstate.propertyId})}" 
+                         class="btn btn-info btn-sm" title="View Details">
+                        <i class="fas fa-eye"></i>
+                      </a>
+                      <a th:href="@{/admin/real-estates/{id}/edit(id=${realEstate.propertyId})}" 
+                         class="btn btn-warning btn-sm" title="Edit">
+                        <i class="fas fa-edit"></i>
+                      </a>
+                      <button type="button" class="btn btn-danger btn-sm delete-btn"
+                              th:data-property-id="${realEstate.propertyId}"
+                              th:data-property-title="${realEstate.title}"
+                              th:data-property-type="${realEstate.propertyType}"
+                              th:data-property-price="${realEstate.price}"
+                              th:data-property-address="${realEstate.address}"
+                              title="Delete">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  </td>
                 </tr>
                 </tbody>
               </table>
@@ -396,18 +557,6 @@
 <!-- Custom JS -->
 <script th:src="@{/dist/js/real-estate-crud.js}"></script>
 <!-- page script -->
-<script>
-  $(function () {
-    $('#realEstatesTable').DataTable({
-      "paging": true,
-      "lengthChange": true,
-      "searching": true,
-      "ordering": true,
-      "info": true,
-      "autoWidth": false,
-      "responsive": true
-    });
-  });
-</script>
+<script th:src="@{/dist/js/admin-real-estates.js}"></script>
 </body>
 </html>
