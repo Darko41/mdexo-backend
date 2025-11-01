@@ -41,28 +41,20 @@ public class AuthApiController {
     @PostMapping("/authenticate")
     public ResponseEntity<?> authenticate(HttpServletRequest request) {
         try {
-            
-            
             // Read the raw request body
             String requestBody = request.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
-            
             
             // Parse JSON manually
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode jsonNode = objectMapper.readTree(requestBody);
             
-            
-            
             // Extract values from JSON
             String email = jsonNode.has("email") ? jsonNode.get("email").asText() : null;
             String password = jsonNode.has("password") ? jsonNode.get("password").asText() : null;
             
-            
-            
             // Check for alternative field names
             if (email == null && jsonNode.has("username")) {
                 email = jsonNode.get("username").asText();
-                
             }
             if (email == null && jsonNode.has("userName")) {
                 email = jsonNode.get("userName").asText();
@@ -71,7 +63,6 @@ public class AuthApiController {
             
             // Enhanced null checking
             if (email == null) {
-                
                 List<String> availableFields = new ArrayList<>();
                 jsonNode.fieldNames().forEachRemaining(availableFields::add);
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -84,7 +75,6 @@ public class AuthApiController {
             }
             
             if (password == null) {
-                
                 List<String> availableFields = new ArrayList<>();
                 jsonNode.fieldNames().forEachRemaining(availableFields::add);
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -97,12 +87,9 @@ public class AuthApiController {
             }
             
             if (email.isEmpty() || password.isEmpty()) {
-                
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("error", "Email and password cannot be empty"));
             }
-            
-            
             
             // Authenticate the user
             Authentication authentication = authenticationManager.authenticate(
@@ -111,14 +98,14 @@ public class AuthApiController {
 
             String authenticatedEmail = authentication.getName();
             
-            
             // Get user and generate token
             User user = userService.getUserEntityByEmail(authenticatedEmail);
             List<String> roles = user.getRoles().stream()
                 .map(role -> role.getName())
                 .collect(Collectors.toList());
 
-            String token = jwtTokenUtil.generateToken(authenticatedEmail, roles);
+            // ✅ UPDATED: Pass user.getId() to generateToken
+            String token = jwtTokenUtil.generateToken(authenticatedEmail, user.getId(), roles);
 
             Map<String, Object> response = new HashMap<>();
             response.put("token", token);
@@ -126,15 +113,12 @@ public class AuthApiController {
             response.put("roles", roles);
             response.put("message", "Login successful");
 
-            
             return ResponseEntity.ok(response);
 
         } catch (BadCredentialsException e) {
-            
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(Map.of("error", "Invalid email or password"));
         } catch (Exception e) {
-            
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of(

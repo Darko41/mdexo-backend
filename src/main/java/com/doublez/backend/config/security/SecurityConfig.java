@@ -136,8 +136,8 @@ public class SecurityConfig {
 	            .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
 	        )
 	        // JWT filter for API requests
-	        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 	        .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+	        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 	        .csrf(csrf -> csrf.disable())
 	        .exceptionHandling(ex -> ex
 	            .authenticationEntryPoint((request, response, authException) -> {

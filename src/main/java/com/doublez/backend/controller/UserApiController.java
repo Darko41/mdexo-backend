@@ -92,7 +92,8 @@ public class UserApiController {
     // get user by id
     @GetMapping("/{id}")
     public ResponseEntity<UserResponseDTO> getUserById(@PathVariable Long id) {
-        try {
+    	System.out.println("🟢 GET /api/users/" + id + " called - ID type: " + id.getClass());
+    	try {
             UserResponseDTO user = userService.getUserById(id);
             return ResponseEntity.ok(user);
         } catch (UserNotFoundException e) {
@@ -145,4 +146,6 @@ public class UserApiController {
             return ResponseEntity.badRequest().build();
         }
     }
+    
+    
 }

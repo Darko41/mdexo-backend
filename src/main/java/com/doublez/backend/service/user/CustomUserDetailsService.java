@@ -30,7 +30,7 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
         
         return new CustomUserDetails(
-            user.getId(), // Include the ID here
+            user.getId(), 
             user.getEmail(),
             user.getPassword(),
             user.getRoles().stream()

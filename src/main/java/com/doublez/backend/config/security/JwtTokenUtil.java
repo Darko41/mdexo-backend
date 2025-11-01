@@ -19,7 +19,7 @@ public class JwtTokenUtil {
 	private final long expirationTime;
 	
 	public JwtTokenUtil(
-            @Value("${jwt.secret}") String secretKey,  // No fallback!
+            @Value("${jwt.secret}") String secretKey,
             @Value("${jwt.expiration:86400000}") long expirationTime) {
         
         if (secretKey == null || secretKey.trim().isEmpty()) {
@@ -28,19 +28,19 @@ public class JwtTokenUtil {
         
         this.secretKey = secretKey;
         this.expirationTime = expirationTime;
-        
     }
 	
-	// Generate JWT Token
-	public String generateToken(String email, List<String> roles) {
+	// Generate JWT Token - UPDATED to include userId
+	public String generateToken(String email, Long userId, List<String> roles) { // ← ADD userId parameter
 		SecretKey key = Keys.hmacShaKeyFor(this.secretKey.getBytes());
 		return Jwts.builder()
 				.claim("sub", email)
+				.claim("userId", userId) // ← ADD THIS LINE
 				.claim("roles", roles)
-				.claim("iat", new Date())	// Issued at time
-				.claim("exp", new Date(System.currentTimeMillis() + this.expirationTime))	// Expiration time
-				.signWith(key)	// Sign the token with the secret key
-				.compact();	// Return the compact token
+				.claim("iat", new Date())
+				.claim("exp", new Date(System.currentTimeMillis() + this.expirationTime))
+				.signWith(key)
+				.compact();
 	}
 	
 	public Claims extractClaims(String token) {
@@ -55,6 +55,11 @@ public class JwtTokenUtil {
 	// Extract Email from Token
 	public String extractEmail(String token) {
 		return extractClaims(token).getSubject();
+	}
+	
+	// Extract User ID from Token - NEW METHOD
+	public Long extractUserId(String token) {
+		return extractClaims(token).get("userId", Long.class);
 	}
 	
 	// Extract roles from the token
@@ -76,5 +81,4 @@ public class JwtTokenUtil {
 	public boolean validateToken(String token, String email) {
 		return (email.equals(extractEmail(token)) && !isTokenExpired(token));
 	}
-
 }

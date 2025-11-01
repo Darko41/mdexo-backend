@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -33,9 +34,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     // Ant-style patterns for public endpoints
     private static final List<String> EXCLUDED_PATHS = Arrays.asList(
-    	"/api/auth/authenticate",
-    	"/api/users/register",
-    	"/v3/api-docs/**",
+        "/api/auth/authenticate",
+        "/api/users/register",
+        "/v3/api-docs/**",
         "/swagger-ui/**",
         "/swagger-resources/**",
         "/webjars/**",
@@ -46,7 +47,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     public JwtAuthenticationFilter(JwtTokenUtil jwtTokenUtil, UserDetailsService userDetailsService) {
         this.jwtTokenUtil = jwtTokenUtil;
-        this.userDetailsService = userDetailsService; // Your CustomUserDetailsService is injected here
+        this.userDetailsService = userDetailsService;
     }
 
     @Override
@@ -54,7 +55,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         final String requestURI = request.getRequestURI();
-        logger.debug("🛡️ JWT Filter processing: {}", requestURI);
+        final String method = request.getMethod();
+        
+        logger.debug("🛡️ JWT Filter processing: {} {}", method, requestURI);
+
+        // COMPLETELY skip OPTIONS requests - let CORS handle them
+        if (HttpMethod.OPTIONS.matches(method)) {
+            logger.debug("🔄 COMPLETELY skipping JWT filter for OPTIONS request: {}", requestURI);
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         if (shouldSkipAuthentication(request)) {
             logger.debug("✅ Skipping JWT filter for: {}", requestURI);
@@ -67,7 +77,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if (token == null) {
                 logger.warn("No JWT token found in request to {}", requestURI);
-                filterChain.doFilter(request, response);
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write("{\"error\":\"No token provided\",\"message\":\"Authentication required\"}");
                 return;
             }
 
@@ -79,6 +90,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
                     if (userDetails != null) {
+                        Long userId = jwtTokenUtil.extractUserId(token);
+                        
                         UsernamePasswordAuthenticationToken authentication =
                                 new UsernamePasswordAuthenticationToken(
                                         userDetails,
@@ -87,9 +100,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         authentication.setDetails(
                                 new WebAuthenticationDetailsSource().buildDetails(request));
 
-                        SecurityContextHolder.getContext().setAuthentication(authentication);
-                        logger.info("Authenticated user: {}", username);
+                        SecurityContext context = SecurityContextHolder.createEmptyContext();
+                        context.setAuthentication(authentication);
+                        
+                        request.setAttribute("userId", userId);
+                        
+                        SecurityContextHolder.setContext(context);
+                        logger.info("Authenticated user: {} (ID: {})", username, userId);
                     }
+                } else {
+                    logger.warn("Invalid JWT token for request: {}", requestURI);
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.getWriter().write("{\"error\":\"Invalid token\",\"message\":\"Token validation failed\"}");
+                    return;
                 }
             }
         } catch (ExpiredJwtException ex) {
@@ -110,12 +133,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private boolean shouldSkipAuthentication(HttpServletRequest request) {
         String requestURI = request.getRequestURI();
         String method = request.getMethod();
-
-        // Skip OPTIONS (CORS preflight)
-        if (HttpMethod.OPTIONS.matches(method)) {
-            logger.debug("Skipping JWT validation for OPTIONS request: {}", requestURI);
-            return true;
-        }
 
         // Skip authentication for excluded paths
         boolean shouldSkip = EXCLUDED_PATHS.stream().anyMatch(pattern -> pathMatcher.match(pattern, requestURI));
