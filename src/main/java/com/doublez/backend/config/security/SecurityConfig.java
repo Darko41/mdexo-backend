@@ -65,7 +65,8 @@ public class SecurityConfig {
 	            // 1. Public static resources - public URLs (no authentication required)
 	            .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 	            .requestMatchers(
-	                "/dist/**",
+	            	"/",
+	            	"/dist/**",
 	                "/pages/**", 
 	                "/plugins/**",
 	                "/css/**",
@@ -167,6 +168,7 @@ public class SecurityConfig {
 	        "http://localhost:5173", 
 	        "https://dwellia.rs",
 	        "https://www.dwellia.rs",
+	        "https://api.dwellia.rs",
 	        "http://localhost:8080"
 	    ));
 	    
