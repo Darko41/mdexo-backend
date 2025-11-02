@@ -32,15 +32,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
-    // Ant-style patterns for public endpoints
+    // UPDATED: Add all public API endpoints that should skip JWT authentication
     private static final List<String> EXCLUDED_PATHS = Arrays.asList(
-        "/api/auth/authenticate",
-        "/api/users/register",
+        "/api/auth/**",           // All auth endpoints
+        "/api/users/register",    // User registration
+        "/api/real-estates/search", // Real estate search
+        "/api/real-estates/features", // Real estate features
+        "/api/real-estates/*",    // GET by ID (single property)
         "/v3/api-docs/**",
         "/swagger-ui/**",
         "/swagger-resources/**",
         "/webjars/**",
-        "/admin/**"  
+        "/admin/**",              // Admin endpoints (session-based)
+        "/auth/**"                // Web auth endpoints (session-based)
     );
 
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
@@ -66,17 +70,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
+        // UPDATED: Skip JWT filter for public endpoints
         if (shouldSkipAuthentication(request)) {
-            logger.debug("✅ Skipping JWT filter for: {}", requestURI);
+            logger.debug("✅ Skipping JWT filter for public endpoint: {}", requestURI);
             filterChain.doFilter(request, response);
             return;
         }
 
+        // Only proceed with JWT validation for protected endpoints
         try {
             String token = getJwtFromRequest(request);
 
             if (token == null) {
-                logger.warn("No JWT token found in request to {}", requestURI);
+                logger.warn("No JWT token found in request to protected endpoint: {}", requestURI);
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 response.getWriter().write("{\"error\":\"No token provided\",\"message\":\"Authentication required\"}");
                 return;
@@ -136,6 +142,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         // Skip authentication for excluded paths
         boolean shouldSkip = EXCLUDED_PATHS.stream().anyMatch(pattern -> pathMatcher.match(pattern, requestURI));
+        
+        // ADDITIONAL: Also skip GET requests to real estate endpoints (they should be public)
+        if (!shouldSkip && requestURI.startsWith("/api/real-estates/") && HttpMethod.GET.matches(method)) {
+            shouldSkip = true;
+            logger.debug("✅ Skipping JWT for public GET real estate endpoint: {}", requestURI);
+        }
+        
         if (shouldSkip) {
             logger.debug("✅ JWT filter skipping: {}", requestURI);
         }
