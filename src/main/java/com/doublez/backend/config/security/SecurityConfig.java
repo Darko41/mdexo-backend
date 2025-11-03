@@ -83,15 +83,16 @@ public class SecurityConfig {
 	                "/webjars/**"
 	            ).permitAll()
 	            
-	            // 2. Public auth endpoints (UPDATED - removed /admin/login since it's now handled by /auth/login)
+	            // 2. Public auth endpoints
 	            .requestMatchers(
-	                "/auth/**"  // Now handles both regular and admin login
+	                "/auth/**"  // Handles both regular and admin login
 	            ).permitAll()
 	            
 	            // 3. Public API endpoints (EXPLICITLY LIST ALL PUBLIC API ENDPOINTS)
 	            .requestMatchers(
 	                "/api/users/register",
-	                "/api/auth/authenticate"
+	                "/api/auth/authenticate",
+	                "/api/auth/me"
 	            ).permitAll()
 	            
 	            // 4. Public real estate API endpoints (search and get by ID)
@@ -135,6 +136,7 @@ public class SecurityConfig {
 	        )
 	        .sessionManagement(sess -> sess
 	            .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+	            .invalidSessionUrl("/auth/login?invalid-session=true")
 	        )
 	        // JWT filter for API requests
 	        .cors(cors -> cors.configurationSource(corsConfigurationSource()))

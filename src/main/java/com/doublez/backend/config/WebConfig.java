@@ -8,17 +8,29 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
-	
-	@Override
+    
+    @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler(
             "/dist/**",
             "/plugins/**", 
-            "/pages/**"
+            "/pages/**",
+            "/css/**",
+            "/js/**",
+            "/images/**",
+            "/static/**",
+            "/assets/**",
+            "/favicon.ico"
         ).addResourceLocations(
             "classpath:/static/dist/",
             "classpath:/static/plugins/", 
-            "classpath:/static/pages/"
+            "classpath:/static/pages/",
+            "classpath:/static/css/",
+            "classpath:/static/js/",
+            "classpath:/static/images/",
+            "classpath:/static/static/",
+            "classpath:/static/assets/",
+            "classpath:/static/"
         );
     }
 
@@ -27,8 +39,7 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addViewController("/admin/login").setViewName("redirect:/auth/login?admin=true");
         registry.addViewController("/admin").setViewName("redirect:/auth/login?admin=true");
         
-        
-        //  React routes
+        // React routes
         registry.addViewController("/").setViewName("forward:/index.html");
         registry.addViewController("/buy").setViewName("forward:/index.html");
         registry.addViewController("/rent").setViewName("forward:/index.html");
@@ -41,5 +52,4 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addViewController("/real-estates").setViewName("forward:/index.html");
         registry.addViewController("/property/{id}").setViewName("forward:/index.html");
     }
-    
 }

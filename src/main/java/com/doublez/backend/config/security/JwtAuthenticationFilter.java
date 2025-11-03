@@ -34,18 +34,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     // UPDATED: Add all public API endpoints that should skip JWT authentication
     private static final List<String> EXCLUDED_PATHS = Arrays.asList(
-        "/api/auth/**",           // All auth endpoints
-        "/api/users/register",    // User registration
-        "/api/real-estates/search", // Real estate search
-        "/api/real-estates/features", // Real estate features
-        "/api/real-estates/*",    // GET by ID (single property)
-        "/v3/api-docs/**",
-        "/swagger-ui/**",
-        "/swagger-resources/**",
-        "/webjars/**",
-        "/admin/**",              // Admin endpoints (session-based)
-        "/auth/**"                // Web auth endpoints (session-based)
-    );
+    	    "/api/auth/**",           // All auth endpoints
+    	    "/api/users/register",    // User registration
+    	    "/api/real-estates/search", // Real estate search
+    	    "/api/real-estates/features", // Real estate features
+    	    "/api/real-estates/*",    // GET by ID (single property)
+    	    "/v3/api-docs/**",
+    	    "/swagger-ui/**",
+    	    "/swagger-resources/**",
+    	    "/webjars/**",
+    	    "/admin/**",              // Admin endpoints (session-based)
+    	    "/auth/**",               // Web auth endpoints (session-based)
+    	    "/dist/**",
+    	    "/plugins/**",
+    	    "/pages/**",
+    	    "/css/**",
+    	    "/js/**", 
+    	    "/images/**",
+    	    "/static/**",
+    	    "/assets/**",
+    	    "/favicon.ico",
+    	    "/manifest.json",
+    	    "/robots.txt"
+    	);
 
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 

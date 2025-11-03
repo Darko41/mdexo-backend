@@ -1,10 +1,12 @@
-package com.doublez.backend.controller;
+package com.doublez.backend.controller.admindashboard;
 
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.csrf.CsrfToken;
@@ -29,6 +31,10 @@ import com.doublez.backend.service.realestate.RealEstateService;
 import com.doublez.backend.service.user.UserService;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+
+
+//For Admin dashboard (Thymeleaf server side) actions
 
 @Controller
 @RequestMapping("/admin")
@@ -57,7 +63,12 @@ public class AdminController {
     }
 
     @GetMapping("/dashboard")
-    public String showAdminDashboard(Model model) {
+    public String showAdminDashboard(Model model, HttpSession session) {
+        // Ensure session is valid
+        if (session.isNew()) {
+            // This might indicate the session was invalidated
+            return "redirect:/auth/login?admin=true";
+        }
         return setupDashboard(model);
     }
 
@@ -158,6 +169,17 @@ public class AdminController {
             redirectAttributes.addFlashAttribute("error", "Failed to create real estate: " + e.getMessage());
             return "redirect:/admin/real-estates/new";
         }
+    }
+    
+    // A session status endpoint
+    @GetMapping("/session-status")
+    @ResponseBody
+    public ResponseEntity<?> checkSessionStatus() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok().build();
     }
 
 }

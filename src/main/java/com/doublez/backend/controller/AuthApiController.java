@@ -9,15 +9,19 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.doublez.backend.config.security.JwtTokenUtil;
+import com.doublez.backend.dto.CustomUserDetails;
 import com.doublez.backend.entity.User;
 import com.doublez.backend.service.user.UserService;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -126,5 +130,26 @@ public class AuthApiController {
                     "details", e.getMessage()
                 ));
         }
+    }
+    
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated() || 
+            authentication instanceof AnonymousAuthenticationToken) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        
+        // Cast to your CustomUserDetails
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        
+        Map<String, Object> userInfo = new HashMap<>();
+        userInfo.put("id", userDetails.getId());
+        userInfo.put("email", userDetails.getUsername()); // or userDetails.getEmail() if you have that method
+        userInfo.put("roles", userDetails.getAuthorities().stream()
+            .map(GrantedAuthority::getAuthority)
+            .collect(Collectors.toList()));
+        userInfo.put("authenticated", true);
+        
+        return ResponseEntity.ok(userInfo);
     }
 }

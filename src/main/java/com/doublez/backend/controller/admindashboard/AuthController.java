@@ -1,4 +1,4 @@
-package com.doublez.backend.controller;
+package com.doublez.backend.controller.admindashboard;
 
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -16,6 +16,10 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+
+
+// For Admin dashboard (Thymeleaf server side) authentication
+
 
 @Controller
 @RequestMapping("/auth")
@@ -82,14 +86,14 @@ public class AuthController {
     }
 	
 	@PostMapping("/logout")
-	public String handleLogout(HttpServletRequest request, HttpServletResponse response) {
+    public String handleLogout(HttpServletRequest request, HttpServletResponse response) {
         // Clear Spring Security context
         SecurityContextHolder.clearContext();
         
         // Invalidate session
         HttpSession session = request.getSession(false);
         if (session != null) {
-            session.invalidate();
+            session.invalidate(); // This will log out ALL tabs/windows
         }
         
         // Clear JSESSIONID cookie
