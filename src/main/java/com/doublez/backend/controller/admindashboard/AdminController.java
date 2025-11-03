@@ -12,6 +12,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -33,7 +34,6 @@ import com.doublez.backend.service.user.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
-
 //For Admin dashboard (Thymeleaf server side) actions
 
 @Controller
@@ -41,7 +41,7 @@ import jakarta.servlet.http.HttpSession;
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
     
-	private final RealEstateService realEstateService;
+    private final RealEstateService realEstateService;
     private final AdminRealEstateService adminRealEstateService;
     private final UserService userService;
 
@@ -54,27 +54,35 @@ public class AdminController {
         this.userService = userService;
     }
 
+    // Single @ModelAttribute method that handles everything
     @ModelAttribute
-    public void addCsrfToken(Model model, HttpServletRequest request) {
+    public void addCommonAttributes(Model model, HttpServletRequest request) {
+        // Add CSRF token
         CsrfToken csrfToken = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
         if (csrfToken != null) {
             model.addAttribute("_csrf", csrfToken);
+        }
+        
+        // Add authentication info
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken)) {
+            model.addAttribute("username", auth.getName());
         }
     }
 
     @GetMapping("/dashboard")
     public String showAdminDashboard(Model model, HttpSession session) {
-        // Ensure session is valid
         if (session.isNew()) {
-            // This might indicate the session was invalidated
             return "redirect:/auth/login?admin=true";
         }
-        return setupDashboard(model);
+        model.addAttribute("realEstateCount", realEstateService.getRealEstateCount());
+        model.addAttribute("userCount", userService.getUserCount());
+        model.addAttribute("agentCount", userService.getAgentCount());
+        return "admin/dashboard";
     }
 
     @GetMapping("/users")
     public String showUserData(Model model) {
-        addAuthenticationToModel(model);
         List<UserResponseDTO> users = userService.getAllUsers();
         model.addAttribute("users", users);
         return "admin/userdata";
@@ -82,7 +90,6 @@ public class AdminController {
 
     @GetMapping("/real-estates")
     public String showRealEstatesData(Model model) {
-        addAuthenticationToModel(model);
         List<RealEstateResponseDTO> realEstates = realEstateService.getAllRealEstates();
         model.addAttribute("realEstates", realEstates);
         return "admin/realestatedata";
@@ -90,39 +97,19 @@ public class AdminController {
 
     @GetMapping("/real-estates/new")
     public String showCreateRealEstateForm(Model model) {
-        addAuthenticationToModel(model);
         model.addAttribute("isEdit", false);
         return "admin/realestate-form";
     }
 
-    // KEEP ONLY THIS ONE - remove the other version
     @GetMapping("/real-estates/{propertyId}/edit")
     public String showEditRealEstateForm(@PathVariable Long propertyId, Model model) {
-        addAuthenticationToModel(model);
-        
-        // The @ModelAttribute method above already adds CSRF token automatically
-        // No need for HttpServletRequest parameter here
-        
         RealEstateResponseDTO realEstate = realEstateService.getRealEstateById(propertyId);
         model.addAttribute("realEstate", realEstate);
         model.addAttribute("isEdit", true);
         return "admin/realestate-form";
     }
 
-    private String setupDashboard(Model model) {
-        addAuthenticationToModel(model);
-        model.addAttribute("realEstateCount", realEstateService.getRealEstateCount());
-        model.addAttribute("userCount", userService.getUserCount());
-        model.addAttribute("agentCount", userService.getAgentCount());
-        return "admin/dashboard";
-    }
-    
-    private void addAuthenticationToModel(Model model) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.isAuthenticated()) {
-            model.addAttribute("username", auth.getName());
-        }
-    }
+    // Remove the private addAuthenticationToModel method since it's now in @ModelAttribute
     
     @GetMapping("/real-estates/{propertyId}")
     @ResponseBody
@@ -133,11 +120,8 @@ public class AdminController {
     
     @GetMapping("/real-estates/{propertyId}/view")
     public String viewRealEstate(@PathVariable Long propertyId, Model model) {
-        addAuthenticationToModel(model);
-        
         RealEstateResponseDTO realEstate = realEstateService.getRealEstateById(propertyId);
         model.addAttribute("property", realEstate);
-        
         return "admin/property";
     }
     
@@ -171,7 +155,6 @@ public class AdminController {
         }
     }
     
-    // A session status endpoint
     @GetMapping("/session-status")
     @ResponseBody
     public ResponseEntity<?> checkSessionStatus() {
@@ -181,5 +164,16 @@ public class AdminController {
         }
         return ResponseEntity.ok().build();
     }
-
+    
+    @DeleteMapping("/real-estates/{propertyId}")
+    @ResponseBody
+    public ResponseEntity<?> deleteRealEstate(@PathVariable Long propertyId) {
+        try {
+            adminRealEstateService.deleteRealEstate(propertyId);
+            return ResponseEntity.ok().body("Real estate deleted successfully");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to delete real estate: " + e.getMessage());
+        }
+    }
 }

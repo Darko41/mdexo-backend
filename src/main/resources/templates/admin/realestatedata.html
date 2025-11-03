@@ -6,8 +6,9 @@
   <title>AdminLTE 3 | Real Estates</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   
-  <meta name="_csrf" th:content="${_csrf?.token}"/>
-  <meta name="_csrf_header" th:content="${_csrf?.headerName}"/>
+  <!-- CSRF Meta Tags - CRITICAL FOR DELETE FUNCTIONALITY -->
+  <meta name="_csrf" th:content="${_csrf.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
   
   <!-- Font Awesome -->
   <link rel="stylesheet" th:href="@{/plugins/fontawesome-free/css/all.min.css}">
@@ -42,6 +43,14 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+    .fade-out {
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .delete-loading {
+      opacity: 0.6;
+      pointer-events: none;
     }
   </style>
 </head>
@@ -289,7 +298,7 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="realEstate : ${realEstates}" class="clickable-row">
+                <tr th:each="realEstate : ${realEstates}" th:data-property-id="${realEstate.propertyId}" class="clickable-row">
                   <!-- ID -->
                   <td>
                     <span class="badge badge-secondary" th:text="${realEstate.propertyId}"></span>
@@ -515,7 +524,7 @@
               <i class="fas fa-tag mr-1"></i> <span id="propertyType">Type</span>
             </div>
             <div class="col-6">
-              <i class="fas fa-dollar-sign mr-1"></i> <span id="propertyPrice">Price</span>
+              <i class="fas fa-dollar-sign mr-1"></i> $<span id="propertyPrice">Price</span>
             </div>
             <div class="col-12 mt-1">
               <i class="fas fa-map-marker-alt mr-1"></i> <span id="propertyAddress">Address</span>
@@ -556,7 +565,6 @@
 <script th:src="@{/dist/js/adminlte.min.js}"></script>
 <!-- Custom JS -->
 <script th:src="@{/dist/js/real-estate-crud.js}"></script>
-<!-- page script -->
-<script th:src="@{/dist/js/admin-real-estates.js}"></script>
+
 </body>
 </html>

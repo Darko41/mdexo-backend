@@ -16,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -141,7 +142,15 @@ public class SecurityConfig {
 	        // JWT filter for API requests
 	        .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 	        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-	        .csrf(csrf -> csrf.disable())
+	        .csrf(csrf -> csrf
+	                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+	                // Disable CSRF for API endpoints (JWT protected)
+	                .ignoringRequestMatchers(
+	                    "/api/**",
+	                    "/auth/authenticate",
+	                    "/auth/register"
+	                )
+	            )
 	        .exceptionHandling(ex -> ex
 	            .authenticationEntryPoint((request, response, authException) -> {
 	                String requestUri = request.getRequestURI();
