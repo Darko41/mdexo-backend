@@ -967,23 +967,6 @@
 
 <!-- Auto-logout detection script -->
 <script>
-// Check session status periodically
-setInterval(() => {
-    fetch('/api/admin/verify', {
-        credentials: 'include'
-    })
-    .then(response => {
-        if (!response.ok) {
-            // Session expired or invalid
-            window.location.href = '/auth/login?admin=true&session=expired';
-        }
-    })
-    .catch(() => {
-        // Ignore network errors
-    });
-}, 300000); // Check every 5 minutes
-
-
 
 // Check session status periodically
 function checkSession() {

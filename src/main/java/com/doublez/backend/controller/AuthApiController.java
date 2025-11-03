@@ -132,24 +132,4 @@ public class AuthApiController {
         }
     }
     
-    @GetMapping("/me")
-    public ResponseEntity<?> getCurrentUser(Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated() || 
-            authentication instanceof AnonymousAuthenticationToken) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        
-        // Cast to your CustomUserDetails
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        
-        Map<String, Object> userInfo = new HashMap<>();
-        userInfo.put("id", userDetails.getId());
-        userInfo.put("email", userDetails.getUsername()); // or userDetails.getEmail() if you have that method
-        userInfo.put("roles", userDetails.getAuthorities().stream()
-            .map(GrantedAuthority::getAuthority)
-            .collect(Collectors.toList()));
-        userInfo.put("authenticated", true);
-        
-        return ResponseEntity.ok(userInfo);
-    }
 }

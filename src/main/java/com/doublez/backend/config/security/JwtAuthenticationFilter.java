@@ -32,19 +32,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
-    // UPDATED: Add all public API endpoints that should skip JWT authentication
+    // Add all public API endpoints that should skip JWT authentication
     private static final List<String> EXCLUDED_PATHS = Arrays.asList(
-    	    "/api/auth/**",           // All auth endpoints
-    	    "/api/users/register",    // User registration
-    	    "/api/real-estates/search", // Real estate search
-    	    "/api/real-estates/features", // Real estate features
-    	    "/api/real-estates/*",    // GET by ID (single property)
+    	    "/api/auth/authenticate",     // Only the login endpoint
+    	    "/api/users/register",        
+    	    "/api/real-estates/search",   
+    	    "/api/real-estates/features", 
+    	    "/api/real-estates/*",        
     	    "/v3/api-docs/**",
     	    "/swagger-ui/**",
     	    "/swagger-resources/**",
     	    "/webjars/**",
-    	    "/admin/**",              // Admin endpoints (session-based)
-    	    "/auth/**",               // Web auth endpoints (session-based)
+    	    "/admin/**",                  
+    	    "/auth/**",                   
     	    "/dist/**",
     	    "/plugins/**",
     	    "/pages/**",
