@@ -9,6 +9,7 @@ import com.doublez.backend.enums.ListingType;
 import com.doublez.backend.enums.PropertyCondition;
 import com.doublez.backend.enums.PropertyType;
 
+import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Max;
@@ -30,7 +31,7 @@ public class RealEstateUpdateDTO {
     private List<String> features;
     private Long ownerId;
 
-    // 🆕 NEW: Geographic coordinates
+    // Geographic coordinates
     @DecimalMin(value = "-90.0", message = "Latitude must be between -90 and 90")
     @DecimalMax(value = "90.0", message = "Latitude must be between -90 and 90")
     private BigDecimal latitude;
@@ -39,7 +40,7 @@ public class RealEstateUpdateDTO {
     @DecimalMax(value = "180.0", message = "Longitude must be between -180 and 180")
     private BigDecimal longitude;
     
-    // 🆕 NEW: Room and floor information
+    // Room and floor information
     @DecimalMin(value = "0.5", message = "Room count must be at least 0.5")
     @DecimalMax(value = "20.0", message = "Room count cannot exceed 20")
     private BigDecimal roomCount;
@@ -52,18 +53,29 @@ public class RealEstateUpdateDTO {
     @Max(value = 200, message = "Total floors cannot exceed 200")
     private Integer totalFloors;
     
-    // 🆕 NEW: Property characteristics
+    // Property characteristics
     @Min(value = 1500, message = "Construction year must be realistic")
     @Max(value = 2030, message = "Construction year cannot be in far future")
     private Integer constructionYear;
     
     private String municipality;
     
-    // 🆕 NEW: ENUM fields
+    // ENUM fields
     private HeatingType heatingType;
     private PropertyCondition propertyCondition;
+    
+    @Nullable
+    private Boolean replaceImages;
 
-    // Constructors
+    public Boolean getReplaceImages() {
+		return replaceImages;
+	}
+
+	public void setReplaceImages(Boolean replaceImages) {
+		this.replaceImages = replaceImages;
+	}
+
+	// Constructors
     public RealEstateUpdateDTO() {
     }
 
@@ -80,7 +92,6 @@ public class RealEstateUpdateDTO {
             String sizeInSqMt,
             List<String> features,
             Long ownerId,
-            // 🆕 NEW: Add new fields to constructor
             BigDecimal latitude,
             BigDecimal longitude,
             BigDecimal roomCount,
@@ -89,7 +100,8 @@ public class RealEstateUpdateDTO {
             Integer constructionYear,
             String municipality,
             HeatingType heatingType,
-            PropertyCondition propertyCondition) {
+            PropertyCondition propertyCondition,
+            Boolean replaceImages) {
         
         this.title = title;
         this.description = description;
@@ -114,6 +126,7 @@ public class RealEstateUpdateDTO {
         this.municipality = municipality;
         this.heatingType = heatingType;
         this.propertyCondition = propertyCondition;
+        this.replaceImages = replaceImages;
     }
 
     // Getters and Setters for existing fields

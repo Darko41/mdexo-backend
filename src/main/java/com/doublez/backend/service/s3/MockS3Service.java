@@ -7,6 +7,8 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 import org.slf4j.Logger;
@@ -38,7 +40,6 @@ public class MockS3Service implements S3Service {
         
         // Return relevant-looking placeholder images
         return "https://loremflickr.com/800/600/" + category + ",realestate?random=" + uniqueId;
-        
     }
 
     @Override
@@ -65,6 +66,28 @@ public class MockS3Service implements S3Service {
     @Override
     public void deleteFile(String key) {
         logger.info("DEV: Simulated delete of {}", key);
+    }
+
+    /**
+     * 🆕 ADD THIS METHOD - Mock implementation for orphan cleanup
+     */
+    @Override
+    public List<String> listObjects(String prefix) {
+        logger.info("DEV: Simulated list objects with prefix: {}", prefix);
+        
+        // In dev mode, return empty list since we don't have real S3 objects to track
+        // Or you could return some mock objects for testing
+        List<String> mockObjects = new ArrayList<>();
+        
+        // Optional: Add some mock objects for testing orphan cleanup
+        if (prefix.equals("real-estates/")) {
+            mockObjects.add("real-estates/mock-image-1.jpg");
+            mockObjects.add("real-estates/mock-image-2.jpg");
+            mockObjects.add("real-estates/mock-image-3.jpg");
+        }
+        
+        logger.info("DEV: Returning {} mock S3 objects", mockObjects.size());
+        return mockObjects;
     }
 
     private String extractFileName(String url) {

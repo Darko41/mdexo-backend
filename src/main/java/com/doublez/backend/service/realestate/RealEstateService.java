@@ -31,6 +31,8 @@ import com.doublez.backend.exception.RealEstateNotFoundException;
 import com.doublez.backend.exception.ResourceNotFoundException;
 import com.doublez.backend.exception.UnauthorizedAccessException;
 import com.doublez.backend.exception.UserNotFoundException;
+import com.doublez.backend.exception.image.ImageOperationException;
+import com.doublez.backend.exception.image.ImageValidationException;
 import com.doublez.backend.mapper.RealEstateMapper;
 import com.doublez.backend.repository.RealEstateRepository;
 import com.doublez.backend.repository.UserRepository;
@@ -265,25 +267,42 @@ public class RealEstateService {
 						"ROLE_AGENT".equals(role.getName()));
 	}
 
-    @Transactional
-    public RealEstateResponseDTO updateRealEstate(Long propertyId, RealEstateUpdateDTO updateDto) {
-        RealEstate realEstate = realEstateRepository.findById(propertyId)
-                .orElseThrow(() -> new ResourceNotFoundException("Real estate not found"));
-        
-        // Handle owner update
-        if (updateDto.getOwnerId() != null) {
-            User owner = userRepository.findById(updateDto.getOwnerId())
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + updateDto.getOwnerId()));
-            realEstate.setOwner(owner);
-        }
-        
-        // Update other fields
-        realEstateMapper.updateEntity(updateDto, realEstate);
-        realEstate.setUpdatedAt(LocalDate.now());
-        
-        RealEstate updated = realEstateRepository.save(realEstate);
-        return realEstateMapper.toResponseDto(updated);
-    }
+	@Transactional
+	public RealEstateResponseDTO updateRealEstate(Long propertyId, RealEstateUpdateDTO updateDto, 
+	                                             MultipartFile[] newImages, List<String> imagesToRemove) {
+	    RealEstate realEstate = realEstateRepository.findById(propertyId)
+	            .orElseThrow(() -> new ResourceNotFoundException("Real estate not found"));
+	    
+	    // Handle image removal first
+	    if (imagesToRemove != null && !imagesToRemove.isEmpty()) {
+	        removeImagesFromProperty(propertyId, imagesToRemove);
+	    }
+	    
+	    // Handle new image uploads (add to existing)
+	    if (newImages != null && newImages.length > 0) {
+	        addImagesToProperty(propertyId, newImages);
+	    }
+	    
+	    // Handle owner update
+	    if (updateDto.getOwnerId() != null) {
+	        User owner = userRepository.findById(updateDto.getOwnerId())
+	                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + updateDto.getOwnerId()));
+	        realEstate.setOwner(owner);
+	    }
+	    
+	    // Update other fields
+	    realEstateMapper.updateEntity(updateDto, realEstate);
+	    realEstate.setUpdatedAt(LocalDate.now());
+	    
+	    RealEstate updated = realEstateRepository.save(realEstate);
+	    return realEstateMapper.toResponseDto(updated);
+	}
+
+	// Method for backward compatibility
+	@Transactional
+	public RealEstateResponseDTO updateRealEstate(Long propertyId, RealEstateUpdateDTO updateDto) {
+	    return updateRealEstate(propertyId, updateDto, null, null);
+	}
 
     public void deleteRealEstate(Long propertyId) {
         RealEstate entity = getValidatedRealEstate(propertyId);
@@ -339,16 +358,6 @@ public class RealEstateService {
     	return realEstateRepository.save(property);
     }
     
-    public void removeImagesFromProperty(Long propertyId, String imageUrl) {
-    	RealEstate property = realEstateRepository.findById(propertyId)
-    			.orElseThrow(() -> new ResourceNotFoundException("Property not found"));
-    	
-    	if (property.getImages().remove(imageUrl)) {
-    		realEstateImageService.deleteImages(List.of(imageUrl));
-    		realEstateRepository.save(property);
-    	}
-    }
-    
     public List<String> getAllUniqueFeatures() {
         List<RealEstate> allRealEstates = realEstateRepository.findAll();
         Set<String> uniqueFeatures = new TreeSet<>();
@@ -362,4 +371,134 @@ public class RealEstateService {
         return new ArrayList<>(uniqueFeatures);
     }
     
+    public Page<RealEstateResponseDTO> getPropertiesByOwner(Long ownerId, Pageable pageable) {
+        Specification<RealEstate> spec = (root, query, cb) -> 
+            cb.equal(root.get("owner").get("id"), ownerId);
+        
+        return realEstateRepository.findAll(spec, pageable)
+            .map(realEstateMapper::toResponseDto);
+    }
+    
+    @Transactional
+    public RealEstate replacePropertyImages(Long propertyId, MultipartFile[] newImages) {
+        // Get current user for audit logging
+        User currentUser = userService.getAuthenticatedUser();
+        
+        logger.info("🔐 User {} attempting to replace all images for property {}", 
+                   currentUser.getId(), propertyId); // 🆕 Use getId()
+        
+        try {
+            RealEstate property = realEstateRepository.findById(propertyId)
+                .orElseThrow(() -> new ResourceNotFoundException("Property not found"));
+            
+            // Safety check - don't allow replacing with empty array
+            if (newImages != null && newImages.length == 0) {
+                logger.warn("⚠️ User {} attempted to replace all images with empty array for property {}", 
+                           currentUser.getId(), propertyId); // 🆕 Use getId()
+                throw new ImageValidationException("Cannot replace images with empty array. Use remove operation instead.");
+            }
+            
+            // 1. Delete old images from S3
+            List<String> oldImageUrls = property.getImages();
+            if (oldImageUrls != null && !oldImageUrls.isEmpty()) {
+                logger.info("🗑️ User {} deleting {} old images from S3 for property {}", 
+                           currentUser.getId(), oldImageUrls.size(), propertyId); // 🆕 Use getId()
+                try {
+                    realEstateImageService.deleteImages(oldImageUrls);
+                } catch (Exception e) {
+                    logger.error("❌ User {} failed to delete old images from S3 for property {}: {}", 
+                               currentUser.getId(), propertyId, e.getMessage()); // 🆕 Use getId()
+                    throw new ImageOperationException("Failed to delete old images from storage", e);
+                }
+            }
+            
+            // 2. Upload new images
+            List<String> newImageUrls = Collections.emptyList();
+            if (newImages != null && newImages.length > 0) {
+                try {
+                    newImageUrls = realEstateImageService.uploadRealEstateImages(newImages);
+                    logger.info("📤 User {} uploaded {} new images to S3 for property {}", 
+                               currentUser.getId(), newImageUrls.size(), propertyId); // 🆕 Use getId()
+                } catch (Exception e) {
+                    logger.error("❌ User {} failed to upload new images for property {}: {}", 
+                               currentUser.getId(), propertyId, e.getMessage()); // 🆕 Use getId()
+                    throw new ImageOperationException("Failed to upload new images to storage", e);
+                }
+            }
+            
+            // 3. Update property with new image URLs
+            property.setImages(newImageUrls);
+            property.setUpdatedAt(LocalDate.now());
+            
+            RealEstate saved = realEstateRepository.save(property);
+            logger.info("🔐 User {} successfully replaced all images for property {}", 
+                       currentUser.getId(), propertyId); // 🆕 Use getId()
+            return saved;
+            
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (ImageValidationException | ImageOperationException e) {
+            throw e;
+        } catch (Exception e) {
+            logger.error("❌ User {} - unexpected error replacing images for property {}: {}", 
+                       currentUser.getId(), propertyId, e.getMessage(), e); // 🆕 Use getId()
+            throw new RuntimeException("Failed to replace property images", e);
+        }
+    }
+    
+    @Transactional
+    public RealEstate removeImagesFromProperty(Long propertyId, List<String> imageUrlsToRemove) {
+        // Get current user for audit logging
+        User currentUser = userService.getAuthenticatedUser();
+        
+        logger.info("🔐 User {} attempting to remove {} images from property {}", 
+                   currentUser.getId(), imageUrlsToRemove.size(), propertyId); // 🆕 Use getId() instead of getUsername()
+        
+        if (imageUrlsToRemove == null || imageUrlsToRemove.isEmpty()) {
+            throw new ImageValidationException("Image URLs to remove cannot be null or empty");
+        }
+        
+        RealEstate property = realEstateRepository.findById(propertyId)
+            .orElseThrow(() -> new ResourceNotFoundException("Property not found"));
+        
+        List<String> currentImages = new ArrayList<>(property.getImages());
+        
+        // Validate that all images to remove actually exist in the property
+        List<String> nonExistentImages = imageUrlsToRemove.stream()
+            .filter(url -> !currentImages.contains(url))
+            .collect(Collectors.toList());
+            
+        if (!nonExistentImages.isEmpty()) {
+            logger.warn("⚠️ User {} attempted to remove non-existent images from property {}: {}", 
+                       currentUser.getId(), propertyId, nonExistentImages); // 🆕 Use getId()
+            throw new ImageValidationException("Cannot remove images that don't exist in this property: " + nonExistentImages);
+        }
+        
+        // Remove from local list
+        boolean removed = currentImages.removeAll(imageUrlsToRemove);
+        
+        if (removed) {
+            try {
+                // Delete from S3
+                realEstateImageService.deleteImages(imageUrlsToRemove);
+                
+                // Update property
+                property.setImages(currentImages);
+                property.setUpdatedAt(LocalDate.now());
+                
+                logger.info("🔐 User {} successfully removed {} images from property {}", 
+                           currentUser.getId(), imageUrlsToRemove.size(), propertyId); // 🆕 Use getId()
+                return realEstateRepository.save(property);
+                
+            } catch (Exception e) {
+                logger.error("❌ User {} failed to delete images from S3 for property {}: {}", 
+                           currentUser.getId(), propertyId, e.getMessage()); // 🆕 Use getId()
+                throw new ImageOperationException("Failed to delete images from storage", e);
+            }
+        }
+        
+        logger.info("ℹ️ User {} - no images removed from property {} (none matched)", 
+                   currentUser.getId(), propertyId); // 🆕 Use getId()
+        return property;
+    }
 }

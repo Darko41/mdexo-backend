@@ -10,20 +10,26 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import com.doublez.backend.exception.image.ImageOperationException;
+import com.doublez.backend.exception.image.ImageUploadException;
+import com.doublez.backend.exception.image.ImageValidationException;
 import com.doublez.backend.response.ApiResponse;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    // Unified handler for all custom exceptions
+    // Unified handler for all custom exceptions - ADD ImageUploadException
     @ExceptionHandler({
         ApiException.class,
         SelfDeletionException.class,
         ResourceNotFoundException.class,
         FileSizeException.class,
         InvalidFileTypeException.class,
-        NullPointerException.class
+        NullPointerException.class,
+        ImageOperationException.class,        
+        ImageValidationException.class,       
+        ImageUploadException.class           
     })
     public ResponseEntity<ApiResponse<?>> handleCustomExceptions(Exception ex) {
         HttpStatus status = determineStatus(ex);
@@ -49,8 +55,24 @@ public class GlobalExceptionHandler {
             return ResponseEntity.status(status)
                 .body(ApiResponse.error(
                     ex.getMessage(),
-                    sdEx.getDetails() // Using your existing details field
+                    sdEx.getDetails()
                 ));
+        }
+
+        // 🆕 ADD HANDLING FOR IMAGE EXCEPTIONS
+        if (ex instanceof ImageOperationException) {
+            return ResponseEntity.status(status)
+                .body(ApiResponse.error("Image operation failed: " + ex.getMessage()));
+        }
+        
+        if (ex instanceof ImageValidationException) {
+            return ResponseEntity.status(status)
+                .body(ApiResponse.error(ex.getMessage()));
+        }
+        
+        if (ex instanceof ImageUploadException) {
+            return ResponseEntity.status(status)
+                .body(ApiResponse.error("Image upload failed: " + ex.getMessage()));
         }
 
         return ResponseEntity.status(status)
@@ -71,6 +93,9 @@ public class GlobalExceptionHandler {
         if (ex instanceof FileSizeException) return HttpStatus.BAD_REQUEST;
         if (ex instanceof InvalidFileTypeException) return HttpStatus.BAD_REQUEST;
         if (ex instanceof NullPointerException) return HttpStatus.BAD_REQUEST;
+        if (ex instanceof ImageValidationException) return HttpStatus.BAD_REQUEST;
+        if (ex instanceof ImageUploadException) return HttpStatus.INTERNAL_SERVER_ERROR; 
+        if (ex instanceof ImageOperationException) return HttpStatus.INTERNAL_SERVER_ERROR;
         return HttpStatus.INTERNAL_SERVER_ERROR;
     }
 }

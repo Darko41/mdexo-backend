@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -53,6 +55,8 @@ public class AdminApiController {
 	private final AdminRealEstateService adminRealEstateService;
     private final RealEstateService realEstateService;
     private final UserService userService;
+    
+    private static final Logger logger = LoggerFactory.getLogger(AdminApiController.class);
     
     public AdminApiController(AdminRealEstateService adminRealEstateService, 
             UserService userService,
@@ -102,28 +106,44 @@ public class AdminApiController {
             pageable));
     }
 
+    /**
+     * ENHANCED ADMIN UPDATE with image support
+     */
     @PutMapping(value = "/real-estates/{propertyId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, Object>> updateRealEstate(
             @PathVariable Long propertyId,
             @ModelAttribute RealEstateUpdateDTO updateDto,
             @RequestParam(required = false) MultipartFile[] images,
+            @RequestParam(required = false) List<String> imagesToRemove,
             HttpServletRequest request) {
         
         if (updateDto == null) {
             throw new IllegalArgumentException("UpdateDTO cannot be null");
         }
         
-        RealEstateResponseDTO response = adminRealEstateService.updateRealEstate(propertyId, updateDto, images);
-        
-        // Return redirect information instead of the response directly
-        Map<String, Object> result = new HashMap<>();
-        result.put("success", true);
-        result.put("message", "Real estate updated successfully");
-        result.put("redirectUrl", "/admin/real-estates/" + propertyId + "/view");
-        result.put("propertyId", propertyId);
-        result.put("property", response);
-        
-        return ResponseEntity.ok(result);
+        try {
+            logger.info("👑 Admin updating real estate {} with image changes", propertyId);
+            
+            // Use the enhanced method with image support
+            RealEstateResponseDTO response = adminRealEstateService.updateRealEstate(
+                propertyId, updateDto, images, imagesToRemove);
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", true);
+            result.put("message", "Real estate updated successfully");
+            result.put("redirectUrl", "/admin/real-estates/" + propertyId + "/view");
+            result.put("propertyId", propertyId);
+            result.put("property", response);
+            
+            return ResponseEntity.ok(result);
+            
+        } catch (Exception e) {
+            logger.error("❌ Admin failed to update real estate {}: {}", propertyId, e.getMessage(), e);
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", false);
+            result.put("message", "Failed to update real estate: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
+        }
     }
 
     @DeleteMapping("/real-estates/{propertyId}")

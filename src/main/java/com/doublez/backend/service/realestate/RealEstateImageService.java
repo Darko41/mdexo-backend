@@ -14,8 +14,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.doublez.backend.exception.ImageUploadException;
+import com.doublez.backend.exception.image.ImageUploadException;
 import com.doublez.backend.service.image.ImageProcessingService;
+import com.doublez.backend.service.s3.RealS3Service;
 import com.doublez.backend.service.s3.S3Service;
 import com.doublez.backend.service.validation.FileValidationService;
 
@@ -297,27 +298,58 @@ public class RealEstateImageService {
         return presignedUrl.split("\\?")[0];
     }
 
+ // In RealEstateImageService.java - enhance deleteImages method
     public void deleteImages(List<String> imageUrls) {
         if (imageUrls == null || imageUrls.isEmpty()) {
             return;
         }
 
         List<String> failedDeletions = new ArrayList<>();
+        List<String> s3Keys = new ArrayList<>();
         
+        // Extract S3 keys first
         for (String url : imageUrls) {
             try {
                 String key = extractS3Key(url);
-                s3Service.deleteFile(key);
-                logger.info("🗑️ Successfully deleted image from S3: {}", key);
+                s3Keys.add(key);
             } catch (Exception e) {
-                logger.error("❌ Failed to delete image from S3: {}", url, e);
+                logger.warn("⚠️ Could not extract S3 key from URL: {}", url);
                 failedDeletions.add(url);
             }
         }
         
+        // Use batch delete if available
+        if (s3Service instanceof RealS3Service && !s3Keys.isEmpty()) {
+            try {
+                ((RealS3Service) s3Service).deleteFiles(s3Keys);
+                logger.info("✅ Batch deleted {} images from S3", s3Keys.size());
+            } catch (Exception e) {
+                logger.warn("⚠️ Batch delete failed, falling back to individual deletes: {}", e.getMessage());
+                // Fall back to individual deletes
+                s3Keys.forEach(key -> {
+                    try {
+                        s3Service.deleteFile(key);
+                    } catch (Exception ex) {
+                        logger.error("❌ Failed to delete image from S3: {}", key, ex);
+                        failedDeletions.add(key);
+                    }
+                });
+            }
+        } else {
+            // Individual deletes for non-RealS3Service implementations
+            s3Keys.forEach(key -> {
+                try {
+                    s3Service.deleteFile(key);
+                } catch (Exception e) {
+                    logger.error("❌ Failed to delete image from S3: {}", key, e);
+                    failedDeletions.add(key);
+                }
+            });
+        }
+        
         if (!failedDeletions.isEmpty()) {
-            logger.warn("⚠️ Failed to delete {} images from S3: {}", failedDeletions.size(), failedDeletions);
-            // You might want to send this to a monitoring service or retry queue
+            logger.warn("⚠️ Failed to delete {} images from S3", failedDeletions.size());
+            // Consider sending to a dead letter queue or monitoring service
         }
     }
 

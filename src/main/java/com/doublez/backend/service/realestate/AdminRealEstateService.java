@@ -1,6 +1,7 @@
 package com.doublez.backend.service.realestate;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -40,22 +41,37 @@ public class AdminRealEstateService {
         this.realEstateImageService = realEstateImageService;
     }
 
-    public RealEstateResponseDTO updateRealEstate(Long propertyId, RealEstateUpdateDTO updateDto, MultipartFile[] images) {
+    @Transactional
+    public RealEstateResponseDTO updateRealEstate(Long propertyId, RealEstateUpdateDTO updateDto, 
+                                                 MultipartFile[] newImages, List<String> imagesToRemove) {
         RealEstate realEstate = realEstateRepository.findById(propertyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Real estate not found"));
         
-        // Handle new image uploads if provided and not empty
-        if (images != null && images.length > 0) {
-            // Filter out empty files
-            List<MultipartFile> nonEmptyImages = Arrays.stream(images)
-                    .filter(file -> !file.isEmpty())
-                    .collect(Collectors.toList());
+        // Handle image removal
+        if (imagesToRemove != null && !imagesToRemove.isEmpty()) {
+            // Remove from property and S3
+            List<String> currentImages = new ArrayList<>(realEstate.getImages());
+            currentImages.removeAll(imagesToRemove);
+            realEstate.setImages(currentImages);
             
-            if (!nonEmptyImages.isEmpty()) {
-                List<String> newImageUrls = realEstateImageService.uploadRealEstateImages(
-                    nonEmptyImages.toArray(new MultipartFile[0])
-                );
-                realEstate.getImages().addAll(newImageUrls);
+            // Delete from S3
+            realEstateImageService.deleteImages(imagesToRemove);
+        }
+        
+        // Handle new image uploads (replace if specified, otherwise add)
+        if (newImages != null && newImages.length > 0) {
+            boolean shouldReplace = updateDto.getReplaceImages() != null && updateDto.getReplaceImages();
+            
+            if (shouldReplace) {
+                // Replace all images
+                List<String> newImageUrls = realEstateImageService.uploadRealEstateImages(newImages);
+                realEstate.setImages(newImageUrls);
+            } else {
+                // Add to existing images
+                List<String> newImageUrls = realEstateImageService.uploadRealEstateImages(newImages);
+                List<String> allImages = new ArrayList<>(realEstate.getImages());
+                allImages.addAll(newImageUrls);
+                realEstate.setImages(allImages);
             }
         }
         
@@ -73,17 +89,23 @@ public class AdminRealEstateService {
         RealEstate updated = realEstateRepository.save(realEstate);
         return realEstateMapper.toResponseDto(updated);
     }
+    
+    @Transactional
+    public RealEstateResponseDTO updateRealEstate(Long propertyId, RealEstateUpdateDTO updateDto, MultipartFile[] images) {
+        // Call the main method with empty imagesToRemove list
+        return updateRealEstate(propertyId, updateDto, images, null);
+    }
 
     public void deleteRealEstate(Long propertyId) {
         RealEstate entity = realEstateRepository.findById(propertyId)
-            .orElseThrow(() -> new ResourceNotFoundException("Real estate not found with id: " + propertyId));
+                .orElseThrow(() -> new ResourceNotFoundException("Real estate not found"));
         
-        // Delete associated images from S3
+        // Delete associated images from S3 FIRST
         if (entity.getImages() != null && !entity.getImages().isEmpty()) {
             realEstateImageService.deleteImages(entity.getImages());
         }
         
-        // Delete the property
+        // Then delete the property from database
         realEstateRepository.delete(entity);
     }
 
