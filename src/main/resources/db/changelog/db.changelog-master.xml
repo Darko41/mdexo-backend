@@ -9,5 +9,7 @@
     <include file="20250425-add-real-estate-agents.xml" relativeToChangelogFile="true"/>
     <include file="20250427-changes.xml" relativeToChangelogFile="true"/>
     <include file="20250427-userprofile.xml" relativeToChangelogFile="true"/>
+    <include file="20251107-agent-user-changes.xml" relativeToChangelogFile="true"/>
+    <include file="20251107-agent-profile-entity.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

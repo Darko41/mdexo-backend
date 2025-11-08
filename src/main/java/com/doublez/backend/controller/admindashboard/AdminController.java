@@ -26,6 +26,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.doublez.backend.dto.realestate.RealEstateCreateDTO;
 import com.doublez.backend.dto.realestate.RealEstateResponseDTO;
 import com.doublez.backend.dto.realestate.RealEstateUpdateDTO;
+import com.doublez.backend.dto.user.UserDTO;
 import com.doublez.backend.dto.user.UserResponseDTO;
 import com.doublez.backend.service.realestate.AdminRealEstateService;
 import com.doublez.backend.service.realestate.RealEstateService;
@@ -83,7 +84,7 @@ public class AdminController {
 
     @GetMapping("/users")
     public String showUserData(Model model) {
-        List<UserResponseDTO> users = userService.getAllUsers();
+        List<UserDTO> users = userService.getAllUsers();
         model.addAttribute("users", users);
         return "admin/userdata";
     }
@@ -109,8 +110,6 @@ public class AdminController {
         return "admin/realestate-form";
     }
 
-    // Remove the private addAuthenticationToModel method since it's now in @ModelAttribute
-    
     @GetMapping("/real-estates/{propertyId}")
     @ResponseBody
     public ResponseEntity<RealEstateResponseDTO> getRealEstate(@PathVariable Long propertyId) {

@@ -2,6 +2,7 @@ package com.doublez.backend.controller.admindashboard;
 
 import java.util.List;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,13 +13,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.doublez.backend.dto.user.AdminUserCreateDTO;
-import com.doublez.backend.dto.user.UserResponseDTO;
-import com.doublez.backend.dto.user.UserUpdateDTO;
+import com.doublez.backend.dto.user.UserDTO;
 import com.doublez.backend.service.user.UserService;
 
 @Controller
 @RequestMapping("/admin/user-management")
+@PreAuthorize("hasRole('ADMIN')")
 public class UserAdminController {
 
     private final UserService userService;
@@ -32,8 +32,7 @@ public class UserAdminController {
     public String userList(Model model,
                           @RequestParam(defaultValue = "0") int page,
                           @RequestParam(defaultValue = "10") int size) {
-        // TODO You might want to add pagination to your service later
-        List<UserResponseDTO> users = userService.getAllUsers();
+        List<UserDTO> users = userService.getAllUsers(); // Changed to UserDTO
         model.addAttribute("users", users);
         model.addAttribute("currentPage", page);
         return "admin/users/list";
@@ -43,7 +42,7 @@ public class UserAdminController {
     @GetMapping("/{id}")
     public String userDetails(@PathVariable Long id, Model model) {
         try {
-            UserResponseDTO user = userService.getUserById(id);
+            UserDTO user = userService.getUserById(id); // Changed to UserDTO
             model.addAttribute("user", user);
             return "admin/users/details";
         } catch (Exception e) {
@@ -54,21 +53,24 @@ public class UserAdminController {
     // Create user form
     @GetMapping("/create")
     public String createUserForm(Model model) {
-        model.addAttribute("userCreate", new AdminUserCreateDTO());
+        // Create empty UserDTO.Create instead of AdminUserCreateDTO
+        UserDTO.Create userCreate = new UserDTO.Create();
+        userCreate.setRoles(List.of("ROLE_USER")); // Default role
+        model.addAttribute("userCreate", userCreate);
         return "admin/users/create";
     }
 
     // Create user (form submission)
     @PostMapping("/create")
-    public String createUser(@ModelAttribute AdminUserCreateDTO createDTO,
+    public String createUser(@ModelAttribute("userCreate") UserDTO.Create createDTO,
                            RedirectAttributes redirectAttributes) {
         try {
-            userService.createUserWithAdminPrivileges(createDTO);
+            userService.registerUser(createDTO, true); // Use registerUser with admin flag
             redirectAttributes.addFlashAttribute("success", "User created successfully");
-            return "redirect:/admin/users";
+            return "redirect:/admin/user-management";
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Error creating user: " + e.getMessage());
-            return "redirect:/admin/users/create";
+            return "redirect:/admin/user-management/create";
         }
     }
 
@@ -76,8 +78,10 @@ public class UserAdminController {
     @GetMapping("/{id}/edit")
     public String editUserForm(@PathVariable Long id, Model model) {
         try {
-            UserResponseDTO user = userService.getUserById(id);
-            UserUpdateDTO updateDTO = new UserUpdateDTO();
+            UserDTO user = userService.getUserById(id); // Changed to UserDTO
+            
+            // Create update DTO from existing user data
+            UserDTO.Update updateDTO = new UserDTO.Update();
             updateDTO.setEmail(user.getEmail());
             updateDTO.setRoles(user.getRoles());
             updateDTO.setProfile(user.getProfile());
@@ -86,22 +90,22 @@ public class UserAdminController {
             model.addAttribute("updateDTO", updateDTO);
             return "admin/users/edit";
         } catch (Exception e) {
-            return "redirect:/admin/users?error=User not found";
+            return "redirect:/admin/user-management?error=User not found";
         }
     }
 
     // Update user (form submission)
     @PostMapping("/{id}/edit")
     public String updateUser(@PathVariable Long id,
-                           @ModelAttribute UserUpdateDTO updateDTO,
+                           @ModelAttribute("updateDTO") UserDTO.Update updateDTO,
                            RedirectAttributes redirectAttributes) {
         try {
-            userService.updateUserProfile(id, updateDTO);
+            userService.updateUser(id, updateDTO); // Changed to updateUser method
             redirectAttributes.addFlashAttribute("success", "User updated successfully");
-            return "redirect:/admin/users/" + id;
+            return "redirect:/admin/user-management/" + id;
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Error updating user: " + e.getMessage());
-            return "redirect:/admin/users/" + id + "/edit";
+            return "redirect:/admin/user-management/" + id + "/edit";
         }
     }
 
@@ -114,6 +118,6 @@ public class UserAdminController {
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Error deleting user: " + e.getMessage());
         }
-        return "redirect:/admin/users";
+        return "redirect:/admin/user-management";
     }
 }

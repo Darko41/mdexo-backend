@@ -3,12 +3,10 @@ package com.doublez.backend.controller;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,13 +17,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.doublez.backend.dto.CustomUserDetails;
-import com.doublez.backend.dto.realestate.RealEstateResponseDTO;
-import com.doublez.backend.dto.user.UserCreateDTO;
-import com.doublez.backend.dto.user.UserProfileDTO;
-import com.doublez.backend.dto.user.UserResponseDTO;
-import com.doublez.backend.dto.user.UserUpdateDTO;
+import com.doublez.backend.dto.user.UserDTO;
+import com.doublez.backend.dto.user.UserRegistrationDTO;
 import com.doublez.backend.exception.EmailExistsException;
 import com.doublez.backend.exception.UserNotFoundException;
+import com.doublez.backend.service.user.RolePromotionService;
 import com.doublez.backend.service.user.UserService;
 
 import jakarta.validation.Valid;
@@ -37,12 +33,31 @@ public class UserApiController {
     @Autowired
     private UserService userService;
     
-    // creation of new user
+    @Autowired
+    private RolePromotionService rolePromotionService;
+    
+    // Consolidated user creation (for admin use)
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserDTO> createUser(@Valid @RequestBody UserDTO.Create createDto) {
+        UserDTO user = userService.registerUser(createDto, true);
+        return ResponseEntity.status(HttpStatus.CREATED).body(user);
+    }
+
+    // Consolidated user update
+    @PutMapping("/{id}")
+    public ResponseEntity<UserDTO> updateUser(@PathVariable Long id,
+                                            @Valid @RequestBody UserDTO.Update updateDto) {
+        UserDTO user = userService.updateUser(id, updateDto);
+        return ResponseEntity.ok(user);
+    }
+    
+    // SIMPLE REGISTRATION: For public user registration
     @PostMapping("/register")
-    public ResponseEntity<String> registerUser(@Valid @RequestBody UserCreateDTO createDto) {
-        // Self-service registration with limited fields
+    public ResponseEntity<String> registerUser(@Valid @RequestBody UserRegistrationDTO registrationDto) {
         try {
-            return ResponseEntity.ok(userService.registerUser(createDto));
+            String result = userService.simpleRegister(registrationDto.getEmail(), registrationDto.getPassword());
+            return ResponseEntity.ok(result);
         } catch (EmailExistsException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
         } catch (Exception e) {
@@ -50,11 +65,12 @@ public class UserApiController {
         }
     }
     
-    // get all users
+    // GET ALL USERS: Returns UserDTO now
     @GetMapping
-    public ResponseEntity<List<UserResponseDTO>> getAllUsers() {
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<UserDTO>> getAllUsers() {
         try {
-            List<UserResponseDTO> users = userService.getAllUsers();
+            List<UserDTO> users = userService.getAllUsers();
             return users.isEmpty() ? 
                 ResponseEntity.noContent().build() : 
                 ResponseEntity.ok(users);
@@ -63,104 +79,48 @@ public class UserApiController {
         }
     }
     
-    // get user by email
-    @GetMapping("/by-email/{email}")
-    public ResponseEntity<UserResponseDTO> getUserProfile(@PathVariable String email) {
+    // GET USER BY ID: Returns UserDTO now
+    @GetMapping("/{id}")
+    public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
         try {
-            UserResponseDTO user = userService.getUserProfile(email);
+            UserDTO user = userService.getUserById(id);
             return ResponseEntity.ok(user);
-        } catch (UsernameNotFoundException e) {
+        } catch (UserNotFoundException e) {
             return ResponseEntity.notFound().build();
         }
     }
-    
-    // USERS update their profiles
-    @PutMapping("/{id}")
-    @PreAuthorize("hasRole('USER') and #id == authentication.principal.id")
-    public ResponseEntity<UserResponseDTO> updateUserProfile(
-            @PathVariable Long id,
-            @Valid @RequestBody UserUpdateDTO updateDTO) {
-        
-        UserResponseDTO updatedUser = userService.updateUserProfile(id, updateDTO);
-        return ResponseEntity.ok(updatedUser);
+
+    // GET CURRENT USER: Returns UserDTO now
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<UserDTO> getCurrentUser(Authentication authentication) {
+        try {
+            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+            UserDTO user = userService.getUserById(userDetails.getId());
+            return ResponseEntity.ok(user);
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
-    
-    // USERS delete themself
+
+    // DELETE USER: No changes needed
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('USER') and #id == authentication.principal.id")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-        userService.deleteUser(id); // Let exception handler manage responses
+        userService.deleteUser(id);
         return ResponseEntity.noContent().build();
     }
     
-    // get user by id
-    @GetMapping("/{id}")
-    public ResponseEntity<UserResponseDTO> getUserById(@PathVariable Long id) {
-    	System.out.println("🟢 GET /api/users/" + id + " called - ID type: " + id.getClass());
-    	try {
-            UserResponseDTO user = userService.getUserById(id);
-            return ResponseEntity.ok(user);
-        } catch (UserNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
-    // Get user profile details
-    @GetMapping("/{id}/profile")
-    @PreAuthorize("(hasRole('USER') and #id == authentication.principal.id) or hasRole('ADMIN')") // ← ADDED ADMIN ACCESS
-    public ResponseEntity<UserProfileDTO> getUserProfileDetails(@PathVariable Long id) {
-        try {
-            UserProfileDTO profile = userService.getUserProfile(id);
-            return ResponseEntity.ok(profile);
-        } catch (UserNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
-    // Update only profile details (separate from user account info)
-    @PutMapping("/{id}/profile")
-    @PreAuthorize("(hasRole('USER') and #id == authentication.principal.id) or hasRole('ADMIN')") // ← ADDED ADMIN ACCESS
-    public ResponseEntity<UserResponseDTO> updateUserProfileDetails(
-            @PathVariable Long id,
-            @Valid @RequestBody UserProfileDTO profileDTO) {
-        
-        try {
-            UserResponseDTO updatedUser = userService.updateUserProfileDetails(id, profileDTO);
-            return ResponseEntity.ok(updatedUser);
-        } catch (UserNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
-        }
-    }
-
-    // Complete profile update (including email and roles - for admin use)
-    @PutMapping("/{id}/complete")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<UserResponseDTO> updateUserComplete(
-            @PathVariable Long id,
-            @Valid @RequestBody UserUpdateDTO updateDTO) {
-        
-        try {
-            UserResponseDTO updatedUser = userService.updateUserProfile(id, updateDTO);
-            return ResponseEntity.ok(updatedUser);
-        } catch (UserNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
-        }
-    }
-    
-    @GetMapping("/me")
+    // User-Facing Promotion Endpoint
+    @PostMapping("/request-agent-promotion")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<UserResponseDTO> getCurrentUser(Authentication authentication) {
+    public ResponseEntity<String> requestAgentPromotion(Authentication authentication) {
         try {
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-            UserResponseDTO user = userService.getUserById(userDetails.getId());
-            return ResponseEntity.ok(user);
-        } catch (UserNotFoundException e) {
-            return ResponseEntity.notFound().build();
+            UserDTO user = rolePromotionService.promoteToAgent(userDetails.getId());
+            return ResponseEntity.ok("Successfully promoted to agent role");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Failed to promote to agent: " + e.getMessage());
         }
     }
-    
 }

@@ -1,7 +1,6 @@
 package com.doublez.backend.controller;
 
 import java.math.BigDecimal;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,12 +28,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.doublez.backend.dto.realestate.RealEstateCreateDTO;
-import com.doublez.backend.dto.realestate.RealEstateFormUpdateDTO;
 import com.doublez.backend.dto.realestate.RealEstateResponseDTO;
 import com.doublez.backend.dto.realestate.RealEstateUpdateDTO;
-import com.doublez.backend.dto.user.UserCreateDTO;
-import com.doublez.backend.dto.user.UserResponseDTO;
-import com.doublez.backend.dto.user.UserUpdateDTO;
+import com.doublez.backend.dto.user.UserDTO;
 import com.doublez.backend.enums.ListingType;
 import com.doublez.backend.enums.PropertyType;
 import com.doublez.backend.exception.IllegalOperationException;
@@ -160,9 +156,9 @@ public class AdminApiController {
 
     // User Management Endpoints
     @PostMapping("/users")
-    public ResponseEntity<UserResponseDTO> createUser(
-            @RequestBody @Valid UserCreateDTO createDto) {
-        UserResponseDTO response = userService.createUser(createDto);
+    public ResponseEntity<UserDTO> createUser(
+            @RequestBody @Valid UserDTO.Create createDto) {
+        UserDTO response = userService.registerUser(createDto, true);
         return ResponseEntity
             .status(HttpStatus.CREATED)
             .header("Location", "/api/users/" + response.getId())
@@ -170,15 +166,15 @@ public class AdminApiController {
     }
 
     @PutMapping("/users/{id}")
-    public ResponseEntity<UserResponseDTO> updateUser(
+    public ResponseEntity<UserDTO> updateUser(
             @PathVariable Long id,
-            @RequestBody @Valid UserUpdateDTO updateDto) {
-        UserResponseDTO updatedUser = userService.updateUserProfile(id, updateDto);
+            @RequestBody @Valid UserDTO.Update updateDto) {
+        UserDTO updatedUser = userService.updateUser(id, updateDto);
         return ResponseEntity.ok(updatedUser);
     }
 
     @GetMapping("/users")
-    public ResponseEntity<List<UserResponseDTO>> getAllUsers() {
+    public ResponseEntity<List<UserDTO>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
     }
 
@@ -210,4 +206,3 @@ public class AdminApiController {
     
     
 }
-

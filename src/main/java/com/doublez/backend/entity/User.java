@@ -1,8 +1,14 @@
 package com.doublez.backend.entity;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import com.doublez.backend.entity.agency.Agency;
+import com.doublez.backend.entity.agency.AgencyMembership;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -14,6 +20,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
@@ -52,6 +59,28 @@ public class User {
     
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private UserProfile userProfile;
+    
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<AgencyMembership> agencyMemberships = new ArrayList<>();
+
+    public List<AgencyMembership> getAgencyMemberships() {
+		return agencyMemberships;
+	}
+
+	public void setAgencyMemberships(List<AgencyMembership> agencyMemberships) {
+		this.agencyMemberships = agencyMemberships;
+	}
+
+	public List<Agency> getOwnedAgencies() {
+		return ownedAgencies;
+	}
+
+	public void setOwnedAgencies(List<Agency> ownedAgencies) {
+		this.ownedAgencies = ownedAgencies;
+	}
+
+	@OneToMany(mappedBy = "admin", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Agency> ownedAgencies = new ArrayList<>();
 
     // No constructors - using default constructor only
 
@@ -143,5 +172,28 @@ public class User {
     public boolean hasRole(String roleName) {
         return this.roles.stream()
                 .anyMatch(role -> role.getName().equals(roleName));
+    }
+    
+    
+    // Helper methods for agency functionality
+    public boolean isAgencyAdmin() {
+        return this.roles.stream()
+                .anyMatch(role -> role.getName().equals("ROLE_AGENCY_ADMIN"));
+    }
+
+    public boolean isAgent() {
+        return this.roles.stream()
+                .anyMatch(role -> role.getName().equals("ROLE_AGENT"));
+    }
+
+    public Optional<Agency> getOwnedAgency() {
+        return this.ownedAgencies.stream().findFirst();
+    }
+
+    public List<Agency> getAgentAgencies() {
+        return this.agencyMemberships.stream()
+                .filter(m -> m.getStatus() == AgencyMembership.MembershipStatus.ACTIVE)
+                .map(AgencyMembership::getAgency)
+                .collect(Collectors.toList());
     }
 }
