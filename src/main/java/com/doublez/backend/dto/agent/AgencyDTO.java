@@ -25,6 +25,9 @@ public class AgencyDTO {
         private String logo;
         private String contactInfo;
 
+        // Default constructor (REQUIRED for Jackson)
+        public Create() {}
+
         // Getters and setters
         public String getName() { return name; }
         public void setName(String name) { this.name = name; }

@@ -181,11 +181,8 @@ public class AdminApiController {
     @DeleteMapping("/users/{id}")
     public ResponseEntity<ApiResponse<String>> deleteUser(@PathVariable Long id) {
         try {
-            userService.deleteUser(id);
+            userService.deleteUserAsAdmin(id);
             return ResponseEntity.ok(ApiResponse.success("User deleted successfully"));
-        } catch (IllegalOperationException | SelfDeletionException e) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error(e.getMessage()));
         } catch (UserNotFoundException e) {
             return ResponseEntity.notFound().build();
         } catch (Exception e) {

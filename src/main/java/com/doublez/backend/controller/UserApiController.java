@@ -20,6 +20,7 @@ import com.doublez.backend.dto.CustomUserDetails;
 import com.doublez.backend.dto.user.UserDTO;
 import com.doublez.backend.dto.user.UserRegistrationDTO;
 import com.doublez.backend.exception.EmailExistsException;
+import com.doublez.backend.exception.IllegalOperationException;
 import com.doublez.backend.exception.UserNotFoundException;
 import com.doublez.backend.service.user.RolePromotionService;
 import com.doublez.backend.service.user.UserService;
@@ -90,7 +91,7 @@ public class UserApiController {
         }
     }
 
-    // GET CURRENT USER: Returns UserDTO now
+    // GET CURRENT USER: Returns UserDTO
     @GetMapping("/me")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<UserDTO> getCurrentUser(Authentication authentication) {
@@ -103,12 +104,20 @@ public class UserApiController {
         }
     }
 
-    // DELETE USER: No changes needed
+    // CASCADE DELETION
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('USER') and #id == authentication.principal.id")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-        userService.deleteUser(id);
-        return ResponseEntity.noContent().build();
+    @PreAuthorize("hasRole('USER') and #id == authentication.principal.id or hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id, Authentication authentication) {
+        try {
+            userService.deleteUser(id, authentication);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalOperationException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
     
     // User-Facing Promotion Endpoint

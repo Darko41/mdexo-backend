@@ -17,8 +17,11 @@ public interface AgencyRepository extends JpaRepository<Agency, Long> {
     boolean existsByName(String name);
     
     @Query("SELECT a FROM Agency a WHERE a.admin.id = :adminId")
-    Optional<Agency> findByAdminId(Long adminId);
+    List<Agency> findByAdminId(Long adminId);
     
     @Query("SELECT a FROM Agency a JOIN a.memberships m WHERE m.user.id = :userId AND m.status = 'ACTIVE'")
     List<Agency> findActiveAgenciesByUserId(Long userId);
+    
+    @Query("SELECT COUNT(a) FROM Agency a WHERE a.admin.id = :adminId")
+    long countByAdminId(Long adminId);
 }

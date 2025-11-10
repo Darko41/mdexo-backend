@@ -3,8 +3,11 @@ package com.doublez.backend.service.user;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import com.doublez.backend.config.security.SecurityConfig;
 import com.doublez.backend.dto.agent.AgencyDTO;
 import com.doublez.backend.dto.user.UserDTO;
 import com.doublez.backend.entity.Role;
@@ -25,6 +28,8 @@ public class RolePromotionService {
 	private final RoleRepository roleRepository;
 	private final AgencyService agencyService;
 	private final UserMapper userMapper;
+	
+	private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
 
 	// FIXED: Add constructor injection
 	public RolePromotionService(UserRepository userRepository, RoleRepository roleRepository,
@@ -54,7 +59,15 @@ public class RolePromotionService {
 	}
 
 	public UserDTO promoteToAgencyAdmin(Long userId, AgencyDTO.Create agencyDto) {
-	    User user = userRepository.findById(userId)
+		logger.info("🔍 promoteToAgencyAdmin called - userId: {}, agencyDto: {}", userId, agencyDto);
+	    
+	    if (agencyDto != null) {
+	    	logger.info("🔍 Agency name: '{}', description: '{}'", agencyDto.getName(), agencyDto.getDescription());
+	    } else {
+	    	logger.warn("⚠️ agencyDto is null!");
+	    }
+		
+		User user = userRepository.findById(userId)
 	        .orElseThrow(() -> new UserNotFoundException(userId));
 
 	    // Ensure user is an agent first

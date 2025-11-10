@@ -1,6 +1,7 @@
 package com.doublez.backend.controller;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,11 +19,15 @@ import com.doublez.backend.dto.CustomUserDetails;
 import com.doublez.backend.dto.agent.AgencyDTO;
 import com.doublez.backend.dto.agent.AgencyMembershipDTO;
 import com.doublez.backend.dto.user.UserDTO;
+import com.doublez.backend.request.PromoteAgencyAdminRequest;
 import com.doublez.backend.service.agency.AgencyService;
 import com.doublez.backend.service.user.RolePromotionService;
 import com.doublez.backend.service.user.UserService;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 @RestController
@@ -95,9 +100,52 @@ public class AgencyController {
 	// Promote to agency admin
 	@PostMapping("/promote/agency-admin")
 	@PreAuthorize("hasRole('ADMIN')")
-	public ResponseEntity<UserDTO> promoteToAgencyAdmin(@RequestParam Long userId, @RequestBody AgencyDTO.Create agencyDto) {
-	    UserDTO user = rolePromotionService.promoteToAgencyAdmin(userId, agencyDto);
-	    return ResponseEntity.ok(user);
+	public ResponseEntity<UserDTO> promoteToAgencyAdmin(HttpServletRequest request) {
+	    try {
+	        // Read the raw body from the request
+	        String body = request.getReader().lines().collect(Collectors.joining());
+	        System.out.println("🎯 RAW BODY: " + body);
+	        
+	        // Parse the JSON manually
+	        ObjectMapper mapper = new ObjectMapper();
+	        JsonNode jsonNode = mapper.readTree(body);
+	        
+	        // Extract values
+	        Long userId = jsonNode.get("userId").asLong();
+	        String name = jsonNode.get("name").asText();
+	        String description = jsonNode.get("description").asText();
+	        
+	        System.out.println("🎯 PARSED VALUES:");
+	        System.out.println("🎯 userId: " + userId);
+	        System.out.println("🎯 name: " + name);
+	        System.out.println("🎯 description: " + description);
+	        
+	        // Create agency DTO
+	        AgencyDTO.Create agencyDto = new AgencyDTO.Create();
+	        agencyDto.setName(name);
+	        agencyDto.setDescription(description);
+	        
+	        // Call service
+	        UserDTO user = rolePromotionService.promoteToAgencyAdmin(userId, agencyDto);
+	        return ResponseEntity.ok(user);
+	        
+	    } catch (Exception e) {
+	        System.out.println("🎯 ERROR: " + e.getMessage());
+	        e.printStackTrace();
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+	    }
+	}
+
+	// Create this DTO class
+	public static class PromoteRequest {
+	    private Long userId;
+	    private AgencyDTO.Create agencyDto;
+	    
+	    // getters and setters
+	    public Long getUserId() { return userId; }
+	    public void setUserId(Long userId) { this.userId = userId; }
+	    public AgencyDTO.Create getAgencyDto() { return agencyDto; }
+	    public void setAgencyDto(AgencyDTO.Create agencyDto) { this.agencyDto = agencyDto; }
 	}
 
 	// Demote Endpoint

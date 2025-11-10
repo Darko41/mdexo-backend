@@ -12,17 +12,23 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.doublez.backend.dto.CustomUserDetails;
 import com.doublez.backend.dto.user.UserDTO;
 import com.doublez.backend.dto.user.UserProfileDTO;
+import com.doublez.backend.entity.RealEstate;
 import com.doublez.backend.entity.Role;
 import com.doublez.backend.entity.User;
 import com.doublez.backend.entity.UserProfile;
+import com.doublez.backend.entity.agency.Agency;
+import com.doublez.backend.entity.agency.AgencyMembership;
 import com.doublez.backend.exception.CustomAuthenticationException;
 import com.doublez.backend.exception.EmailExistsException;
 import com.doublez.backend.exception.IllegalOperationException;
 import com.doublez.backend.exception.SelfDeletionException;
 import com.doublez.backend.exception.UserNotFoundException;
 import com.doublez.backend.mapper.UserMapper;
+import com.doublez.backend.repository.AgencyMembershipRepository;
+import com.doublez.backend.repository.AgencyRepository;
 import com.doublez.backend.repository.RealEstateRepository;
 import com.doublez.backend.repository.RoleRepository;
 import com.doublez.backend.repository.UserRepository;
@@ -39,17 +45,23 @@ public class UserService {
     private final RoleRepository roleRepository;
     private final UserMapper userMapper;
     private final RealEstateRepository realEstateRepository;
+    private final AgencyRepository agencyRepository;
+    private final AgencyMembershipRepository membershipRepository;
 
     public UserService(UserRepository userRepository,
                      PasswordEncoder passwordEncoder,
                      RoleRepository roleRepository,
                      UserMapper userMapper,
-                     RealEstateRepository realEstateRepository) {
+                     RealEstateRepository realEstateRepository,
+                     AgencyRepository agencyRepository,
+                     AgencyMembershipRepository membershipRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.roleRepository = roleRepository;
         this.userMapper = userMapper;
         this.realEstateRepository = realEstateRepository;
+        this.agencyRepository = agencyRepository;
+        this.membershipRepository = membershipRepository;
     }
 
     // Consolidated user registration
@@ -146,46 +158,77 @@ public class UserService {
         return "User registered successfully!";
     }
 
-    // Delete user (no changes needed)
+    // Delete user with cascade deletion - ALLOWS SELF-DELETION FOR EVERYONE
     @Transactional
-    public void deleteUser(Long id) {
-        User currentUser = getAuthenticatedUser();
+    public void deleteUser(Long id, Authentication authentication) {
+        CustomUserDetails currentUserDetails = (CustomUserDetails) authentication.getPrincipal();
+        User currentUser = userRepository.findById(currentUserDetails.getId())
+                .orElseThrow(() -> new UserNotFoundException(currentUserDetails.getId()));
+        
         User targetUser = userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
 
-        // 1. Prevent self-deletion
-        if (currentUser.getId().equals(targetUser.getId())) {
-            throw new SelfDeletionException("Self-deletion is not allowed", 
-                Map.of("currentUserId", currentUser.getId()));
+        boolean isSuperAdmin = currentUser.getRoles().stream()
+                .anyMatch(role -> "ROLE_ADMIN".equals(role.getName()));
+        boolean isSelfDeletion = currentUser.getId().equals(targetUser.getId());
+
+        System.out.println("🔍 Delete User Check - Current User: " + currentUser.getId() + 
+                          ", Target User: " + targetUser.getId() + 
+                          ", isSuperAdmin: " + isSuperAdmin + 
+                          ", isSelfDeletion: " + isSelfDeletion);
+
+        // SIMPLIFIED LOGIC: Allow deletion if user is deleting themselves OR admin is deleting any user
+        if (!isSelfDeletion && !isSuperAdmin) {
+            throw new IllegalOperationException("You can only delete your own account");
         }
 
-        // 2. Prevent removing last admin
-        long adminCount = userRepository.countByRoles_Name("ROLE_ADMIN");
-        if (targetUser.isAdmin() && adminCount <= 1) {
-            throw new IllegalOperationException("System must have at least one admin");
+        // Handle cascade deletion - pass true for super admin, false for self-deletion
+        // This controls whether agency deletion is blocked for non-admins
+        deleteUserWithCascade(id, isSuperAdmin);
+    }
+
+    // Delete user with all associated data
+    public void deleteUserWithCascade(Long userId, boolean isSuperAdmin) {
+        System.out.println("🔍 Starting cascade deletion for user: " + userId + ", isSuperAdmin: " + isSuperAdmin);
+        
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+        
+        System.out.println("🔍 User found: " + user.getEmail());
+
+        // Check if user owns agencies
+        List<Agency> ownedAgencies = agencyRepository.findByAdminId(userId);
+        System.out.println("🔍 Found " + ownedAgencies.size() + " owned agencies");
+        
+        // REMOVED THE RESTRICTION - Allow users to delete themselves even if they own agencies
+        // The agencies will be deleted along with the user
+        
+        // Delete owned agencies (cascade will handle memberships)
+        for (Agency agency : ownedAgencies) {
+            System.out.println("🗑️ Deleting agency: " + agency.getName() + " owned by user: " + userId);
+            agencyRepository.delete(agency);
         }
         
-        // 3. Handle property reassignment for admins
-        if (targetUser.isAdmin()) {
-            List<User> otherAdmins = userRepository.findByRoleName("ROLE_ADMIN")
-                    .stream()
-                    .filter(admin -> !admin.getId().equals(targetUser.getId()))
-                    .collect(Collectors.toList());
-            
-            if (!otherAdmins.isEmpty()) {
-                User replacementAdmin = otherAdmins.get(0);
-                if (realEstateRepository.existsByOwner(targetUser)) {
-                    realEstateRepository.reassignAllPropertiesFromUser(targetUser.getId(), replacementAdmin.getId());
-                }
-            }
+        // Delete user's real estate properties
+        List<RealEstate> userProperties = realEstateRepository.findByUserId(userId);
+        System.out.println("🔍 Found " + userProperties.size() + " user properties");
+        
+        for (RealEstate property : userProperties) {
+            System.out.println("🗑️ Deleting property: " + property.getTitle() + " owned by user: " + userId);
+            realEstateRepository.delete(property);
         }
-
-        // 4. Delete the user
-        try {
-            userRepository.delete(targetUser);
-        } catch (DataIntegrityViolationException e) {
-            throw new IllegalOperationException("Cannot delete user: may be referenced by existing properties");
-        }
+        
+        // Delete user's agency memberships
+        List<AgencyMembership> userMemberships = membershipRepository.findByUserId(userId);
+        System.out.println("🔍 Found " + userMemberships.size() + " user memberships");
+        
+        membershipRepository.deleteAll(userMemberships);
+        
+        // Finally delete the user
+        System.out.println("🗑️ Deleting user: " + userId);
+        userRepository.delete(user);
+        
+        System.out.println("✅ Successfully deleted user: " + userId + " and all associated data");
     }
     
     public long getUserCount() {
@@ -273,5 +316,14 @@ public class UserService {
         if (profileDto.getBio() != null) {
             profile.setBio(profileDto.getBio());
         }
+    }
+    
+    @Transactional
+    public void deleteUserAsAdmin(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+        
+        // Admin can delete any user, so we pass isAdmin = true
+        deleteUserWithCascade(userId, true);
     }
 }

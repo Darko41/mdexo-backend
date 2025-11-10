@@ -92,6 +92,7 @@ public class SecurityConfig {
 	            // 3. Public API endpoints (EXPLICITLY LIST ALL PUBLIC API ENDPOINTS)
 	            .requestMatchers(
 	                "/api/users/register",
+	                "/api/agencies",
 	                "/api/auth/authenticate",
 	                "/api/auth/me"
 	            ).permitAll()

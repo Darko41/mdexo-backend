@@ -2,9 +2,14 @@ package com.doublez.backend.controller.admindashboard;
 
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,6 +19,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.doublez.backend.dto.user.UserDTO;
+import com.doublez.backend.exception.IllegalOperationException;
+import com.doublez.backend.exception.UserNotFoundException;
+import com.doublez.backend.response.ApiResponse;
 import com.doublez.backend.service.user.UserService;
 
 @Controller
@@ -110,14 +118,24 @@ public class UserAdminController {
     }
 
     // Delete user
-    @PostMapping("/{id}/delete")
-    public String deleteUser(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    @DeleteMapping("/users/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<String>> deleteUser(@PathVariable Long id) {
         try {
-            userService.deleteUser(id);
-            redirectAttributes.addFlashAttribute("success", "User deleted successfully");
+            // For admin operations, we need to simulate the authentication
+            // Since admin can delete any user, we'll create a simple approach
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            userService.deleteUser(id, authentication);
+            
+            return ResponseEntity.ok(ApiResponse.success("User deleted successfully"));
+        } catch (IllegalOperationException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(ApiResponse.error(e.getMessage()));
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.notFound().build();
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Error deleting user: " + e.getMessage());
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponse.error("Failed to delete user: " + e.getMessage()));
         }
-        return "redirect:/admin/user-management";
     }
 }

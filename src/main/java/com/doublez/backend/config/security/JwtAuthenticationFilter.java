@@ -34,17 +34,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     // Add all public API endpoints that should skip JWT authentication
     private static final List<String> EXCLUDED_PATHS = Arrays.asList(
-    	    "/api/auth/authenticate",     // Only the login endpoint
-    	    "/api/users/register",        
-    	    "/api/real-estates/search",   
-    	    "/api/real-estates/features", 
-    	    "/api/real-estates/*",        
+    	    // Auth endpoints
+    	    "/api/auth/authenticate",
+    	    
+    	    // User registration
+    	    "/api/users/register",
+    	    "/api/users/check-email/*",
+    	    
+    	    // Public real estate browsing
+    	    "/api/real-estates/search",
+    	    "/api/real-estates/features",
+    	    "/api/real-estates/*",
+    	    "/api/real-estates/**/similar",
+    	    
+    	    // Public agency browsing ONLY
+    	    "/api/agencies",           // GET all agencies
+    	    "/api/agencies/*",         // GET specific agency
+    	    
+    	    // Static resources
     	    "/v3/api-docs/**",
     	    "/swagger-ui/**",
     	    "/swagger-resources/**",
     	    "/webjars/**",
-    	    "/admin/**",                  
-    	    "/auth/**",                   
+    	    "/admin/**",
+    	    "/auth/**",
     	    "/dist/**",
     	    "/plugins/**",
     	    "/pages/**",
@@ -73,6 +86,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         final String method = request.getMethod();
         
         logger.debug("🛡️ JWT Filter processing: {} {}", method, requestURI);
+        logger.debug("🛡️ JWT Filter START: {} {}", method, requestURI);
+        
+        System.out.println("🎯 TEST LOG - JWT Filter processing: " + request.getMethod() + " " + request.getRequestURI());
+        logger.info("🎯 LOGGER TEST - JWT Filter processing: {} {}", request.getMethod(), request.getRequestURI());
 
         // COMPLETELY skip OPTIONS requests - let CORS handle them
         if (HttpMethod.OPTIONS.matches(method)) {
@@ -143,6 +160,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             response.getWriter().write("{\"error\":\"Invalid token\",\"message\":\"Authentication failed\"}");
             return;
         }
+        
+        logger.debug("🛡️ JWT Filter END: {} {}", method, requestURI);
 
         filterChain.doFilter(request, response);
     }
@@ -150,19 +169,31 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private boolean shouldSkipAuthentication(HttpServletRequest request) {
         String requestURI = request.getRequestURI();
         String method = request.getMethod();
+        
+        logger.debug("🔍 Checking if should skip authentication for: {}", requestURI);
 
         // Skip authentication for excluded paths
-        boolean shouldSkip = EXCLUDED_PATHS.stream().anyMatch(pattern -> pathMatcher.match(pattern, requestURI));
+//        boolean shouldSkip = EXCLUDED_PATHS.stream().anyMatch(pattern -> pathMatcher.match(pattern, requestURI));
+        
+        boolean shouldSkip = EXCLUDED_PATHS.stream().anyMatch(pattern -> {
+            boolean matches = pathMatcher.match(pattern, requestURI);
+            if (matches) {
+                logger.debug("✅ Pattern '{}' matches request '{}'", pattern, requestURI);
+            }
+            return matches;
+        });
         
         // ADDITIONAL: Also skip GET requests to real estate endpoints (they should be public)
-        if (!shouldSkip && requestURI.startsWith("/api/real-estates/") && HttpMethod.GET.matches(method)) {
-            shouldSkip = true;
-            logger.debug("✅ Skipping JWT for public GET real estate endpoint: {}", requestURI);
-        }
+//        if (!shouldSkip && requestURI.startsWith("/api/real-estates/") && HttpMethod.GET.matches(method)) {
+//            shouldSkip = true;
+//            logger.debug("✅ Skipping JWT for public GET real estate endpoint: {}", requestURI);
+//        }
+//        
+//        if (shouldSkip) {
+//            logger.debug("✅ JWT filter skipping: {}", requestURI);
+//        }
+        logger.debug("🔍 Final skip decision for {}: {}", requestURI, shouldSkip);
         
-        if (shouldSkip) {
-            logger.debug("✅ JWT filter skipping: {}", requestURI);
-        }
         return shouldSkip;
     }
 
