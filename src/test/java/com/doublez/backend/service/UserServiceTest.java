@@ -19,7 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.doublez.backend.dto.user.UserResponseDTO;
 import com.doublez.backend.entity.Role;
-import com.doublez.backend.entity.User;
+import com.doublez.backend.entity.user.User;
 import com.doublez.backend.exception.CustomAuthenticationException;
 import com.doublez.backend.mapper.UserMapper;
 import com.doublez.backend.repository.RoleRepository;

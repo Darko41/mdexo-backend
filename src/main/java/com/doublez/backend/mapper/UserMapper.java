@@ -6,17 +6,19 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
+import com.doublez.backend.dto.InvestorProfileDTO;
 import com.doublez.backend.dto.agent.AgencyDTO;
 import com.doublez.backend.dto.agent.AgencyInfoDTO;
 import com.doublez.backend.dto.agent.AgencyMembershipDTO;
 import com.doublez.backend.dto.user.UserDTO;
 import com.doublez.backend.dto.user.UserProfileDTO;
 import com.doublez.backend.dto.user.UserResponseDTO;
+import com.doublez.backend.entity.InvestorProfile;
 import com.doublez.backend.entity.Role;
-import com.doublez.backend.entity.User;
-import com.doublez.backend.entity.UserProfile;
 import com.doublez.backend.entity.agency.Agency;
 import com.doublez.backend.entity.agency.AgencyMembership;
+import com.doublez.backend.entity.user.User;
+import com.doublez.backend.entity.user.UserProfile;
 
 @Component
 public class UserMapper {
@@ -34,10 +36,15 @@ public class UserMapper {
         dto.setRoles(mapRoles(user.getRoles()));
         dto.setCreatedAt(user.getCreatedAt());
         dto.setUpdatedAt(user.getUpdatedAt());
+        dto.setTier(user.getTier());
         
         // Map profile if exists
         if (user.getUserProfile() != null) {
             dto.setProfile(toProfileDto(user.getUserProfile()));
+        }
+        
+        if (user.getInvestorProfile() != null) {
+            dto.setInvestorProfile(toInvestorProfileDTO(user.getInvestorProfile()));
         }
         
         // Map agency info if user is an agent with active memberships
@@ -266,6 +273,76 @@ public class UserMapper {
         
         if (userDTO.getProfile() != null) {
             updateUserProfile(userDTO.getProfile(), user);
+        }
+    }
+    
+    
+    // ===== INVESTOR MAPPING METHODS =====
+    public InvestorProfileDTO toInvestorProfileDTO(InvestorProfile profile) {
+        if (profile == null) {
+            return null;
+        }
+        
+        return new InvestorProfileDTO(
+            profile.getCompanyName(),
+            profile.getPib(),
+            profile.getMb(),
+            profile.getWebsite(),
+            profile.getContactPerson(),
+            profile.getPhoneNumber(),
+            profile.getInvestorType(),
+            profile.getYearsInBusiness(),
+            profile.getPortfolioSize(),
+            profile.getInvestmentFocus(),
+            profile.getPreferredLocations(),
+            profile.getMinInvestmentAmount(),
+            profile.getMaxInvestmentAmount()
+        );
+    }
+    
+    public void updateInvestorProfileFromDTO(InvestorProfileDTO profileDto, InvestorProfile profile) {
+        if (profileDto == null || profile == null) {
+            return;
+        }
+        
+        if (profileDto.getCompanyName() != null) {
+            profile.setCompanyName(profileDto.getCompanyName());
+        }
+        if (profileDto.getPib() != null) {
+            profile.setPib(profileDto.getPib());
+        }
+        if (profileDto.getMb() != null) {
+            profile.setMb(profileDto.getMb());
+        }
+        if (profileDto.getWebsite() != null) {
+            profile.setWebsite(profileDto.getWebsite());
+        }
+        if (profileDto.getContactPerson() != null) {
+            profile.setContactPerson(profileDto.getContactPerson());
+        }
+        if (profileDto.getPhoneNumber() != null) {
+            profile.setPhoneNumber(profileDto.getPhoneNumber());
+        }
+        if (profileDto.getInvestorType() != null) {
+            profile.setInvestorType(profileDto.getInvestorType());
+        }
+        if (profileDto.getYearsInBusiness() != null) {
+            profile.setYearsInBusiness(profileDto.getYearsInBusiness());
+        }
+        if (profileDto.getPortfolioSize() != null) {
+            profile.setPortfolioSize(profileDto.getPortfolioSize());
+        }
+        if (profileDto.getInvestmentFocus() != null) {
+            profile.setInvestmentFocus(profileDto.getInvestmentFocus());
+        }
+        if (profileDto.getPreferredLocations() != null) {
+            profile.setPreferredLocations(profileDto.getPreferredLocations());
+        }
+        if (profileDto.getMinInvestmentAmount() != null) {
+            profile.setMinInvestmentAmount(profileDto.getMinInvestmentAmount());
+        }
+        if (profileDto.getMaxInvestmentAmount() != null) {
+            profile.setMaxInvestmentAmount(profileDto.getMaxInvestmentAmount());
         }
     }
 }

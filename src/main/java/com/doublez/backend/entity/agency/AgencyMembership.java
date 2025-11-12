@@ -2,7 +2,7 @@ package com.doublez.backend.entity.agency;
 
 import java.time.LocalDate;
 
-import com.doublez.backend.entity.User;
+import com.doublez.backend.entity.user.User;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

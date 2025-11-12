@@ -1,5 +1,6 @@
 package com.doublez.backend.repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -8,7 +9,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.doublez.backend.entity.User;
+import com.doublez.backend.entity.user.User;
+import com.doublez.backend.enums.UserTier;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long>{
@@ -36,4 +38,26 @@ public interface UserRepository extends JpaRepository<User, Long>{
     
     @Query("SELECT u FROM User u JOIN u.roles r WHERE r.name = :roleName")
     List<User> findByRoleName(@Param("roleName") String roleName);
+    
+    List<User> findByTier(UserTier tier);
+    
+    @Query("SELECT COUNT(re) FROM RealEstate re WHERE re.owner.id = :userId")
+    Long countActiveRealEstatesByUser(@Param("userId") Long userId);
+    
+    @Query("SELECT COUNT(i) FROM RealEstate re JOIN re.images i WHERE re.owner.id = :userId")
+    Long countImagesByUser(@Param("userId") Long userId);
+    
+    // 🆕 TRIAL-RELATED QUERIES
+    @Query("SELECT u FROM User u WHERE u.trialEndDate = :date AND u.trialUsed = true")
+    List<User> findByTrialEndDate(@Param("date") LocalDate date);
+    
+    @Query("SELECT u FROM User u WHERE u.trialEndDate < :date AND u.trialUsed = true")
+    List<User> findByTrialEndDateBefore(@Param("date") LocalDate date);
+    
+    @Query("SELECT u FROM User u WHERE u.trialUsed = true AND u.trialEndDate BETWEEN :startDate AND :endDate")
+    List<User> findUsersWithTrialEndingBetween(@Param("startDate") LocalDate startDate, 
+                                             @Param("endDate") LocalDate endDate);
+    
+    @Query("SELECT COUNT(u) FROM User u WHERE u.trialUsed = true AND u.trialEndDate > CURRENT_DATE")
+    Long countActiveTrials();
 }

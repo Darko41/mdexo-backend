@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.doublez.backend.entity.User;
+import com.doublez.backend.entity.user.User;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;

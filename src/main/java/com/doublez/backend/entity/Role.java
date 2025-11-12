@@ -2,6 +2,8 @@ package com.doublez.backend.entity;
 
 import java.util.List;
 
+import com.doublez.backend.entity.user.User;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;

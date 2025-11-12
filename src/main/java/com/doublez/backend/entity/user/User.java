@@ -1,18 +1,24 @@
-package com.doublez.backend.entity;
+package com.doublez.backend.entity.user;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.doublez.backend.entity.InvestorProfile;
+import com.doublez.backend.entity.Role;
 import com.doublez.backend.entity.agency.Agency;
 import com.doublez.backend.entity.agency.AgencyMembership;
+import com.doublez.backend.enums.UserTier;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -31,6 +37,8 @@ import jakarta.validation.constraints.NotNull;
 @Table(name = "users")
 public class User {
     
+	// FIELDS
+	
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -66,9 +74,71 @@ public class User {
     public List<AgencyMembership> getAgencyMemberships() {
 		return agencyMemberships;
 	}
+    
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tier", nullable = false)
+    private UserTier tier = UserTier.FREE_USER; // Default tier
+    
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private InvestorProfile investorProfile;
+    
+    @Column(name = "trial_start_date")
+    private LocalDate trialStartDate;
+
+    @Column(name = "trial_end_date") 
+    private LocalDate trialEndDate;
+
+    @Column(name = "trial_used", nullable = false)
+    private Boolean trialUsed = false;
+    
+    @OneToMany(mappedBy = "admin", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Agency> ownedAgencies = new ArrayList<>();
+    
+    // No constructors - using default constructor only
+    // METHODS
+
+	public LocalDate getTrialStartDate() {
+		return trialStartDate;
+	}
+
+	public void setTrialStartDate(LocalDate trialStartDate) {
+		this.trialStartDate = trialStartDate;
+	}
+
+	public LocalDate getTrialEndDate() {
+		return trialEndDate;
+	}
+
+	public void setTrialEndDate(LocalDate trialEndDate) {
+		this.trialEndDate = trialEndDate;
+	}
+
+	public Boolean getTrialUsed() {
+		return trialUsed;
+	}
+
+	public void setTrialUsed(Boolean trialUsed) {
+		this.trialUsed = trialUsed;
+	}
 
 	public void setAgencyMemberships(List<AgencyMembership> agencyMemberships) {
 		this.agencyMemberships = agencyMemberships;
+	}
+
+	public InvestorProfile getInvestorProfile() {
+		return investorProfile;
+	}
+
+	public void setInvestorProfile(InvestorProfile investorProfile) {
+		this.investorProfile = investorProfile;
+	}
+
+	public UserTier getTier() {
+		return tier;
+	}
+
+	public void setTier(UserTier tier) {
+		this.tier = tier;
 	}
 
 	public List<Agency> getOwnedAgencies() {
@@ -78,11 +148,6 @@ public class User {
 	public void setOwnedAgencies(List<Agency> ownedAgencies) {
 		this.ownedAgencies = ownedAgencies;
 	}
-
-	@OneToMany(mappedBy = "admin", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Agency> ownedAgencies = new ArrayList<>();
-
-    // No constructors - using default constructor only
 
     @PrePersist
     public void prePersist() {
@@ -195,5 +260,52 @@ public class User {
                 .filter(m -> m.getStatus() == AgencyMembership.MembershipStatus.ACTIVE)
                 .map(AgencyMembership::getAgency)
                 .collect(Collectors.toList());
+    }
+    
+    // Helper methods for tiers
+    public boolean isInFreeTrial() {
+        return this.tier == UserTier.FREE_USER || this.tier == UserTier.FREE_AGENT;
+    }
+    
+    public boolean isAgentTier() {
+        return this.tier == UserTier.FREE_AGENT || 
+               this.tier == UserTier.BASIC_AGENT || 
+               this.tier == UserTier.PREMIUM_AGENT;
+    }
+    
+    // Helper methods for investors
+    public boolean isInvestor() {
+        return this.tier == UserTier.FREE_INVESTOR || 
+               this.tier == UserTier.BASIC_INVESTOR || 
+               this.tier == UserTier.PREMIUM_INVESTOR;
+    }
+    
+    public InvestorProfile getOrCreateInvestorProfile() {
+        if (this.investorProfile == null) {
+            this.investorProfile = new InvestorProfile(this);
+        }
+        return this.investorProfile;
+    }
+    
+    // TRIAL HELPER METHODS
+    public boolean isInTrialPeriod() {
+        if (!Boolean.TRUE.equals(trialUsed) || trialEndDate == null) {
+            return false;
+        }
+        return LocalDate.now().isBefore(trialEndDate) ||  
+               LocalDate.now().equals(trialEndDate);      
+    }
+    
+    public boolean isTrialExpired() {
+        return Boolean.TRUE.equals(trialUsed) && 
+               trialEndDate != null && 
+               LocalDate.now().isAfter(trialEndDate);   
+    }
+    
+    public long getTrialDaysRemaining() {
+        if (!isInTrialPeriod()) {
+            return 0;
+        }
+        return ChronoUnit.DAYS.between(LocalDate.now(), trialEndDate);
     }
 }

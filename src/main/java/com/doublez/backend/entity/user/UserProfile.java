@@ -1,4 +1,4 @@
-package com.doublez.backend.entity;
+package com.doublez.backend.entity.user;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

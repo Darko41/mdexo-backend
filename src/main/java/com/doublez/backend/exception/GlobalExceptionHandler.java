@@ -19,7 +19,7 @@ import com.doublez.backend.response.ApiResponse;
 public class GlobalExceptionHandler {
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    // Unified handler for all custom exceptions - ADD ImageUploadException
+    // Unified handler for all custom exceptions - ADD LimitationExceededException
     @ExceptionHandler({
         ApiException.class,
         SelfDeletionException.class,
@@ -29,7 +29,9 @@ public class GlobalExceptionHandler {
         NullPointerException.class,
         ImageOperationException.class,        
         ImageValidationException.class,       
-        ImageUploadException.class           
+        ImageUploadException.class,
+        LimitationExceededException.class,    // 🆕 ADDED
+        UserNotFoundException.class           // 🆕 ADDED (if you have this)
     })
     public ResponseEntity<ApiResponse<?>> handleCustomExceptions(Exception ex) {
         HttpStatus status = determineStatus(ex);
@@ -56,6 +58,24 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(
                     ex.getMessage(),
                     sdEx.getDetails()
+                ));
+        }
+
+        // 🆕 ADD HANDLING FOR LIMITATION EXCEPTIONS
+        if (ex instanceof LimitationExceededException) {
+            return ResponseEntity.status(status)
+                .body(ApiResponse.error(
+                    ex.getMessage(),
+                    Map.of("errorType", "LIMITATION_EXCEEDED")
+                ));
+        }
+
+        // 🆕 ADD HANDLING FOR USER NOT FOUND
+        if (ex instanceof UserNotFoundException) {
+            return ResponseEntity.status(status)
+                .body(ApiResponse.error(
+                    ex.getMessage(),
+                    Map.of("errorType", "USER_NOT_FOUND")
                 ));
         }
 
@@ -96,6 +116,8 @@ public class GlobalExceptionHandler {
         if (ex instanceof ImageValidationException) return HttpStatus.BAD_REQUEST;
         if (ex instanceof ImageUploadException) return HttpStatus.INTERNAL_SERVER_ERROR; 
         if (ex instanceof ImageOperationException) return HttpStatus.INTERNAL_SERVER_ERROR;
+        if (ex instanceof LimitationExceededException) return HttpStatus.FORBIDDEN;      // 🆕 ADDED
+        if (ex instanceof UserNotFoundException) return HttpStatus.NOT_FOUND;            // 🆕 ADDED
         return HttpStatus.INTERNAL_SERVER_ERROR;
     }
 }

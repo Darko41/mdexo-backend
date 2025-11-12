@@ -1,0 +1,82 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:pro="http://www.liquibase.org/xml/ns/pro" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/pro http://www.liquibase.org/xml/ns/pro/liquibase-pro-latest.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    
+    <!-- Create user_verifications table -->
+    <changeSet author="Darko" id="1762920926336-1">
+        <createTable tableName="user_verifications">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="user_verifications_pkey"/>
+            </column>
+            <column name="document_image_path" type="VARCHAR(512)"/>
+            <column name="document_number" type="VARCHAR(255)"/>
+            <column name="document_type" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="license_expiry" type="date"/>
+            <column name="license_number" type="VARCHAR(255)"/>
+            <column name="notes" type="VARCHAR(2000)"/>
+            <column name="rejection_reason" type="VARCHAR(1000)"/>
+            <column name="reviewed_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="status" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="submitted_at" type="TIMESTAMP WITHOUT TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="reviewed_by" type="BIGINT"/>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <!-- Add foreign key constraints -->
+    <changeSet author="Darko" id="1762920926336-2">
+        <addForeignKeyConstraint baseColumnNames="user_id" baseTableName="user_verifications" 
+                               constraintName="fk_user_verifications_user" 
+                               referencedColumnNames="id" referencedTableName="users"/>
+        <addForeignKeyConstraint baseColumnNames="reviewed_by" baseTableName="user_verifications" 
+                               constraintName="fk_user_verifications_reviewer" 
+                               referencedColumnNames="id" referencedTableName="users"/>
+    </changeSet>
+
+    <!-- Add CHECK constraints for enums -->
+    <changeSet author="Darko" id="1762920926336-3">
+        <sql>
+            -- VerificationStatus enum constraint
+            ALTER TABLE user_verifications 
+            ADD CONSTRAINT chk_user_verifications_status 
+            CHECK (status IN ('PENDING', 'UNDER_REVIEW', 'APPROVED', 'REJECTED', 'EXPIRED', 'SUSPENDED'));
+            
+            -- DocumentType enum constraint  
+            ALTER TABLE user_verifications
+            ADD CONSTRAINT chk_user_verifications_document_type
+            CHECK (document_type IN ('PERSONAL_ID', 'PASSPORT', 'DRIVERS_LICENSE', 'AGENCY_LICENSE', 'AGENT_LICENSE', 'TAX_REGISTRATION', 'BUSINESS_REGISTER', 'PROPERTY_DEED', 'OTHER'));
+        </sql>
+    </changeSet>
+
+    <changeSet author="Darko" id="1762920926336-4">
+        <!-- First update any NULL values to false -->
+        <update tableName="real_estates">
+            <column name="is_featured" valueBoolean="false"/>
+            <where>is_featured IS NULL</where>
+        </update>
+        <!-- Then add NOT NULL constraint -->
+        <addNotNullConstraint tableName="real_estates" columnName="is_featured"/>
+        <!-- Finally set default value -->
+        <addDefaultValue tableName="real_estates" columnName="is_featured" defaultValueBoolean="false"/>
+    </changeSet>
+
+    <changeSet author="Darko" id="1762920926336-5">
+        <!-- First update any NULL values to FREE_USER -->
+        <update tableName="users">
+            <column name="tier" value="FREE_USER"/>
+            <where>tier IS NULL</where>
+        </update>
+        <!-- Then add NOT NULL constraint -->
+        <addNotNullConstraint tableName="users" columnName="tier"/>
+        <!-- Finally set default value -->
+        <addDefaultValue tableName="users" columnName="tier" defaultValue="FREE_USER"/>
+    </changeSet>
+
+</databaseChangeLog>

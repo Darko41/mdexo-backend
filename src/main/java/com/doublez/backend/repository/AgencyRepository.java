@@ -7,8 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import com.doublez.backend.entity.User;
 import com.doublez.backend.entity.agency.Agency;
+import com.doublez.backend.entity.user.User;
 
 @Repository
 public interface AgencyRepository extends JpaRepository<Agency, Long> {

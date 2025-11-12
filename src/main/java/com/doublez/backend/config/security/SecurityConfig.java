@@ -34,182 +34,232 @@ import org.slf4j.LoggerFactory;
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
-	
-	private final JwtTokenUtil jwtTokenUtil;
-	private final JwtAuthenticationFilter jwtAuthenticationFilter;
-	private final CustomUserDetailsService userDetailsService;
-	
-	private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
-	
-	public SecurityConfig(JwtTokenUtil jwtTokenUtil,
-			JwtAuthenticationFilter jwtAuthenticationFilter,
-			CustomUserDetailsService userDetailsService) {
+    
+    private final JwtTokenUtil jwtTokenUtil;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final CustomUserDetailsService userDetailsService;
+    
+    private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
+    
+    public SecurityConfig(JwtTokenUtil jwtTokenUtil,
+            JwtAuthenticationFilter jwtAuthenticationFilter,
+            CustomUserDetailsService userDetailsService) {
         this.jwtTokenUtil = jwtTokenUtil;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.userDetailsService = userDetailsService;
     }
 
-	@Bean
-	PasswordEncoder passwordEncoder() {
-		return new BCryptPasswordEncoder();
-	}
-	
-	@Bean
-	AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-	    return config.getAuthenticationManager();
-	}
-	
-	@Bean
-	SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-	    http
-	        .authorizeHttpRequests((authz) -> authz
-	            // 1. Public static resources - public URLs (no authentication required)
-	            .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-	            .requestMatchers(
-	            	"/",
-	            	"/dist/**",
-	                "/pages/**", 
-	                "/plugins/**",
-	                "/css/**",
-	                "/js/**",
-	                "/images/**",
-	                "/static/**",
-	                "/assets/**",
-	                "/favicon.ico",
-	                "/manifest.json",
-	                "/robots.txt",
-	                "/v3/api-docs/**",
-	                "/swagger-ui/**", 
-	                "/swagger-resources/**",
-	                "/webjars/**"
-	            ).permitAll()
-	            
-	            // 2. Public auth endpoints
-	            .requestMatchers(
-	                "/auth/**"  // Handles both regular and admin login
-	            ).permitAll()
-	            
-	            // 3. Public API endpoints (EXPLICITLY LIST ALL PUBLIC API ENDPOINTS)
-	            .requestMatchers(
-	                "/api/users/register",
-	                "/api/agencies",
-	                "/api/auth/authenticate",
-	                "/api/auth/me"
-	            ).permitAll()
-	            
-	            // 4. Public real estate API endpoints (search and get by ID)
-	            .requestMatchers(HttpMethod.GET, "/api/real-estates/search").permitAll()
-	            .requestMatchers(HttpMethod.GET, "/api/real-estates/features").permitAll()
-	            .requestMatchers(HttpMethod.GET, "/api/real-estates/{propertyId}").permitAll()
-	            .requestMatchers(HttpMethod.GET, "/api/real-estates/**").permitAll()
-	            
-	            // 5. Protected real estate endpoints (JWT authentication)
-	            .requestMatchers(HttpMethod.POST, "/api/real-estates/**").authenticated()
-	            .requestMatchers(HttpMethod.PUT, "/api/real-estates/**").authenticated() 
-	            .requestMatchers(HttpMethod.DELETE, "/api/real-estates/**").authenticated()
-	            
-	            // 6. Admin API endpoints (JWT + ROLE_ADMIN)
-	            .requestMatchers("/api/admin/**").hasRole("ADMIN")
-	            
-	            // 7. Admin dashboard endpoints (Session + ROLE_ADMIN)  
-	            .requestMatchers("/admin/**").hasRole("ADMIN")
-	            
-	            // 8. General API protection (catch-all for other API endpoints)
-	            .requestMatchers("/api/**").authenticated()
-	            
-	            // 9. Any other request must be authenticated
-	            .anyRequest().authenticated()
-	        )
-	        // Form login for both regular users and admin (session-based)
-	        .formLogin(form -> form
-	            .loginPage("/auth/login")
-	            .loginProcessingUrl("/auth/login") 
-	            .defaultSuccessUrl("/auth/success", true) // Let controller handle redirect
-	            .failureUrl("/auth/login?error=true")
-	            .permitAll()
-	        )
-	        // Logout for both regular users and admin (session-based)
-	        .logout(logout -> logout
-	            .logoutUrl("/auth/logout")
-	            .logoutSuccessUrl("/auth/login?logout=true")
-	            .invalidateHttpSession(true)
-	            .deleteCookies("JSESSIONID")
-	            .permitAll()
-	        )
-	        .sessionManagement(sess -> sess
-	            .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-	            .invalidSessionUrl("/auth/login?invalid-session=true")
-	        )
-	        // JWT filter for API requests
-	        .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-	        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-	        .csrf(csrf -> csrf
-	                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-	                // Disable CSRF for API endpoints (JWT protected)
-	                .ignoringRequestMatchers(
-	                    "/api/**",
-	                    "/auth/authenticate",
-	                    "/auth/register"
-	                )
-	            )
-	        .exceptionHandling(ex -> ex
-	            .authenticationEntryPoint((request, response, authException) -> {
-	                String requestUri = request.getRequestURI();
-	                if (requestUri.startsWith("/api/")) {
-	                    // API calls get 401 (JWT)
-	                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
-	                } else {
-	                    // Web pages get redirect to login (Session)
-	                    // For admin pages, add admin flag to redirect
-	                    if (requestUri.startsWith("/admin/")) {
-	                        response.sendRedirect("/auth/login?admin=true");
-	                    } else {
-	                        response.sendRedirect("/auth/login");
-	                    }
-	                }
-	            })
-	        );
-	    
-	    return http.build();
-	}
-	
-	@Bean
-	CorsConfigurationSource corsConfigurationSource() {
-	    CorsConfiguration configuration = new CorsConfiguration();
-	    configuration.setAllowedOriginPatterns(Arrays.asList(
-	        "http://localhost:5173", 
-	        "https://dwellia.rs",
-	        "https://www.dwellia.rs",
-	        "https://api.dwellia.rs",
-	        "http://localhost:8080"
-	    ));
-	    
-	    configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-	    configuration.setAllowedHeaders(Arrays.asList("*"));
-	    configuration.setAllowCredentials(true);
-	    configuration.setExposedHeaders(Arrays.asList("Set-Cookie", "Authorization"));
-	    configuration.setMaxAge(3600L);
-	    
-	    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-	    source.registerCorsConfiguration("/**", configuration);
-	    return source;
-	}
-	
-	@Bean
+    @Bean
+    PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+    
+    @Bean
+    AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
+    }
+    
+    @Bean
+    SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+            .authorizeHttpRequests((authz) -> authz
+                // Public static resources - public URLs (no authentication required)
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers(
+                    "/",
+                    "/dist/**",
+                    "/pages/**", 
+                    "/plugins/**",
+                    "/css/**",
+                    "/js/**",
+                    "/images/**",
+                    "/static/**",
+                    "/assets/**",
+                    "/favicon.ico",
+                    "/manifest.json",
+                    "/robots.txt",
+                    "/v3/api-docs/**",
+                    "/swagger-ui/**", 
+                    "/swagger-resources/**",
+                    "/webjars/**"
+                ).permitAll()
+                
+                // Public auth endpoints
+                .requestMatchers(
+                    "/auth/**"  // Handles both regular and admin login
+                ).permitAll()
+                
+                // Public API endpoints (EXPLICITLY LIST ALL PUBLIC API ENDPOINTS)
+                .requestMatchers(
+                    "/api/users/register",
+                    "/api/agencies",
+                    "/api/auth/authenticate",
+                    "/api/auth/me"
+                ).permitAll()
+                
+                // PUBLIC VERIFICATION ENDPOINTS
+                .requestMatchers(HttpMethod.GET, "/api/verification/public/user/**").permitAll()
+                
+                // Public real estate API endpoints (search and get by ID)
+                .requestMatchers(HttpMethod.GET, "/api/real-estates/search").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/real-estates/features").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/real-estates/{propertyId}").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/real-estates/**").permitAll()
+                
+                // PUBLIC USAGE TRACKING ENDPOINTS
+                .requestMatchers(HttpMethod.GET, "/api/usage/**").authenticated() // Users can check their own usage
+                .requestMatchers(HttpMethod.GET, "/api/usage-tracking/**").authenticated() // Users can check their own usage
+                
+                // Protected real estate endpoints (JWT authentication)
+                .requestMatchers(HttpMethod.POST, "/api/real-estates/**").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/api/real-estates/**").authenticated() 
+                .requestMatchers(HttpMethod.DELETE, "/api/real-estates/**").authenticated()
+                
+                // VERIFICATION ENDPOINTS - USER ROLE
+                .requestMatchers(HttpMethod.POST, "/api/verification/submit").hasRole("USER")
+                .requestMatchers(HttpMethod.GET, "/api/verification/my-status").hasRole("USER")
+                .requestMatchers(HttpMethod.GET, "/api/verification/my-history").hasRole("USER")
+                .requestMatchers(HttpMethod.GET, "/api/verification/can-apply/**").hasRole("USER")
+                
+                // VERIFICATION ENDPOINTS - ADMIN ROLE
+                .requestMatchers(HttpMethod.GET, "/api/verification/admin/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/verification/admin/**").hasRole("ADMIN")
+                
+                // INVESTOR ENDPOINTS
+                .requestMatchers(HttpMethod.POST, "/api/investor/apply").hasRole("USER")
+                .requestMatchers(HttpMethod.PUT, "/api/investor/profile").hasRole("INVESTOR")
+                .requestMatchers(HttpMethod.GET, "/api/investor/profile").hasRole("INVESTOR")
+                
+                // USER PROMOTION ENDPOINTS
+                .requestMatchers(HttpMethod.POST, "/api/users/request-agent-promotion").hasRole("USER")
+                .requestMatchers(HttpMethod.POST, "/api/users/request-investor-promotion").hasRole("USER")
+                
+                // AGENCY ENDPOINTS - AGENT ROLE
+                .requestMatchers(HttpMethod.POST, "/api/agencies/{agencyId}/apply").hasRole("AGENT")
+                .requestMatchers(HttpMethod.GET, "/api/agencies/my-memberships").hasRole("AGENT")
+                .requestMatchers(HttpMethod.DELETE, "/api/agencies/memberships/{membershipId}").hasRole("AGENT")
+                
+                // AGENCY ENDPOINTS - AGENCY_ADMIN ROLE
+                .requestMatchers(HttpMethod.POST, "/api/agencies/memberships/{membershipId}/approve").hasRole("AGENCY_ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/agencies/{agencyId}/pending-memberships").hasRole("AGENCY_ADMIN")
+                
+                // AGENCY ENDPOINTS - ADMIN ROLE (Promotion endpoints)
+                .requestMatchers(HttpMethod.POST, "/api/agencies/promote/agent").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/agencies/promote/agency-admin").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/agencies/demote/agent").hasRole("ADMIN")
+                
+                // Admin API endpoints (JWT + ROLE_ADMIN)
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                
+                // Admin dashboard endpoints (Session + ROLE_ADMIN)  
+                .requestMatchers("/admin/**").hasRole("ADMIN")
+                
+                // General API protection (catch-all for other API endpoints)
+                .requestMatchers("/api/**").authenticated()
+                
+                // Any other request must be authenticated
+                .anyRequest().authenticated()
+            )
+            // Form login for both regular users and admin (session-based)
+            .formLogin(form -> form
+                .loginPage("/auth/login")
+                .loginProcessingUrl("/auth/login") 
+                .defaultSuccessUrl("/auth/success", true) // Let controller handle redirect
+                .failureUrl("/auth/login?error=true")
+                .permitAll()
+            )
+            // Logout for both regular users and admin (session-based)
+            .logout(logout -> logout
+                .logoutUrl("/auth/logout")
+                .logoutSuccessUrl("/auth/login?logout=true")
+                .invalidateHttpSession(true)
+                .deleteCookies("JSESSIONID")
+                .permitAll()
+            )
+            .sessionManagement(sess -> sess
+                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                .invalidSessionUrl("/auth/login?invalid-session=true")
+            )
+            // JWT filter for API requests
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .csrf(csrf -> csrf
+                    .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                    // Disable CSRF for API endpoints (JWT protected)
+                    .ignoringRequestMatchers(
+                        "/api/**",
+                        "/auth/authenticate",
+                        "/auth/register"
+                    )
+                )
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint((request, response, authException) -> {
+                    String requestUri = request.getRequestURI();
+                    if (requestUri.startsWith("/api/")) {
+                        // API calls get 401 (JWT)
+                        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+                    } else {
+                        // Web pages get redirect to login (Session)
+                        // For admin pages, add admin flag to redirect
+                        if (requestUri.startsWith("/admin/")) {
+                            response.sendRedirect("/auth/login?admin=true");
+                        } else {
+                            response.sendRedirect("/auth/login");
+                        }
+                    }
+                })
+            );
+        
+        return http.build();
+    }
+    
+    @Bean
+    CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOriginPatterns(Arrays.asList(
+            "http://localhost:5173", 
+            "https://dwellia.rs",
+            "https://www.dwellia.rs",
+            "https://api.dwellia.rs",
+            "http://localhost:8080"
+        ));
+        
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowCredentials(true);
+        configuration.setExposedHeaders(Arrays.asList("Set-Cookie", "Authorization"));
+        configuration.setMaxAge(3600L);
+        
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
+    
+    @Bean
     AuthorizationManager<RequestAuthorizationContext> authorizationManager() {
         return (authentication, context) -> {
             if (authentication.get() == null) {
                 return new AuthorizationDecision(false);
             }
             
-            // Check roles with hierarchy logic
+            // 🆕 UPDATED ROLE HIERARCHY WITH NEW ROLES
             if (authentication.get().getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
                 return new AuthorizationDecision(true);
             }
             
             if (authentication.get().getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_AGENCY_ADMIN"))) {
+                return new AuthorizationDecision(true);
+            }
+            
+            if (authentication.get().getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_AGENT"))) {
+                return new AuthorizationDecision(true);
+            }
+            
+            if (authentication.get().getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_INVESTOR"))) {
                 return new AuthorizationDecision(true);
             }
             
@@ -219,6 +269,4 @@ public class SecurityConfig {
             );
         };
     }
-	
-
 }

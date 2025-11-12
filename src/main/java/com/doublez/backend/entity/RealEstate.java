@@ -2,6 +2,7 @@ package com.doublez.backend.entity;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Year;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -10,6 +11,7 @@ import java.util.Set;
 
 import org.springframework.format.annotation.NumberFormat;
 
+import com.doublez.backend.entity.user.User;
 import com.doublez.backend.enums.HeatingType;
 import com.doublez.backend.enums.ListingType;
 import com.doublez.backend.enums.PropertyCondition;
@@ -40,6 +42,8 @@ import jakarta.validation.constraints.Size;
 @Entity
 @Table(name = "real_estates")
 public class RealEstate {
+	
+	// FIELDS
 	
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -109,6 +113,15 @@ public class RealEstate {
 	@Column(name = "updated_at")
 	private LocalDate updatedAt;
 	
+	@Column(name = "is_featured", nullable = false) // 🆕 TEMPORARY: nullable = true
+    private Boolean isFeatured = false;
+    
+	@Column(name = "featured_until", nullable = false) // 🆕 TEMPORARY: nullable = true
+    private LocalDateTime featuredUntil;
+    
+	@Column(name = "featured_at", nullable = false) // 🆕 TEMPORARY: nullable = true
+    private LocalDateTime featuredAt;
+	
 	@PrePersist
 	public void prePersist() {
 		this.createdAt = LocalDate.now();
@@ -153,7 +166,6 @@ public class RealEstate {
     @Column(name = "municipality", length = 100)
     private String municipality;
     
-    // 🆕 NEW: ENUM fields
     @Enumerated(EnumType.STRING)
     @Column(name = "heating_type", length = 50)
     private HeatingType heatingType;
@@ -174,11 +186,35 @@ public class RealEstate {
 	 public boolean isAssignedToAgent(User agent) {
 	        return this.assignedAgents.contains(agent);
 	    }
-	
+	// METHODS
 	// GETTERS AND SETTERS
 
 	public Long getPropertyId() {
 		return propertyId;
+	}
+
+	public Boolean getIsFeatured() {
+		return isFeatured;
+	}
+
+	public void setIsFeatured(Boolean isFeatured) {
+		this.isFeatured = isFeatured;
+	}
+
+	public LocalDateTime getFeaturedUntil() {
+		return featuredUntil;
+	}
+
+	public void setFeaturedUntil(LocalDateTime featuredUntil) {
+		this.featuredUntil = featuredUntil;
+	}
+
+	public LocalDateTime getFeaturedAt() {
+		return featuredAt;
+	}
+
+	public void setFeaturedAt(LocalDateTime featuredAt) {
+		this.featuredAt = featuredAt;
 	}
 
 	public Set<User> getAssignedAgents() {
@@ -385,6 +421,9 @@ public class RealEstate {
 		this.propertyCondition = propertyCondition;
 	}
 	
+	
+	// Helper methods
+	
 	public String getFloorDisplay() {
         if (floor == null || totalFloors == null) return "N/A";
         
@@ -413,6 +452,23 @@ public class RealEstate {
     public Integer getPropertyAge() {
         if (constructionYear == null) return null;
         return Year.now().getValue() - constructionYear;
+    }
+    
+    public boolean isCurrentlyFeatured() {
+        if (!isFeatured) {
+            return false;
+        }
+        if (featuredUntil == null) {
+            return true; // Permanent featuring
+        }
+        return LocalDateTime.now().isBefore(featuredUntil);
+    }
+    
+    public void setFeatured(boolean featured, Integer featuredDays) {
+        this.isFeatured = featured;
+        this.featuredAt = featured ? LocalDateTime.now() : null;
+        this.featuredUntil = featured && featuredDays != null ? 
+            LocalDateTime.now().plusDays(featuredDays) : null;
     }
 		
 }

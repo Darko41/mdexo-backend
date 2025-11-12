@@ -1,0 +1,107 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:pro="http://www.liquibase.org/xml/ns/pro" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/pro http://www.liquibase.org/xml/ns/pro/liquibase-pro-latest.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet author="Darko (generated)" id="1762913026132-1">
+        <createTable tableName="investor_profiles">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="investor_profiles_pkey"/>
+            </column>
+            <column name="company_name" type="VARCHAR(255)"/>
+            <column name="contact_person" type="VARCHAR(255)"/>
+            <column name="investment_focus" type="VARCHAR(500)"/>
+            <column name="investor_type" type="VARCHAR(255)"/>
+            <column name="max_investment_amount" type="numeric(38, 2)"/>
+            <column name="mb" type="VARCHAR(8)"/>
+            <column name="min_investment_amount" type="numeric(38, 2)"/>
+            <column name="phone_number" type="VARCHAR(255)"/>
+            <column name="pib" type="VARCHAR(9)"/>
+            <column name="portfolio_size" type="INTEGER"/>
+            <column name="preferred_locations" type="VARCHAR(1000)"/>
+            <column name="website" type="VARCHAR(255)"/>
+            <column name="years_in_business" type="INTEGER"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Darko (generated)" id="1762913026132-2">
+        <createTable tableName="user_limitations">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="user_limitations_pkey"/>
+            </column>
+            <column name="can_feature_listings" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="max_featured_listings" type="INTEGER"/>
+            <column name="max_images" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="max_images_per_listing" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="max_listings" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="price_per_month" type="numeric(38, 2)"/>
+            <column name="tier" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Darko (generated)" id="1762913026132-3">
+        <addUniqueConstraint columnNames="tier" constraintName="ukntnqo6nbs803vt1v92apqcocw" tableName="user_limitations"/>
+    </changeSet>
+    <changeSet author="Darko (generated)" id="1762913026132-4">
+        <addColumn tableName="users">
+            <column name="tier" type="VARCHAR(255)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="Darko (generated)" id="1762913026132-5">
+        <addColumn tableName="real_estates">
+            <column name="featured_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="Darko (generated)" id="1762913026132-6">
+        <addColumn tableName="real_estates">
+            <column name="featured_until" type="TIMESTAMP WITHOUT TIME ZONE"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="Darko (generated)" id="1762913026132-7">
+        <addColumn tableName="real_estates">
+            <column name="is_featured" type="BOOLEAN"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="Darko (generated)" id="1762913026132-8">
+        <addForeignKeyConstraint baseColumnNames="id" baseTableName="investor_profiles" constraintName="fk3567ryo0y5f5vr6jrrdq36jal" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="users" validate="true"/>
+    </changeSet>
+    
+    
+	<!-- Add default values and NOT NULL constraints -->
+	<changeSet author="Darko" id="1762913026132-9">
+    	<!-- First: Update the 6 NULL records -->
+    	<update tableName="users">
+        	<column name="tier" value="FREE_USER"/>
+        	<where>tier IS NULL</where>
+    	</update>
+    	<!-- Second: Add NOT NULL constraint -->
+    	<addNotNullConstraint tableName="users" columnName="tier"/>
+    	<!-- Third: Set default for future inserts -->
+    	<addDefaultValue tableName="users" columnName="tier" defaultValue="FREE_USER"/>
+	</changeSet>
+	
+	<changeSet author="Darko" id="1762913026132-10">
+	    <update tableName="real_estates">
+	        <column name="is_featured" valueBoolean="false"/>
+	        <where>is_featured IS NULL</where>
+	    </update>
+	    <addNotNullConstraint tableName="real_estates" columnName="is_featured"/>
+	    <addDefaultValue tableName="real_estates" columnName="is_featured" defaultValueBoolean="false"/>
+	</changeSet>
+	
+	<!-- Add CHECK constraint for tier enum using SQL -->
+	<changeSet author="Darko" id="1762913026132-11">
+	    <sql>
+	        ALTER TABLE users 
+	        ADD CONSTRAINT chk_users_tier 
+	        CHECK (tier IN ('FREE_USER','BASIC_USER','PREMIUM_USER','FREE_AGENT','BASIC_AGENT','PREMIUM_AGENT','AGENCY_BASIC','AGENCY_PREMIUM','FREE_INVESTOR','BASIC_INVESTOR','PREMIUM_INVESTOR','ADMIN'));
+	    </sql>
+	</changeSet>
+	    
+    
+</databaseChangeLog>

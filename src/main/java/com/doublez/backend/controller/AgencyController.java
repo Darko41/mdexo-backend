@@ -136,18 +136,6 @@ public class AgencyController {
 	    }
 	}
 
-	// Create this DTO class
-	public static class PromoteRequest {
-	    private Long userId;
-	    private AgencyDTO.Create agencyDto;
-	    
-	    // getters and setters
-	    public Long getUserId() { return userId; }
-	    public void setUserId(Long userId) { this.userId = userId; }
-	    public AgencyDTO.Create getAgencyDto() { return agencyDto; }
-	    public void setAgencyDto(AgencyDTO.Create agencyDto) { this.agencyDto = agencyDto; }
-	}
-
 	// Demote Endpoint
 	@PostMapping("/demote/agent")
 	@PreAuthorize("hasRole('ADMIN')")

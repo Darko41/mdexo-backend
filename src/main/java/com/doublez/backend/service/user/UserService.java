@@ -17,10 +17,10 @@ import com.doublez.backend.dto.user.UserDTO;
 import com.doublez.backend.dto.user.UserProfileDTO;
 import com.doublez.backend.entity.RealEstate;
 import com.doublez.backend.entity.Role;
-import com.doublez.backend.entity.User;
-import com.doublez.backend.entity.UserProfile;
 import com.doublez.backend.entity.agency.Agency;
 import com.doublez.backend.entity.agency.AgencyMembership;
+import com.doublez.backend.entity.user.User;
+import com.doublez.backend.entity.user.UserProfile;
 import com.doublez.backend.exception.CustomAuthenticationException;
 import com.doublez.backend.exception.EmailExistsException;
 import com.doublez.backend.exception.IllegalOperationException;
@@ -32,6 +32,7 @@ import com.doublez.backend.repository.AgencyRepository;
 import com.doublez.backend.repository.RealEstateRepository;
 import com.doublez.backend.repository.RoleRepository;
 import com.doublez.backend.repository.UserRepository;
+import com.doublez.backend.service.usage.TrialService;
 
 import jakarta.transaction.Transactional;	// TODO check if another package is required
 
@@ -47,6 +48,7 @@ public class UserService {
     private final RealEstateRepository realEstateRepository;
     private final AgencyRepository agencyRepository;
     private final AgencyMembershipRepository membershipRepository;
+    private final TrialService trialService;
 
     public UserService(UserRepository userRepository,
                      PasswordEncoder passwordEncoder,
@@ -54,7 +56,8 @@ public class UserService {
                      UserMapper userMapper,
                      RealEstateRepository realEstateRepository,
                      AgencyRepository agencyRepository,
-                     AgencyMembershipRepository membershipRepository) {
+                     AgencyMembershipRepository membershipRepository,
+                     TrialService trialService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.roleRepository = roleRepository;
@@ -62,6 +65,7 @@ public class UserService {
         this.realEstateRepository = realEstateRepository;
         this.agencyRepository = agencyRepository;
         this.membershipRepository = membershipRepository;
+        this.trialService = trialService;
     }
 
     // Consolidated user registration
@@ -93,6 +97,12 @@ public class UserService {
         }
 
         User savedUser = userRepository.save(user);
+        
+        // 🆕 START FREE TRIAL for non-admin registrations
+        if (!isAdminOperation) {
+            trialService.startTrial(savedUser);
+        }
+        
         return userMapper.toDTO(savedUser);
     }
 
@@ -250,6 +260,10 @@ public class UserService {
 
     public Long getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new CustomAuthenticationException("User not authenticated");
+        }
+        
         String email = authentication.getName();
         return userRepository.findByEmail(email)
             .orElseThrow(() -> new UsernameNotFoundException("User '" + email + "' not found"))
@@ -325,5 +339,12 @@ public class UserService {
         
         // Admin can delete any user, so we pass isAdmin = true
         deleteUserWithCascade(userId, true);
+    }
+    
+    public boolean isCurrentUserAdmin() {
+        Long currentUserId = getCurrentUserId();
+        User currentUser = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new UserNotFoundException(currentUserId));
+        return isAdmin(currentUser);
     }
 }

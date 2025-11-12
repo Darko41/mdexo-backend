@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.doublez.backend.config.security.JwtTokenUtil;
 import com.doublez.backend.dto.CustomUserDetails;
-import com.doublez.backend.entity.User;
+import com.doublez.backend.entity.user.User;
 import com.doublez.backend.service.user.UserService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

@@ -13,7 +13,7 @@ import com.doublez.backend.dto.realestate.RealEstateDTO;
 import com.doublez.backend.dto.realestate.RealEstateResponseDTO;
 import com.doublez.backend.dto.realestate.RealEstateUpdateDTO;
 import com.doublez.backend.entity.RealEstate;
-import com.doublez.backend.entity.User;
+import com.doublez.backend.entity.user.User;
 import com.doublez.backend.repository.UserRepository;
 import com.doublez.backend.request.RealEstateRequest;
 

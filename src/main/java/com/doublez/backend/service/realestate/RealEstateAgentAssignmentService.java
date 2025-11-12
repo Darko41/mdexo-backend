@@ -4,7 +4,7 @@ import org.springframework.stereotype.Service;
 
 import com.doublez.backend.entity.RealEstate;
 import com.doublez.backend.entity.Role;
-import com.doublez.backend.entity.User;
+import com.doublez.backend.entity.user.User;
 import com.doublez.backend.exception.ResourceNotFoundException;
 import com.doublez.backend.repository.RealEstateRepository;
 import com.doublez.backend.repository.UserRepository;
