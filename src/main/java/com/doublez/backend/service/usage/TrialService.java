@@ -16,26 +16,28 @@ import com.doublez.backend.entity.user.UserLimitation;
 import com.doublez.backend.enums.UserTier;
 import com.doublez.backend.exception.UserNotFoundException;
 import com.doublez.backend.repository.UserRepository;
-import com.doublez.backend.service.email.EmailService;
+import com.doublez.backend.service.email.ResendEmailService;
 import com.doublez.backend.service.user.LimitationService;
 
 import jakarta.transaction.Transactional;
 
 @Service
-//@Transactional
+@Transactional
 public class TrialService {
 
     private static final Logger logger = LoggerFactory.getLogger(TrialService.class);
 
     private final UserRepository userRepository;
     private final LimitationService limitationService;
-    private final EmailService emailService;
+    private final ResendEmailService resendEmailService;
     private final int TRIAL_MONTHS = 6;
 
-    public TrialService(UserRepository userRepository, LimitationService limitationService, EmailService emailService) {
+    public TrialService(UserRepository userRepository, 
+                       LimitationService limitationService, 
+                       ResendEmailService resendEmailService) {
         this.userRepository = userRepository;
         this.limitationService = limitationService;
-        this.emailService = emailService;
+        this.resendEmailService = resendEmailService;
     }
 
     // A method to get effective limitations considering trial status
@@ -89,13 +91,13 @@ public class TrialService {
 
         userRepository.save(user);
 
-        // Send welcome email with trial information - WITH BETTER ERROR HANDLING
+        // Send welcome email with Resend
         try {
-            emailService.sendTrialStartedEmail(user.getEmail(), getUserDisplayName(user), TRIAL_MONTHS);
-            logger.info("Trial started email sent successfully to: {}", user.getEmail());
+            resendEmailService.sendTrialStartedEmail(user.getEmail(), getUserDisplayName(user), TRIAL_MONTHS);
+            logger.info("✅ Resend trial email sent successfully to: {}", user.getEmail());
         } catch (Exception e) {
-            logger.warn("Failed to send trial started email to {}: {}", user.getEmail(), e.getMessage());
-            // Don't re-throw - user registration should still succeed
+            logger.warn("⚠️ Failed to send trial email via Resend to {}: {}", user.getEmail(), e.getMessage());
+            // Don't fail registration if email fails
         }
 
         logger.info("Trial started for user: {} until {}", user.getEmail(), user.getTrialEndDate());
@@ -156,7 +158,7 @@ public class TrialService {
         userRepository.save(user);
 
         try {
-            emailService.sendTrialExtendedEmail(user.getEmail(), getUserDisplayName(user), additionalMonths);
+            resendEmailService.sendTrialExtendedEmail(user.getEmail(), getUserDisplayName(user), additionalMonths);
         } catch (Exception e) {
             logger.warn("Failed to send trial extended email: {}", e.getMessage());
         }
@@ -214,7 +216,7 @@ public class TrialService {
 
     private void sendTrialExpirationWarning(User user, int daysRemaining) {
         try {
-            emailService.sendTrialExpiringEmail(user.getEmail(), getUserDisplayName(user), daysRemaining);
+            resendEmailService.sendTrialExpiringEmail(user.getEmail(), getUserDisplayName(user), daysRemaining);
             logger.info("Trial expiration warning sent to user: {} ({} days remaining)", user.getEmail(),
                     daysRemaining);
         } catch (Exception e) {
@@ -241,7 +243,7 @@ public class TrialService {
 
         // Send expiration notification
         try {
-            emailService.sendTrialExpiredEmail(user.getEmail(), getUserDisplayName(user), newTier);
+            resendEmailService.sendTrialExpiredEmail(user.getEmail(), getUserDisplayName(user), newTier);
         } catch (Exception e) {
             logger.warn("Failed to send trial expired email: {}", e.getMessage());
         }
