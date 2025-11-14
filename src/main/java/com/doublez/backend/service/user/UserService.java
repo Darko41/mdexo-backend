@@ -21,6 +21,7 @@ import com.doublez.backend.entity.agency.Agency;
 import com.doublez.backend.entity.agency.AgencyMembership;
 import com.doublez.backend.entity.user.User;
 import com.doublez.backend.entity.user.UserProfile;
+import com.doublez.backend.enums.UserTier;
 import com.doublez.backend.exception.CustomAuthenticationException;
 import com.doublez.backend.exception.EmailExistsException;
 import com.doublez.backend.exception.IllegalOperationException;
@@ -79,6 +80,7 @@ public class UserService {
         User user = new User();
         user.setEmail(createDto.getEmail());
         user.setPassword(passwordEncoder.encode(createDto.getPassword()));
+        user.setTier(createDto.getTier()); // Make sure this is set
         
         // Role assignment logic
         if (isAdminOperation) {
@@ -98,9 +100,15 @@ public class UserService {
 
         User savedUser = userRepository.save(user);
         
-        // 🆕 START FREE TRIAL for non-admin registrations
+        // 🆕 START FREE TRIAL for non-admin registrations - WITH ERROR HANDLING
         if (!isAdminOperation) {
-            trialService.startTrial(savedUser);
+            try {
+                trialService.startTrial(savedUser);
+            } catch (Exception e) {
+                // Log the error but don't fail the registration
+                System.err.println("⚠️ Trial service failed but registration completed: " + e.getMessage());
+                // User is still registered, just trial email failed
+            }
         }
         
         return userMapper.toDTO(savedUser);
@@ -155,17 +163,6 @@ public class UserService {
         return userRepository.findAll().stream()
                 .map(userMapper::toDTO)
                 .collect(Collectors.toList());
-    }
-
-    // Simple registration for public use
-    public String simpleRegister(String email, String password) {
-        UserDTO.Create createDto = new UserDTO.Create();
-        createDto.setEmail(email);
-        createDto.setPassword(password);
-        createDto.setRoles(List.of("ROLE_USER"));
-        
-        registerUser(createDto, false);
-        return "User registered successfully!";
     }
 
     // Delete user with cascade deletion - ALLOWS SELF-DELETION FOR EVERYONE

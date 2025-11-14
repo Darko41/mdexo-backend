@@ -2,6 +2,7 @@ package com.doublez.backend.config.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authorization.AuthorizationDecision;
@@ -60,33 +61,15 @@ public class SecurityConfig {
     }
     
     @Bean
-    SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    @Order(1) // Higher priority - processes API requests first
+    SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
         http
+            .securityMatcher("/api/**", "/public/**") // ONLY match API and public paths
             .authorizeHttpRequests((authz) -> authz
                 // Public static resources - public URLs (no authentication required)
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers(
-                    "/",
-                    "/dist/**",
-                    "/pages/**", 
-                    "/plugins/**",
-                    "/css/**",
-                    "/js/**",
-                    "/images/**",
-                    "/static/**",
-                    "/assets/**",
-                    "/favicon.ico",
-                    "/manifest.json",
-                    "/robots.txt",
-                    "/v3/api-docs/**",
-                    "/swagger-ui/**", 
-                    "/swagger-resources/**",
-                    "/webjars/**"
-                ).permitAll()
-                
-                // Public auth endpoints
-                .requestMatchers(
-                    "/auth/**"  // Handles both regular and admin login
+                    "/api/debug/**"           // EmailDebugController
                 ).permitAll()
                 
                 // Public API endpoints (EXPLICITLY LIST ALL PUBLIC API ENDPOINTS)
@@ -151,24 +134,75 @@ public class SecurityConfig {
                 // Admin API endpoints (JWT + ROLE_ADMIN)
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 
-                // Admin dashboard endpoints (Session + ROLE_ADMIN)  
-                .requestMatchers("/admin/**").hasRole("ADMIN")
-                
                 // General API protection (catch-all for other API endpoints)
                 .requestMatchers("/api/**").authenticated()
+            )
+            // DISABLE form login for API paths
+            .formLogin(form -> form.disable())
+            .httpBasic(basic -> basic.disable())
+            .sessionManagement(sess -> sess
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // STATELESS for API
+            )
+            // JWT filter for API requests
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .csrf(csrf -> csrf.disable()) // Disable CSRF for API
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint((request, response, authException) -> {
+                    // API calls always get 401 JSON
+                    response.setContentType("application/json");
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.getWriter().write("{\"error\":\"Unauthorized\",\"message\":\"Authentication required\"}");
+                })
+            );
+        
+        return http.build();
+    }
+
+    // FILTER CHAIN 2: TEMPLATE ENDPOINTS (Session-based)
+    @Bean
+    @Order(2) // Lower priority - handles everything else
+    SecurityFilterChain templateFilterChain(HttpSecurity http) throws Exception {
+        http
+            .securityMatcher("/**") // Match everything else (templates, static resources, etc.)
+            .authorizeHttpRequests((authz) -> authz
+                // Public static resources
+                .requestMatchers(
+                    "/",
+                    "/dist/**",
+                    "/pages/**", 
+                    "/plugins/**",
+                    "/css/**",
+                    "/js/**",
+                    "/images/**",
+                    "/static/**",
+                    "/assets/**",
+                    "/favicon.ico",
+                    "/manifest.json",
+                    "/robots.txt",
+                    "/v3/api-docs/**",
+                    "/swagger-ui/**", 
+                    "/swagger-resources/**",
+                    "/webjars/**"
+                ).permitAll()
+                
+                // Public auth endpoints
+                .requestMatchers("/auth/**").permitAll()
+                
+                // Admin dashboard endpoints (Session + ROLE_ADMIN)  
+                .requestMatchers("/admin/**").hasRole("ADMIN")
                 
                 // Any other request must be authenticated
                 .anyRequest().authenticated()
             )
-            // Form login for both regular users and admin (session-based)
+            // Form login for templates
             .formLogin(form -> form
                 .loginPage("/auth/login")
                 .loginProcessingUrl("/auth/login") 
-                .defaultSuccessUrl("/auth/success", true) // Let controller handle redirect
+                .defaultSuccessUrl("/auth/success", true)
                 .failureUrl("/auth/login?error=true")
                 .permitAll()
             )
-            // Logout for both regular users and admin (session-based)
             .logout(logout -> logout
                 .logoutUrl("/auth/logout")
                 .logoutSuccessUrl("/auth/login?logout=true")
@@ -177,35 +211,19 @@ public class SecurityConfig {
                 .permitAll()
             )
             .sessionManagement(sess -> sess
-                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                .invalidSessionUrl("/auth/login?invalid-session=true")
+                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED) // SESSIONS for templates
             )
-            // JWT filter for API requests
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             .csrf(csrf -> csrf
-                    .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                    // Disable CSRF for API endpoints (JWT protected)
-                    .ignoringRequestMatchers(
-                        "/api/**",
-                        "/auth/authenticate",
-                        "/auth/register"
-                    )
-                )
+                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+            )
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint((request, response, authException) -> {
+                    // Web pages get redirect to login (Session)
                     String requestUri = request.getRequestURI();
-                    if (requestUri.startsWith("/api/")) {
-                        // API calls get 401 (JWT)
-                        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+                    if (requestUri.startsWith("/admin/")) {
+                        response.sendRedirect("/auth/login?admin=true");
                     } else {
-                        // Web pages get redirect to login (Session)
-                        // For admin pages, add admin flag to redirect
-                        if (requestUri.startsWith("/admin/")) {
-                            response.sendRedirect("/auth/login?admin=true");
-                        } else {
-                            response.sendRedirect("/auth/login");
-                        }
+                        response.sendRedirect("/auth/login");
                     }
                 })
             );

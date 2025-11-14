@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.doublez.backend.dto.InvestorProfileDTO;
 import com.doublez.backend.dto.user.UserDTO;
-import com.doublez.backend.dto.user.UserRegistrationDTO;
+import com.doublez.backend.enums.UserTier;
 import com.doublez.backend.exception.EmailExistsException;
 import com.doublez.backend.exception.IllegalOperationException;
 import com.doublez.backend.exception.UserNotFoundException;
@@ -56,16 +56,20 @@ public class UserApiController {
         return ResponseEntity.ok(user);
     }
     
-    // SIMPLE REGISTRATION: For public user registration
+    // For public user registration
     @PostMapping("/register")
-    public ResponseEntity<String> registerUser(@Valid @RequestBody UserRegistrationDTO registrationDto) {
+    public ResponseEntity<UserDTO> registerUser(@Valid @RequestBody UserDTO.Create createDto) {
         try {
-            String result = userService.simpleRegister(registrationDto.getEmail(), registrationDto.getPassword());
-            return ResponseEntity.ok(result);
+            // Override any roles/tier for public registration
+            createDto.setRoles(List.of("ROLE_USER"));
+            createDto.setTier(UserTier.FREE_USER);
+            
+            UserDTO user = userService.registerUser(createDto, false);
+            return ResponseEntity.status(HttpStatus.CREATED).body(user);
         } catch (EmailExistsException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Registration failed: " + e.getMessage());
+            return ResponseEntity.badRequest().build();
         }
     }
     

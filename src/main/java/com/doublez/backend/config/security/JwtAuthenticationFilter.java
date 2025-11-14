@@ -29,47 +29,36 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenUtil jwtTokenUtil;
     private final UserDetailsService userDetailsService;
-
     private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
-    // Add all public API endpoints that should skip JWT authentication
+    // KEEP YOUR EXISTING EXCLUDED_PATHS
     private static final List<String> EXCLUDED_PATHS = Arrays.asList(
-    	    // Auth endpoints
-    	    "/api/auth/authenticate",
-    	    
-    	    // User registration
-    	    "/api/users/register",
-    	    "/api/users/check-email/*",
-    	    
-    	    // Public real estate browsing
-    	    "/api/real-estates/search",
-    	    "/api/real-estates/features",
-    	    "/api/real-estates/*",
-    	    "/api/real-estates/**/similar",
-    	    
-    	    // Public agency browsing ONLY
-    	    "/api/agencies",           // GET all agencies
-    	    "/api/agencies/*",         // GET specific agency
-    	    
-    	    // Static resources
-    	    "/v3/api-docs/**",
-    	    "/swagger-ui/**",
-    	    "/swagger-resources/**",
-    	    "/webjars/**",
-    	    "/admin/**",
-    	    "/auth/**",
-    	    "/dist/**",
-    	    "/plugins/**",
-    	    "/pages/**",
-    	    "/css/**",
-    	    "/js/**", 
-    	    "/images/**",
-    	    "/static/**",
-    	    "/assets/**",
-    	    "/favicon.ico",
-    	    "/manifest.json",
-    	    "/robots.txt"
-    	);
+        // Auth endpoints
+        "/api/auth/authenticate",
+        
+        // User registration
+        "/api/users/register",
+        "/api/users/check-email/*",
+        
+        // Public real estate browsing
+        "/api/real-estates/search",
+        "/api/real-estates/features",
+        "/api/real-estates/*",
+        "/api/real-estates/**/similar",
+        
+        // Email debug endpoint
+        "/api/debug/**",
+        
+        // Public agency browsing ONLY
+        "/api/agencies",           // GET all agencies
+        "/api/agencies/*",         // GET specific agency
+        
+        // Static resources
+        "/v3/api-docs/**",
+        "/swagger-ui/**",
+        "/swagger-resources/**",
+        "/webjars/**"
+    );
 
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
@@ -86,26 +75,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         final String method = request.getMethod();
         
         logger.debug("🛡️ JWT Filter processing: {} {}", method, requestURI);
-        logger.debug("🛡️ JWT Filter START: {} {}", method, requestURI);
-        
-        System.out.println("🎯 TEST LOG - JWT Filter processing: " + request.getMethod() + " " + request.getRequestURI());
-        logger.info("🎯 LOGGER TEST - JWT Filter processing: {} {}", request.getMethod(), request.getRequestURI());
 
-        // COMPLETELY skip OPTIONS requests - let CORS handle them
+        // COMPLETELY skip OPTIONS requests
         if (HttpMethod.OPTIONS.matches(method)) {
-            logger.debug("🔄 COMPLETELY skipping JWT filter for OPTIONS request: {}", requestURI);
+            logger.debug("🔄 Skipping JWT filter for OPTIONS request: {}", requestURI);
             filterChain.doFilter(request, response);
             return;
         }
 
-        // UPDATED: Skip JWT filter for public endpoints
+        // Skip JWT filter for excluded paths
         if (shouldSkipAuthentication(request)) {
             logger.debug("✅ Skipping JWT filter for public endpoint: {}", requestURI);
             filterChain.doFilter(request, response);
             return;
         }
 
-        // Only proceed with JWT validation for protected endpoints
+        // JWT validation for protected API endpoints
         try {
             String token = getJwtFromRequest(request);
 
@@ -160,41 +145,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             response.getWriter().write("{\"error\":\"Invalid token\",\"message\":\"Authentication failed\"}");
             return;
         }
-        
-        logger.debug("🛡️ JWT Filter END: {} {}", method, requestURI);
 
         filterChain.doFilter(request, response);
     }
 
     private boolean shouldSkipAuthentication(HttpServletRequest request) {
         String requestURI = request.getRequestURI();
-        String method = request.getMethod();
         
-        logger.debug("🔍 Checking if should skip authentication for: {}", requestURI);
-
-        // Skip authentication for excluded paths
-//        boolean shouldSkip = EXCLUDED_PATHS.stream().anyMatch(pattern -> pathMatcher.match(pattern, requestURI));
+        // Skip if not an API request (let template filter handle it)
+        if (!requestURI.startsWith("/api/")) {
+            return true;
+        }
         
-        boolean shouldSkip = EXCLUDED_PATHS.stream().anyMatch(pattern -> {
-            boolean matches = pathMatcher.match(pattern, requestURI);
-            if (matches) {
-                logger.debug("✅ Pattern '{}' matches request '{}'", pattern, requestURI);
-            }
-            return matches;
-        });
-        
-        // ADDITIONAL: Also skip GET requests to real estate endpoints (they should be public)
-//        if (!shouldSkip && requestURI.startsWith("/api/real-estates/") && HttpMethod.GET.matches(method)) {
-//            shouldSkip = true;
-//            logger.debug("✅ Skipping JWT for public GET real estate endpoint: {}", requestURI);
-//        }
-//        
-//        if (shouldSkip) {
-//            logger.debug("✅ JWT filter skipping: {}", requestURI);
-//        }
-        logger.debug("🔍 Final skip decision for {}: {}", requestURI, shouldSkip);
-        
-        return shouldSkip;
+        // Skip excluded API paths
+        return EXCLUDED_PATHS.stream().anyMatch(pattern -> pathMatcher.match(pattern, requestURI));
     }
 
     private String getJwtFromRequest(HttpServletRequest request) {

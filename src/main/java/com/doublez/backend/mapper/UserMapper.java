@@ -76,6 +76,7 @@ public class UserMapper {
 
         User user = new User();
         user.setEmail(createDto.getEmail());
+        user.setTier(createDto.getTier());
         
         // Handle profile creation if provided
         if (createDto.getProfile() != null) {
