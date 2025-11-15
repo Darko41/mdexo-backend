@@ -210,7 +210,9 @@ public class SecurityConfig {
             // CSRF configuration - disabled for API, enabled for templates
             .csrf(csrf -> csrf
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                .ignoringRequestMatchers("/api/**") // Disable CSRF for API endpoints
+                .ignoringRequestMatchers(
+                		"/api/**",					// Disable CSRF for API endpoints
+                		"/api/auth/authenticate")	// Specific auth endpoint
             )
             // =============================================
             // EXCEPTION HANDLING
