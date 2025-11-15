@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import com.doublez.backend.dto.s3.CleanupStats;
 import com.doublez.backend.dto.s3.OrphanCleanupResult;
 import com.doublez.backend.repository.RealEstateRepository;
+import com.doublez.backend.service.cloudfront.CloudFrontService;
 
 import jakarta.transaction.Transactional;
 
@@ -27,6 +28,7 @@ public class S3OrphanCleanupService {
     
     private final S3Service s3Service;
     private final RealEstateRepository realEstateRepository;
+    private final CloudFrontService cloudFrontService;
     
     @Value("${app.s3.folder:real-estates}")
     private String s3Folder;
@@ -37,9 +39,10 @@ public class S3OrphanCleanupService {
     @Value("${app.s3.cleanup.dry-run:false}")
     private boolean dryRun;
 
-    public S3OrphanCleanupService(S3Service s3Service, RealEstateRepository realEstateRepository) {
+    public S3OrphanCleanupService(S3Service s3Service, RealEstateRepository realEstateRepository, CloudFrontService cloudFrontService) {
         this.s3Service = s3Service;
         this.realEstateRepository = realEstateRepository;
+        this.cloudFrontService = cloudFrontService;
     }
     
     /**
@@ -155,9 +158,9 @@ public class S3OrphanCleanupService {
      * Convert S3 key to URL format (matches what's stored in database)
      */
     private String convertS3KeyToUrl(String s3Key) {
-        // This should match the URL format used in your RealEstateImageService.extractPublicUrl()
-        // Adjust based on your actual S3 URL structure
-        return "https://your-bucket-name.s3.your-region.amazonaws.com/" + s3Key;
+        // Build S3 URL first, then convert to CDN
+        String s3Url = "https://mdexoawsbucket.s3.eu-north-1.amazonaws.com/" + s3Key;
+        return cloudFrontService.convertToCdnUrl(s3Url);
     }
     
     /**

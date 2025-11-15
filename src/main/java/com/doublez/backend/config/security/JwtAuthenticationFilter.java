@@ -46,8 +46,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         "/api/real-estates/*",
         "/api/real-estates/**/similar",
         
+        // =============================================
+        // TEMPORARY DEBUG ENDPOINTS
+        // =============================================
+        
         // Email debug endpoint
         "/api/debug/**",
+        
+        // CDN test endpoint
+        "/api/cdn-test",
         
         // Public agency browsing ONLY
         "/api/agencies",           // GET all agencies

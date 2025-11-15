@@ -71,8 +71,14 @@ public class SecurityConfig {
                 // Public static resources - public URLs (no authentication required)
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 
+                // =============================================
+                // TEMPORARY DEBUG ENDPOINTS
+                // =============================================
+                
                 // Email Debug Controller
                 .requestMatchers("/api/debug/**").permitAll()
+                // CDN test endpoint
+                .requestMatchers("/api/cdn-test").permitAll()
                 
                 // Public API endpoints (EXPLICITLY LIST ALL PUBLIC API ENDPOINTS)
                 .requestMatchers(

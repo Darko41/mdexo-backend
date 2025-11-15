@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.doublez.backend.exception.image.ImageUploadException;
+import com.doublez.backend.service.cloudfront.CloudFrontService;
 import com.doublez.backend.service.image.ImageProcessingService;
 import com.doublez.backend.service.s3.RealS3Service;
 import com.doublez.backend.service.s3.S3Service;
@@ -29,16 +30,19 @@ public class RealEstateImageService {
     private final S3Service s3Service;
     private final ImageProcessingService imageProcessingService;
     private final FileValidationService validationService;
+    private final CloudFrontService cloudFrontService;
     
     @Value("${app.s3.folder:real-estates}")
     private String s3Folder;
 
     public RealEstateImageService(S3Service s3Service, 
                                  ImageProcessingService imageProcessingService,
-                                 FileValidationService validationService) {
+                                 FileValidationService validationService,
+                                 CloudFrontService cloudFrontService) {
         this.s3Service = s3Service;
         this.imageProcessingService = imageProcessingService;
         this.validationService = validationService;
+        this.cloudFrontService = cloudFrontService;
     }
 
     // Sequential upload with processing - MEMORY SAFE
@@ -289,13 +293,17 @@ public class RealEstateImageService {
 
     private String generateUniqueFilename(MultipartFile file, String customName) {
         String originalName = customName != null ? customName : file.getOriginalFilename();
-        String extension = "jpg"; // Always use jpg after processing
+        String extension = "jpg";
         String baseName = UUID.randomUUID().toString();
-        return String.format("%s/%s.%s", s3Folder, baseName, extension.toLowerCase());
+        String filename = String.format("%s/%s.%s", s3Folder, baseName, extension.toLowerCase());
+        
+        logger.info("📁 Generated filename: {}", filename); // Add this line
+        return filename;
     }
 
     private String extractPublicUrl(String presignedUrl) {
-        return presignedUrl.split("\\?")[0];
+    	String s3Url = presignedUrl.split("\\?")[0];
+        return cloudFrontService.convertToCdnUrl(s3Url);
     }
 
  // In RealEstateImageService.java - enhance deleteImages method
