@@ -61,16 +61,18 @@ public class SecurityConfig {
     }
     
     @Bean
-    @Order(1) // Higher priority - processes API requests first
-    SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .securityMatcher("/api/**", "/public/**") // ONLY match API and public paths
             .authorizeHttpRequests((authz) -> authz
+                // =============================================
+                // PUBLIC API ENDPOINTS (No authentication required)
+                // =============================================
+                
                 // Public static resources - public URLs (no authentication required)
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers(
-                    "/api/debug/**"           // EmailDebugController
-                ).permitAll()
+                
+                // Email Debug Controller
+                .requestMatchers("/api/debug/**").permitAll()
                 
                 // Public API endpoints (EXPLICITLY LIST ALL PUBLIC API ENDPOINTS)
                 .requestMatchers(
@@ -88,6 +90,10 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/real-estates/features").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/real-estates/{propertyId}").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/real-estates/**").permitAll()
+                
+                // =============================================
+                // PROTECTED API ENDPOINTS (JWT authentication)
+                // =============================================
                 
                 // PUBLIC USAGE TRACKING ENDPOINTS
                 .requestMatchers(HttpMethod.GET, "/api/usage/**").authenticated() // Users can check their own usage
@@ -136,36 +142,11 @@ public class SecurityConfig {
                 
                 // General API protection (catch-all for other API endpoints)
                 .requestMatchers("/api/**").authenticated()
-            )
-            // DISABLE form login for API paths
-            .formLogin(form -> form.disable())
-            .httpBasic(basic -> basic.disable())
-            .sessionManagement(sess -> sess
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // STATELESS for API
-            )
-            // JWT filter for API requests
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-            .csrf(csrf -> csrf.disable()) // Disable CSRF for API
-            .exceptionHandling(ex -> ex
-                .authenticationEntryPoint((request, response, authException) -> {
-                    // API calls always get 401 JSON
-                    response.setContentType("application/json");
-                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    response.getWriter().write("{\"error\":\"Unauthorized\",\"message\":\"Authentication required\"}");
-                })
-            );
-        
-        return http.build();
-    }
-
-    // FILTER CHAIN 2: TEMPLATE ENDPOINTS (Session-based)
-    @Bean
-    @Order(2) // Lower priority - handles everything else
-    SecurityFilterChain templateFilterChain(HttpSecurity http) throws Exception {
-        http
-            .securityMatcher("/**") // Match everything else (templates, static resources, etc.)
-            .authorizeHttpRequests((authz) -> authz
+                
+                // =============================================
+                // TEMPLATE ENDPOINTS (Session-based authentication)
+                // =============================================
+                
                 // Public static resources
                 .requestMatchers(
                     "/",
@@ -195,7 +176,11 @@ public class SecurityConfig {
                 // Any other request must be authenticated
                 .anyRequest().authenticated()
             )
-            // Form login for templates
+            // =============================================
+            // AUTHENTICATION CONFIGURATION
+            // =============================================
+            
+            // Form login for templates (Session-based)
             .formLogin(form -> form
                 .loginPage("/auth/login")
                 .loginProcessingUrl("/auth/login") 
@@ -211,19 +196,35 @@ public class SecurityConfig {
                 .permitAll()
             )
             .sessionManagement(sess -> sess
-                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED) // SESSIONS for templates
+                .sessionCreationPolicy(SessionCreationPolicy.ALWAYS) // Allow sessions for templates
             )
+            // JWT filter for API requests
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            // CSRF configuration - disabled for API, enabled for templates
             .csrf(csrf -> csrf
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                .ignoringRequestMatchers("/api/**") // Disable CSRF for API endpoints
             )
+            // =============================================
+            // EXCEPTION HANDLING
+            // =============================================
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint((request, response, authException) -> {
-                    // Web pages get redirect to login (Session)
                     String requestUri = request.getRequestURI();
-                    if (requestUri.startsWith("/admin/")) {
-                        response.sendRedirect("/auth/login?admin=true");
+                    
+                    if (requestUri.startsWith("/api/")) {
+                        // API calls always get 401 JSON
+                        response.setContentType("application/json");
+                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                        response.getWriter().write("{\"error\":\"Unauthorized\",\"message\":\"Authentication required\"}");
                     } else {
-                        response.sendRedirect("/auth/login");
+                        // Web pages get redirect to login (Session)
+                        if (requestUri.startsWith("/admin/")) {
+                            response.sendRedirect("/auth/login?admin=true");
+                        } else {
+                            response.sendRedirect("/auth/login");
+                        }
                     }
                 })
             );

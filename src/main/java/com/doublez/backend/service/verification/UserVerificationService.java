@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import com.doublez.backend.dto.email.EmailDTO;
 import com.doublez.backend.entity.user.User;
 import com.doublez.backend.entity.user.UserVerification;
 import com.doublez.backend.enums.DocumentType;
@@ -21,7 +20,7 @@ import com.doublez.backend.enums.VerificationStatus;
 import com.doublez.backend.exception.UserNotFoundException;
 import com.doublez.backend.repository.UserRepository;
 import com.doublez.backend.repository.UserVerificationRepository;
-import com.doublez.backend.service.email.EmailService;
+import com.doublez.backend.service.email.ResendEmailService;
 import com.doublez.backend.service.user.UserService;
 
 import jakarta.transaction.Transactional;
@@ -33,16 +32,16 @@ public class UserVerificationService {
 	private final UserVerificationRepository verificationRepository;
 	private final UserRepository userRepository;
 	private final UserService userService;
-	private final EmailService emailService;
+	private final ResendEmailService resendEmailService;
 
 	private static final Logger logger = LoggerFactory.getLogger(UserVerificationService.class);
 
 	public UserVerificationService(UserVerificationRepository verificationRepository, UserRepository userRepository,
-			UserService userService, EmailService emailService) {
+			UserService userService, ResendEmailService resendEmailService) { // Changed parameter
 		this.verificationRepository = verificationRepository;
 		this.userRepository = userRepository;
 		this.userService = userService;
-		this.emailService = emailService;
+		this.resendEmailService = resendEmailService; // Updated assignment
 	}
 
 	// Submit verification application
@@ -59,13 +58,16 @@ public class UserVerificationService {
 
 		UserVerification saved = verificationRepository.save(verification);
 
-		// SEND EMAIL NOTIFICATIONS
+		// SEND EMAIL NOTIFICATIONS using Resend
 		try {
 			// Notify user
-			emailService.sendVerificationSubmitted(user.getEmail(), getUserDisplayName(user), documentType.toString());
+			resendEmailService.sendVerificationSubmitted(user.getEmail(), getUserDisplayName(user), documentType.toString());
+			
+			// Add delay before sending admin notification
+			Thread.sleep(500); // 0.5 second delay
 
 			// Notify admins
-			emailService.sendNewVerificationAdminNotification(getUserDisplayName(user), documentType.toString());
+			resendEmailService.sendNewVerificationAdminNotification(getUserDisplayName(user), documentType.toString());
 
 		} catch (Exception e) {
 			logger.warn("Failed to send email notifications for verification: {}", e.getMessage());
@@ -99,15 +101,15 @@ public class UserVerificationService {
 
 		UserVerification updated = verificationRepository.save(verification);
 
-		// ✅ SEND EMAIL NOTIFICATION TO USER
+		// ✅ SEND EMAIL NOTIFICATION TO USER using Resend
 		try {
 			User user = verification.getUser();
 			if (status == VerificationStatus.APPROVED) {
 				// 🆕 DETERMINE ROLE BASED ON DOCUMENT TYPE
 				String role = determineRoleFromDocumentType(verification.getDocumentType());
-				emailService.sendVerificationApproved(user.getEmail(), getUserDisplayName(user), role);
+				resendEmailService.sendVerificationApproved(user.getEmail(), getUserDisplayName(user), role);
 			} else if (status == VerificationStatus.REJECTED) {
-				emailService.sendVerificationRejected(user.getEmail(), getUserDisplayName(user), rejectionReason);
+				resendEmailService.sendVerificationRejected(user.getEmail(), getUserDisplayName(user), rejectionReason);
 			}
 		} catch (Exception e) {
 			logger.warn("Failed to send verification result email: {}", e.getMessage());
@@ -202,11 +204,11 @@ public class UserVerificationService {
 		}
 	}
 
-	// ✅ UPDATE NOTIFICATION METHODS TO USE EMAIL SERVICE
+	// ✅ UPDATE NOTIFICATION METHODS TO USE RESEND EMAIL SERVICE
 	private void notifyUserAboutExpiringLicense(UserVerification verification) {
 		try {
 			User user = verification.getUser();
-			emailService.sendLicenseExpiring(user.getEmail(), getUserDisplayName(user),
+			resendEmailService.sendLicenseExpiring(user.getEmail(), getUserDisplayName(user),
 					verification.getLicenseExpiry());
 		} catch (Exception e) {
 			logger.warn("Failed to send license expiration email: {}", e.getMessage());
@@ -217,7 +219,7 @@ public class UserVerificationService {
 		try {
 			User user = verification.getUser();
 			String subject = "Licenca istekla - Real Estate Platform";
-			String body = """
+			String message = """
 					Poštovani/poštovana %s,
 
 					Vaša licenca je istekla %s.
@@ -228,8 +230,8 @@ public class UserVerificationService {
 					""".formatted(getUserDisplayName(user),
 					verification.getLicenseExpiry().format(DateTimeFormatter.ofPattern("dd.MM.yyyy.")));
 
-			EmailDTO email = new EmailDTO(user.getEmail(), subject, body);
-			emailService.sendEmail(email);
+			// Use the text-only email method from ResendEmailService
+			resendEmailService.sendTextEmail(user.getEmail(), subject, message);
 		} catch (Exception e) {
 			logger.warn("Failed to send license expired email: {}", e.getMessage());
 		}

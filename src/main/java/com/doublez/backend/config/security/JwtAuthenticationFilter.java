@@ -152,6 +152,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private boolean shouldSkipAuthentication(HttpServletRequest request) {
         String requestURI = request.getRequestURI();
         
+        if (EXCLUDED_PATHS.stream().anyMatch(pattern -> pathMatcher.match(pattern, requestURI))) {
+            return true;
+        }
+        
         // Skip if not an API request (let template filter handle it)
         if (!requestURI.startsWith("/api/")) {
             return true;

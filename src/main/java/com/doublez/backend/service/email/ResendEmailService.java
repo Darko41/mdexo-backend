@@ -15,112 +15,385 @@ import com.resend.core.exception.ResendException;
 import com.resend.services.emails.model.CreateEmailOptions;
 import com.resend.services.emails.model.CreateEmailResponse;
 
+import jakarta.transaction.Transactional;
+
 @Service
+@Transactional
 public class ResendEmailService {
     
     private static final Logger logger = LoggerFactory.getLogger(ResendEmailService.class);
     
     private final Resend resend;
     private final String fromAddress;
+    private final String supportEmail;
+    private final String adminEmail;
+    private final boolean emailEnabled;
     
     public ResendEmailService(@Value("${resend.api-key}") String apiKey,
-                            @Value("${app.email.from-address:noreply@iterials.com}") String fromAddress) {
+                            @Value("${app.email.from-address:noreply@iterials.com}") String fromAddress,
+                            @Value("${app.email.support-email:support@iterials.com}") String supportEmail,
+                            @Value("${app.email.admin-email:admin@iterials.com}") String adminEmail,
+                            @Value("${app.email.enabled:true}") boolean emailEnabled) {
         this.resend = new Resend(apiKey);
         this.fromAddress = fromAddress;
+        this.supportEmail = supportEmail;
+        this.adminEmail = adminEmail;
+        this.emailEnabled = emailEnabled;
     }
     
-    public void sendTrialStartedEmail(String toEmail, String userName, int trialMonths) {
+    // Basic email sending method
+    public void sendEmail(String to, String subject, String htmlContent, String textContent) {
+        if (!emailEnabled) {
+            logger.info("Email sending is disabled. Would send: To={}, Subject={}", to, subject);
+            return;
+        }
+
         try {
-            String subject = "🎉 Welcome to Dwellia - Your Trial Has Started!";
-            String htmlContent = createTrialEmailHtml(userName, trialMonths);
-            
             CreateEmailOptions params = CreateEmailOptions.builder()
                 .from("Dwellia <" + fromAddress + ">")
-                .to(toEmail)
+                .to(to)
                 .subject(subject)
                 .html(htmlContent)
+                .text(textContent)
                 .build();
             
             CreateEmailResponse data = resend.emails().send(params);
-            logger.info("✅ Resend trial email sent successfully to: {} with ID: {}", toEmail, data.getId());
+            logger.info("✅ Email sent successfully to: {} with ID: {}", to, data.getId());
             
-        } catch (ResendException e) {
-            logger.error("❌ Resend API error for {}: {}", toEmail, e.getMessage());
-            throw new RuntimeException("Email sending failed: " + e.getMessage(), e);
         } catch (Exception e) {
-            logger.error("❌ Failed to send Resend email to {}: {}", toEmail, e.getMessage());
+            logger.error("❌ Failed to send email to {}: {}", to, e.getMessage());
             throw new RuntimeException("Email sending failed", e);
         }
     }
     
-    public void sendTrialExpiringEmail(String toEmail, String userName, int daysRemaining) {
-        try {
-            String subject = "⏰ Your Dwellia Trial Expires in " + daysRemaining + " Day(s)";
-            String htmlContent = createTrialExpiringHtml(userName, daysRemaining);
-            
-            CreateEmailOptions params = CreateEmailOptions.builder()
-                .from("Dwellia <" + fromAddress + ">")
-                .to(toEmail)
-                .subject(subject)
-                .html(htmlContent)
-                .build();
-            
-            resend.emails().send(params);
-            logger.info("✅ Resend trial expiring email sent to: {}", toEmail);
-            
-        } catch (Exception e) {
-            logger.error("❌ Failed to send trial expiring email to {}: {}", toEmail, e.getMessage());
-            throw new RuntimeException("Email sending failed", e);
-        }
+    // Simple text email
+    public void sendTextEmail(String to, String subject, String textContent) {
+        sendEmail(to, subject, null, textContent);
     }
     
-    public void sendTrialExpiredEmail(String toEmail, String userName, UserTier newTier) {
+    // HTML email only
+    public void sendHtmlEmail(String to, String subject, String htmlContent) {
+        sendEmail(to, subject, htmlContent, null);
+    }
+
+    // USER REGISTRATION & AUTHENTICATION EMAILS
+    public void sendWelcomeEmail(String userEmail, String userName) {
+        String subject = "Dobrodošli na Real Estate Platform";
+        String htmlContent = createWelcomeEmailHtml(userName);
+        String textContent = createWelcomeEmailText(userName);
+        sendEmail(userEmail, subject, htmlContent, textContent);
+    }
+
+    public void sendPasswordResetEmail(String userEmail, String userName, String resetToken) {
+        String subject = "Resetovanje lozinke - Real Estate Platform";
+        String htmlContent = createPasswordResetHtml(userName, resetToken);
+        String textContent = createPasswordResetText(userName, resetToken);
+        sendEmail(userEmail, subject, htmlContent, textContent);
+    }
+
+    // VERIFICATION EMAILS
+    public void sendVerificationSubmitted(String userEmail, String userName, String documentType) {
+        String subject = "Verifikacija dokumenta je podneta";
+        String htmlContent = createVerificationSubmittedHtml(userName, documentType);
+        String textContent = createVerificationSubmittedText(userName, documentType);
+        sendEmail(userEmail, subject, htmlContent, textContent);
+    }
+
+    public void sendVerificationApproved(String userEmail, String userName, String role) {
+        String subject = "Verifikacija odobrena";
+        String htmlContent = createVerificationApprovedHtml(userName, role);
+        String textContent = createVerificationApprovedText(userName, role);
+        sendEmail(userEmail, subject, htmlContent, textContent);
+    }
+
+    public void sendVerificationRejected(String userEmail, String userName, String rejectionReason) {
+        String subject = "Verifikacija odbijena";
+        String htmlContent = createVerificationRejectedHtml(userName, rejectionReason);
+        String textContent = createVerificationRejectedText(userName, rejectionReason);
+        sendEmail(userEmail, subject, htmlContent, textContent);
+    }
+
+    public void sendLicenseExpiring(String userEmail, String userName, LocalDate expiryDate) {
+        String subject = "Licenca ističe uskoro";
+        String htmlContent = createLicenseExpiringHtml(userName, expiryDate);
+        String textContent = createLicenseExpiringText(userName, expiryDate);
+        sendEmail(userEmail, subject, htmlContent, textContent);
+    }
+
+    public void sendNewVerificationAdminNotification(String userName, String documentType) {
+        String subject = "Nova verifikacija za pregled";
+        String htmlContent = createNewVerificationAdminHtml(userName, documentType);
+        String textContent = createNewVerificationAdminText(userName, documentType);
+        sendEmail(adminEmail, subject, htmlContent, textContent);
+    }
+
+    // TRIAL EMAILS
+    public void sendTrialStartedEmail(String userEmail, String userName, int trialMonths) {
+        String subject = "🎉 Dobrodošli - Vaš probni period je počeo!";
+        String htmlContent = createTrialStartedHtml(userName, trialMonths);
+        String textContent = createTrialStartedText(userName, trialMonths);
+        sendEmail(userEmail, subject, htmlContent, textContent);
+    }
+
+    public void sendTrialExpiringEmail(String userEmail, String userName, int daysRemaining) {
+        String subject = "⏰ Vaš probni period ističe za " + daysRemaining + " dan(a)";
+        String htmlContent = createTrialExpiringHtml(userName, daysRemaining);
+        String textContent = createTrialExpiringText(userName, daysRemaining);
+        sendEmail(userEmail, subject, htmlContent, textContent);
+    }
+
+    public void sendTrialExpiredEmail(String userEmail, String userName, UserTier newTier) {
         try {
-            String subject = "📊 Your Dwellia Trial Has Ended";
+            logger.info("🔄 Starting trial expired email for: {}, Tier: {}", userEmail, newTier);
+            
+            // Check if tier is null
+            if (newTier == null) {
+                logger.warn("⚠️ UserTier is null for trial expired email, using BASIC_USER as default");
+                newTier = UserTier.BASIC_USER; // Default fallback
+            }
+            
+            String subject = "ℹ️ Vaš probni period je istekao";
+            logger.info("🔄 Subject: {}", subject);
+            
+            // Generate HTML content
             String htmlContent = createTrialExpiredHtml(userName, newTier);
+            logger.info("🔄 HTML content generated, length: {}", htmlContent.length());
             
-            CreateEmailOptions params = CreateEmailOptions.builder()
-                .from("Dwellia <" + fromAddress + ">")
-                .to(toEmail)
-                .subject(subject)
-                .html(htmlContent)
-                .build();
+            // Generate text content
+            String textContent = createTrialExpiredText(userName, newTier);
+            logger.info("🔄 Text content generated, length: {}", textContent.length());
             
-            resend.emails().send(params);
-            logger.info("✅ Resend trial expired email sent to: {}", toEmail);
+            // Send the email
+            sendEmail(userEmail, subject, htmlContent, textContent);
+            logger.info("✅ Trial expired email sent successfully to: {}", userEmail);
             
         } catch (Exception e) {
-            logger.error("❌ Failed to send trial expired email to {}: {}", toEmail, e.getMessage());
+            logger.error("❌ Failed to send trial expired email to {}: {}", userEmail, e.getMessage(), e);
             throw new RuntimeException("Email sending failed", e);
         }
     }
-    
-    public void sendTrialExtendedEmail(String toEmail, String userName, int additionalMonths) {
-        try {
-            String subject = "🎁 Your Dwellia Trial Has Been Extended!";
-            String htmlContent = createTrialExtendedHtml(userName, additionalMonths);
-            
-            CreateEmailOptions params = CreateEmailOptions.builder()
-                .from("Dwellia <" + fromAddress + ">")
-                .to(toEmail)
-                .subject(subject)
-                .html(htmlContent)
-                .build();
-            
-            resend.emails().send(params);
-            logger.info("✅ Resend trial extended email sent to: {}", toEmail);
-            
-        } catch (Exception e) {
-            logger.error("❌ Failed to send trial extended email to {}: {}", toEmail, e.getMessage());
-            throw new RuntimeException("Email sending failed", e);
-        }
+
+    public void sendTrialExtendedEmail(String userEmail, String userName, int additionalMonths) {
+        String subject = "🎁 Vaš probni period je produžen!";
+        String htmlContent = createTrialExtendedHtml(userName, additionalMonths);
+        String textContent = createTrialExtendedText(userName, additionalMonths);
+        sendEmail(userEmail, subject, htmlContent, textContent);
     }
-    
-    // HTML Email Templates - FIXED SYNTAX
-    private String createTrialEmailHtml(String userName, int trialMonths) {
+
+    // HTML TEMPLATES
+    private String createWelcomeEmailHtml(String userName) {
+        return "<!DOCTYPE html>" +
+            "<html>" +
+            "<head>" +
+            "    <style>" +
+            "        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }" +
+            "        .container { max-width: 600px; margin: 0 auto; padding: 20px; }" +
+            "        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }" +
+            "        .content { padding: 30px; background: #f8f9fa; border-radius: 0 0 10px 10px; }" +
+            "        .button { background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0; }" +
+            "    </style>" +
+            "</head>" +
+            "<body>" +
+            "    <div class=\"container\">" +
+            "        <div class=\"header\">" +
+            "            <h1>Dobrodošli!</h1>" +
+            "            <p>Vaš nalog je uspešno kreiran</p>" +
+            "        </div>" +
+            "        <div class=\"content\">" +
+            "            <h2>Poštovani/poštovana " + userName + ",</h2>" +
+            "            <p>Dobrodošli na Real Estate Platform! Vaš nalog je uspešno kreiran.</p>" +
+            "            <p>Sada možete pretraživati nekretnine, kontaktirati agente i sačuvati omiljene oglase.</p>" +
+            "            <a href=\"https://dwellia.rs\" class=\"button\">Započnite istraživanje</a>" +
+            "            <p>Ako imate pitanja, kontaktirajte nas: <a href=\"mailto:" + supportEmail + "\">" + supportEmail + "</a></p>" +
+            "            <p>S poštovanjem,<br>Real Estate Platform Team</p>" +
+            "        </div>" +
+            "    </div>" +
+            "</body>" +
+            "</html>";
+    }
+
+    private String createPasswordResetHtml(String userName, String resetToken) {
+        return "<!DOCTYPE html>" +
+            "<html>" +
+            "<head>" +
+            "    <style>" +
+            "        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }" +
+            "        .container { max-width: 600px; margin: 0 auto; padding: 20px; }" +
+            "        .header { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }" +
+            "        .content { padding: 30px; background: #f8f9fa; border-radius: 0 0 10px 10px; }" +
+            "        .token { background: white; padding: 15px; border: 2px dashed #f5576c; text-align: center; font-size: 18px; font-weight: bold; margin: 20px 0; }" +
+            "    </style>" +
+            "</head>" +
+            "<body>" +
+            "    <div class=\"container\">" +
+            "        <div class=\"header\">" +
+            "            <h1>Resetovanje Lozinke</h1>" +
+            "        </div>" +
+            "        <div class=\"content\">" +
+            "            <h2>Poštovani/poštovana " + userName + ",</h2>" +
+            "            <p>Primili smo zahtev za resetovanje vaše lozinke.</p>" +
+            "            <div class=\"token\">" + resetToken + "</div>" +
+            "            <p>Ukoliko niste Vi zatražili resetovanje, ignorišite ovaj email.</p>" +
+            "            <p>S poštovanjem,<br>Real Estate Platform Team<br><a href=\"mailto:" + supportEmail + "\">" + supportEmail + "</a></p>" +
+            "        </div>" +
+            "    </div>" +
+            "</body>" +
+            "</html>";
+    }
+
+    private String createVerificationSubmittedHtml(String userName, String documentType) {
+        return "<!DOCTYPE html>" +
+            "<html>" +
+            "<head>" +
+            "    <style>" +
+            "        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }" +
+            "        .container { max-width: 600px; margin: 0 auto; padding: 20px; }" +
+            "        .header { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }" +
+            "        .content { padding: 30px; background: #f8f9fa; border-radius: 0 0 10px 10px; }" +
+            "    </style>" +
+            "</head>" +
+            "<body>" +
+            "    <div class=\"container\">" +
+            "        <div class=\"header\">" +
+            "            <h1>Verifikacija Podneta</h1>" +
+            "        </div>" +
+            "        <div class=\"content\">" +
+            "            <h2>Poštovani/poštovana " + userName + ",</h2>" +
+            "            <p>Uspešno ste podneli dokument za verifikaciju: <strong>" + documentType + "</strong>.</p>" +
+            "            <p>Naš tim će pregledati vašu prijavu u najkraćem mogućem roku.</p>" +
+            "            <p>Bićete obavešteni o statusu verifikacije.</p>" +
+            "            <p>S poštovanjem,<br>Real Estate Platform Team</p>" +
+            "        </div>" +
+            "    </div>" +
+            "</body>" +
+            "</html>";
+    }
+
+    private String createVerificationApprovedHtml(String userName, String role) {
+        return "<!DOCTYPE html>" +
+            "<html>" +
+            "<head>" +
+            "    <style>" +
+            "        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }" +
+            "        .container { max-width: 600px; margin: 0 auto; padding: 20px; }" +
+            "        .header { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }" +
+            "        .content { padding: 30px; background: #f8f9fa; border-radius: 0 0 10px 10px; }" +
+            "        .button { background: #43e97b; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0; }" +
+            "    </style>" +
+            "</head>" +
+            "<body>" +
+            "    <div class=\"container\">" +
+            "        <div class=\"header\">" +
+            "            <h1>✅ Verifikacija Odobrena</h1>" +
+            "        </div>" +
+            "        <div class=\"content\">" +
+            "            <h2>Poštovani/poštovana " + userName + ",</h2>" +
+            "            <p>Čestitamo! Vaša verifikacija je odobrena.</p>" +
+            "            <p>Sada imate <strong>" + role + "</strong> status na platformi.</p>" +
+            "            <p>Možete početi da koristite sve privilegije vašeg novog statusa.</p>" +
+            "            <a href=\"https://dwellia.rs\" class=\"button\">Nastavite na Platformu</a>" +
+            "            <p>S poštovanjem,<br>Real Estate Platform Team</p>" +
+            "        </div>" +
+            "    </div>" +
+            "</body>" +
+            "</html>";
+    }
+
+    private String createVerificationRejectedHtml(String userName, String rejectionReason) {
+        return "<!DOCTYPE html>" +
+            "<html>" +
+            "<head>" +
+            "    <style>" +
+            "        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }" +
+            "        .container { max-width: 600px; margin: 0 auto; padding: 20px; }" +
+            "        .header { background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }" +
+            "        .content { padding: 30px; background: #f8f9fa; border-radius: 0 0 10px 10px; }" +
+            "        .reason { background: white; padding: 15px; border-left: 4px solid #ff6b6b; margin: 15px 0; }" +
+            "    </style>" +
+            "</head>" +
+            "<body>" +
+            "    <div class=\"container\">" +
+            "        <div class=\"header\">" +
+            "            <h1>❌ Verifikacija Odbijena</h1>" +
+            "        </div>" +
+            "        <div class=\"content\">" +
+            "            <h2>Poštovani/poštovana " + userName + ",</h2>" +
+            "            <p>Nažalost, vaša verifikacija je odbijena.</p>" +
+            "            <div class=\"reason\">" +
+            "                <strong>Razlog:</strong><br>" + rejectionReason +
+            "            </div>" +
+            "            <p>Možete podneti novu prijavu sa ispravljenim dokumentima.</p>" +
+            "            <p>Ako imate pitanja, kontaktirajte nas: <a href=\"mailto:" + supportEmail + "\">" + supportEmail + "</a></p>" +
+            "            <p>S poštovanjem,<br>Real Estate Platform Team</p>" +
+            "        </div>" +
+            "    </div>" +
+            "</body>" +
+            "</html>";
+    }
+
+    private String createLicenseExpiringHtml(String userName, LocalDate expiryDate) {
+        String formattedDate = expiryDate.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+        return "<!DOCTYPE html>" +
+            "<html>" +
+            "<head>" +
+            "    <style>" +
+            "        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }" +
+            "        .container { max-width: 600px; margin: 0 auto; padding: 20px; }" +
+            "        .header { background: linear-gradient(135deg, #ffa726 0%, #ff9800 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }" +
+            "        .content { padding: 30px; background: #f8f9fa; border-radius: 0 0 10px 10px; }" +
+            "        .warning { background: #fff3e0; padding: 15px; border-left: 4px solid #ffa726; margin: 15px 0; }" +
+            "    </style>" +
+            "</head>" +
+            "<body>" +
+            "    <div class=\"container\">" +
+            "        <div class=\"header\">" +
+            "            <h1>⚠️ Licenca Ističe</h1>" +
+            "        </div>" +
+            "        <div class=\"content\">" +
+            "            <h2>Poštovani/poštovana " + userName + ",</h2>" +
+            "            <div class=\"warning\">" +
+            "                <strong>Vaša licenca ističe: " + formattedDate + "</strong>" +
+            "            </div>" +
+            "            <p>Obnovite licencu na vreme kako biste nastavili da koristite sve funkcije platforme.</p>" +
+            "            <p>S poštovanjem,<br>Real Estate Platform Team<br><a href=\"mailto:" + supportEmail + "\">" + supportEmail + "</a></p>" +
+            "        </div>" +
+            "    </div>" +
+            "</body>" +
+            "</html>";
+    }
+
+    private String createNewVerificationAdminHtml(String userName, String documentType) {
+        return "<!DOCTYPE html>" +
+            "<html>" +
+            "<head>" +
+            "    <style>" +
+            "        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }" +
+            "        .container { max-width: 600px; margin: 0 auto; padding: 20px; }" +
+            "        .header { background: linear-gradient(135deg, #8e2de2 0%, #4a00e0 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }" +
+            "        .content { padding: 30px; background: #f8f9fa; border-radius: 0 0 10px 10px; }" +
+            "        .button { background: #8e2de2; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0; }" +
+            "    </style>" +
+            "</head>" +
+            "<body>" +
+            "    <div class=\"container\">" +
+            "        <div class=\"header\">" +
+            "            <h1>📋 Nova Verifikacija</h1>" +
+            "        </div>" +
+            "        <div class=\"content\">" +
+            "            <h2>Administrativni pregled</h2>" +
+            "            <p>Korisnik <strong>" + userName + "</strong> je podneo novu verifikaciju.</p>" +
+            "            <p><strong>Tip dokumenta:</strong> " + documentType + "</p>" +
+            "            <a href=\"https://dwellia.rs/admin/verifications\" class=\"button\">Pregledaj Verifikacije</a>" +
+            "            <p>Real Estate Platform Admin</p>" +
+            "        </div>" +
+            "    </div>" +
+            "</body>" +
+            "</html>";
+    }
+
+    private String createTrialStartedHtml(String userName, int trialMonths) {
         String endDate = LocalDate.now().plusMonths(trialMonths)
-            .format(DateTimeFormatter.ofPattern("MMMM dd, yyyy"));
-            
+            .format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
         return "<!DOCTYPE html>" +
             "<html>" +
             "<head>" +
@@ -136,39 +409,24 @@ public class ResendEmailService {
             "<body>" +
             "    <div class=\"container\">" +
             "        <div class=\"header\">" +
-            "            <h1>🎉 Welcome to Dwellia!</h1>" +
-            "            <p>Your " + trialMonths + "-Month Free Trial Is Active</p>" +
+            "            <h1>🎉 Dobrodošli!</h1>" +
+            "            <p>Vaš " + trialMonths + "-mesečni probni period je aktivan</p>" +
             "        </div>" +
             "        <div class=\"content\">" +
-            "            <h2>Hello " + userName + ",</h2>" +
-            "            <p>We're excited to have you on board! Your premium trial includes:</p>" +
-            "            " +
-            "            <div class=\"feature\">" +
-            "                <strong>🏠 Unlimited Property Listings</strong>" +
-            "                <p>Browse and save unlimited properties</p>" +
-            "            </div>" +
-            "            " +
-            "            <div class=\"feature\">" +
-            "                <strong>🔍 Advanced Search Filters</strong>" +
-            "                <p>Find exactly what you're looking for</p>" +
-            "            </div>" +
-            "            " +
-            "            <div class=\"feature\">" +
-            "                <strong>📱 Direct Owner Contact</strong>" +
-            "                <p>Connect directly with property owners</p>" +
-            "            </div>" +
-            "            " +
-            "            <p><strong>📅 Trial End Date:</strong> " + endDate + "</p>" +
-            "            " +
-            "            <a href=\"https://dwellia.rs\" class=\"button\">Start Exploring Properties</a>" +
-            "            " +
-            "            <p>Happy house hunting!<br>The Dwellia Team</p>" +
+            "            <h2>Poštovani/poštovana " + userName + ",</h2>" +
+            "            <p>Dobrodošli na Real Estate Platform! Vaš " + trialMonths + "-mesečni probni period je sada aktivan.</p>" +
+            "            <div class=\"feature\"><strong>🏠 Neograničeno listanje nekretnina</strong></div>" +
+            "            <div class=\"feature\"><strong>🔍 Napredne filter opcije</strong></div>" +
+            "            <div class=\"feature\"><strong>📱 Direktan kontakt sa vlasnicima</strong></div>" +
+            "            <p><strong>📅 Kraj probnog perioda:</strong> " + endDate + "</p>" +
+            "            <a href=\"https://dwellia.rs\" class=\"button\">Započnite istraživanje</a>" +
+            "            <p>Srećno traženje doma!<br>Real Estate Platform Team</p>" +
             "        </div>" +
             "    </div>" +
             "</body>" +
             "</html>";
     }
-    
+
     private String createTrialExpiringHtml(String userName, int daysRemaining) {
         return "<!DOCTYPE html>" +
             "<html>" +
@@ -185,7 +443,7 @@ public class ResendEmailService {
             "    <div class=\"container\">" +
             "        <div class=\"header\">" +
             "            <h1>⏰ Trial Ending Soon</h1>" +
-            "            <p>" + daysRemaining + " day(s) remaining</p>" +
+            "            <p>" + daysRemaining + " dan(a) remaining</p>" +
             "        </div>" +
             "        <div class=\"content\">" +
             "            <h2>Hello " + userName + ",</h2>" +
@@ -197,7 +455,7 @@ public class ResendEmailService {
             "</body>" +
             "</html>";
     }
-    
+
     private String createTrialExpiredHtml(String userName, UserTier newTier) {
         String tierName = getTierDisplayName(newTier);
         return "<!DOCTYPE html>" +
@@ -227,11 +485,10 @@ public class ResendEmailService {
             "</body>" +
             "</html>";
     }
-    
+
     private String createTrialExtendedHtml(String userName, int additionalMonths) {
         String endDate = LocalDate.now().plusMonths(additionalMonths)
-            .format(DateTimeFormatter.ofPattern("MMMM dd, yyyy"));
-            
+            .format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
         return "<!DOCTYPE html>" +
             "<html>" +
             "<head>" +
@@ -259,16 +516,75 @@ public class ResendEmailService {
             "</body>" +
             "</html>";
     }
-    
+
+    // PLAIN TEXT TEMPLATES
+    private String createWelcomeEmailText(String userName) {
+        return "Poštovani/poštovana " + userName + ",\n\nDobrodošli na Real Estate Platform!\n\nVaš nalog je uspešno kreiran. Sada možete pretraživati nekretnine, kontaktirati agente i sačuvati omiljene oglase.\n\nAko imate pitanja, kontaktirajte nas: " + supportEmail + "\n\nS poštovanjem,\nReal Estate Platform Team";
+    }
+
+    private String createPasswordResetText(String userName, String resetToken) {
+        return "Poštovani/poštovana " + userName + ",\n\nPrimili smo zahtev za resetovanje vaše lozinke.\n\nToken za resetovanje: " + resetToken + "\n\nUkoliko niste Vi zatražili resetovanje, ignorišite ovaj email.\n\nS poštovanjem,\nReal Estate Platform Team\n" + supportEmail;
+    }
+
+    private String createVerificationSubmittedText(String userName, String documentType) {
+        return "Poštovani/poštovana " + userName + ",\n\nUspešno ste podneli dokument za verifikaciju: " + documentType + ".\n\nNaš tim će pregledati vašu prijavu u najkraćem mogućem roku.\n\nBićete obavešteni o statusu verifikacije.\n\nS poštovanjem,\nReal Estate Platform Team";
+    }
+
+    private String createVerificationApprovedText(String userName, String role) {
+        return "Poštovani/poštovana " + userName + ",\n\nČestitamo! Vaša verifikacija je odobrena.\n\nSada imate " + role + " status na platformi.\n\nMožete početi da koristite sve privilegije vašeg novog statusa.\n\nS poštovanjem,\nReal Estate Platform Team";
+    }
+
+    private String createVerificationRejectedText(String userName, String rejectionReason) {
+        return "Poštovani/poštovana " + userName + ",\n\nNažalost, vaša verifikacija je odbijena.\n\nRazlog: " + rejectionReason + "\n\nMožete podneti novu prijavu sa ispravljenim dokumentima.\n\nAko imate pitanja, kontaktirajte nas: " + supportEmail + "\n\nS poštovanjem,\nReal Estate Platform Team";
+    }
+
+    private String createLicenseExpiringText(String userName, LocalDate expiryDate) {
+        String formattedDate = expiryDate.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+        return "Poštovani/poštovana " + userName + ",\n\nVaša licenca ističe: " + formattedDate + "\n\nObnovite licencu na vreme kako biste nastavili da koristite sve funkcije platforme.\n\nS poštovanjem,\nReal Estate Platform Team\n" + supportEmail;
+    }
+
+    private String createNewVerificationAdminText(String userName, String documentType) {
+        return "Administrativni pregled\n\nKorisnik " + userName + " je podneo novu verifikaciju.\n\nTip dokumenta: " + documentType + "\n\nPregledajte verifikacije: https://dwellia.rs/admin/verifications\n\nReal Estate Platform Admin";
+    }
+
+    private String createTrialStartedText(String userName, int trialMonths) {
+        String endDate = LocalDate.now().plusMonths(trialMonths).format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+        return "Poštovani/poštovana " + userName + ",\n\nDobrodošli na Real Estate Platform! Vaš " + trialMonths + "-mesečni probni period je sada aktivan.\n\nTokom probnog perioda imate pristup svim premium funkcijama.\n\nProbni period traje do: " + endDate + "\n\nAko imate pitanja, kontaktirajte nas: " + supportEmail + "\n\nS poštovanjem,\nReal Estate Platform Team";
+    }
+
+    private String createTrialExpiringText(String userName, int daysRemaining) {
+        return "Poštovani/poštovana " + userName + ",\n\nŽelimo da Vas podsetimo da Vaš probni period ističe za " + daysRemaining + " dan(a).\n\nNakon isteka probnog perioda, i dalje ćete imati pristup osnovnim funkcijama platforme.\n\nAko želite da nastavite sa premium funkcijama, kontaktirajte nas.\n\nS poštovanjem,\nReal Estate Platform Team\n" + supportEmail;
+    }
+
+    private String createTrialExpiredText(String userName, UserTier newTier) {
+        String tierName = getTierDisplayName(newTier);
+        return "Poštovani/poštovana " + userName + ",\n\n" +
+               "Vaš probni period je istekao. Sada imate pristup " + tierName + " paketu.\n\n" +
+               "Osnovne funkcije su i dalje dostupne. Za povratak premium funkcija, kontaktirajte nas.\n\n" +
+               "S poštovanjem,\nReal Estate Platform Team\n" + supportEmail;
+    }
+
+    private String createTrialExtendedText(String userName, int additionalMonths) {
+        String endDate = LocalDate.now().plusMonths(additionalMonths).format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+        return "Poštovani/poštovana " + userName + ",\n\nVaš probni period je produžen za " + additionalMonths + " meseci.\n\nSada možete nastaviti da uživate u svim premium funkcijama do " + endDate + ".\n\nHvala Vam što koristite našu platformu!\n\nS poštovanjem,\nReal Estate Platform Team\n" + supportEmail;
+    }
+
     private String getTierDisplayName(UserTier tier) {
+        if (tier == null) {
+            return "Osnovni"; // Default fallback
+        }
+        
         switch (tier) {
-            case BASIC_USER: return "Basic";
+            case FREE_USER: return "Besplatni";
+            case BASIC_USER: return "Osnovni";
             case PREMIUM_USER: return "Premium";
-            case BASIC_AGENT: return "Basic Agent";
+            case FREE_AGENT: return "Besplatni Agent";
+            case BASIC_AGENT: return "Osnovni Agent";
             case PREMIUM_AGENT: return "Premium Agent";
-            case BASIC_INVESTOR: return "Basic Investor";
-            case PREMIUM_INVESTOR: return "Premium Investor";
-            default: return "Free";
+            case FREE_INVESTOR: return "Besplatni Investitor";
+            case BASIC_INVESTOR: return "Osnovni Investitor";
+            case PREMIUM_INVESTOR: return "Premium Investitor";
+            default: return "Osnovni";
         }
     }
 }
