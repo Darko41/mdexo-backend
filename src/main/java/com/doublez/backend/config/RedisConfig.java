@@ -1,12 +1,17 @@
 package com.doublez.backend.config;
 
 import java.time.Duration;
+import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -19,6 +24,8 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+
+import com.doublez.backend.config.security.JwtAuthenticationFilter;
 
 @Configuration
 @EnableCaching
@@ -35,6 +42,8 @@ public class RedisConfig {
 
     @Value("${spring.data.redis.ssl:false}")
     private boolean useSsl;
+    
+    private static final Logger logger = LoggerFactory.getLogger(RedisConfig.class);
 
     @Bean
     RedisConnectionFactory redisConnectionFactory() {
@@ -93,5 +102,32 @@ public class RedisConfig {
             .withCacheConfiguration("uniqueFeatures", 
                 RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(1)))
             .build();
+    }
+    
+    @Bean
+    @Order(1)
+    CommandLineRunner testRedisConnection(RedisTemplate<String, Object> redisTemplate) {
+        return args -> {
+            logger.info("🔍 Testing Redis connection to: {}:{}", redisHost, redisPort);
+            
+            try {
+                // Test basic Redis operations
+                String testKey = "startup_test_" + System.currentTimeMillis();
+                String testValue = "success_" + UUID.randomUUID();
+                
+                redisTemplate.opsForValue().set(testKey, testValue, Duration.ofSeconds(30));
+                String retrievedValue = (String) redisTemplate.opsForValue().get(testKey);
+                
+                if (testValue.equals(retrievedValue)) {
+                    logger.info("✅ Redis connection test: SUCCESS - Connection established and basic operations work");
+                } else {
+                    logger.error("❌ Redis connection test: FAILED - Values don't match. Expected: {}, Got: {}", testValue, retrievedValue);
+                }
+                
+            } catch (Exception e) {
+                logger.error("❌ Redis connection test: ERROR - {}", e.getMessage());
+                logger.debug("Stack trace:", e);
+            }
+        };
     }
 }
