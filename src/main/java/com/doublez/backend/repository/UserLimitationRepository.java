@@ -12,7 +12,7 @@ import com.doublez.backend.enums.UserTier;
 @Repository
 public interface UserLimitationRepository extends JpaRepository<UserLimitation, Long>{
 	
-Optional<UserLimitation> findByTier(UserTier tier);
+	Optional<UserLimitation> findByTier(UserTier tier);
     
     List<UserLimitation> findAllByOrderByPricePerMonthAsc();
 

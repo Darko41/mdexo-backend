@@ -1,0 +1,30 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+           http://www.liquibase.org/xml/ns/dbchangelog
+           http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="20251117-1-drop-agent-related-tables" author="Darko">
+        <comment>Remove old agent-related tables no longer used in application</comment>
+
+        <dropTable tableName="agency_memberships" cascadeConstraints="true"/>
+        <dropTable tableName="real_estate_agents" cascadeConstraints="true"/>
+        <dropTable tableName="agent_profiles" cascadeConstraints="true"/>
+
+        <rollback>
+            <createTable tableName="agency_memberships">
+                <column name="id" type="BIGINT"/>
+            </createTable>
+            <createTable tableName="real_estate_agents">
+                <column name="id" type="BIGINT"/>
+            </createTable>
+            <createTable tableName="agent_profiles">
+                <column name="id" type="BIGINT"/>
+            </createTable>
+        </rollback>
+
+    </changeSet>
+
+</databaseChangeLog>

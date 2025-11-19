@@ -1,6 +1,5 @@
 package com.doublez.backend.dto.agent;
 
-import com.doublez.backend.entity.agency.AgencyMembership;
 
 public class AgencyInfoDTO {
 	private Long id;
@@ -8,7 +7,6 @@ public class AgencyInfoDTO {
 	private String description;
 	private String logo;
 	private String contactInfo;
-	private AgencyMembership.MembershipStatus membershipStatus; // Use entity enum
 	private String position;
 
 	// Constructors
@@ -60,14 +58,6 @@ public class AgencyInfoDTO {
 
 	public void setContactInfo(String contactInfo) {
 		this.contactInfo = contactInfo;
-	}
-
-	public AgencyMembership.MembershipStatus getMembershipStatus() {
-		return membershipStatus;
-	}
-
-	public void setMembershipStatus(AgencyMembership.MembershipStatus membershipStatus) {
-		this.membershipStatus = membershipStatus;
 	}
 
 	public String getPosition() {

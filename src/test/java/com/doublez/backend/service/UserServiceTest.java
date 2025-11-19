@@ -216,11 +216,11 @@ class UserServiceTest {
         assertEquals(10L, userService.getUserCount());
     }
 
-    @Test
-    void getAgentCount_ShouldReturnCount() {
-        when(userRepository.countUsersByRole("ROLE_AGENT")).thenReturn(5L);
-        assertEquals(5L, userService.getAgentCount());
-    }
+//    @Test
+//    void getAgentCount_ShouldReturnCount() {
+//        when(userRepository.countUsersByRole("ROLE_AGENT")).thenReturn(5L);
+//        assertEquals(5L, userService.getAgentCount());
+//    }
 
     // Helper methods
     private UserResponseDTO createTestUserResponseDTO() {

@@ -2,18 +2,18 @@ package com.doublez.backend.service.realestate;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.doublez.backend.entity.RealEstate;
-import com.doublez.backend.entity.user.User;
-import com.doublez.backend.entity.user.UserLimitation;
+import com.doublez.backend.exception.IllegalOperationException;
 import com.doublez.backend.exception.LimitationExceededException;
-import com.doublez.backend.exception.UserNotFoundException;
+import com.doublez.backend.exception.ResourceNotFoundException;
 import com.doublez.backend.repository.RealEstateRepository;
-import com.doublez.backend.repository.UserRepository;
-import com.doublez.backend.service.user.LimitationService;
+import com.doublez.backend.service.user.UserService;
 
 import jakarta.transaction.Transactional;
 
@@ -21,89 +21,73 @@ import jakarta.transaction.Transactional;
 @Service
 @Transactional
 public class FeaturedListingService {
+	
+	private static final Logger logger = LoggerFactory.getLogger(FeaturedListingService.class);
 
-	private final RealEstateRepository realEstateRepository;
-	private final LimitationService limitationService;
-	private final UserRepository userRepository;
+    private final RealEstateRepository realEstateRepository;
+    private final RealEstateAuthorizationService authService; 
+    private final UserService userService; 
 
-	public FeaturedListingService(RealEstateRepository realEstateRepository, LimitationService limitationService,
-			UserRepository userRepository) {
-		this.realEstateRepository = realEstateRepository;
-		this.limitationService = limitationService;
-		this.userRepository = userRepository;
-	}
+    public FeaturedListingService(RealEstateRepository realEstateRepository, 
+                                RealEstateAuthorizationService authService,
+                                UserService userService) { 
+        this.realEstateRepository = realEstateRepository;
+        this.authService = authService;
+        this.userService = userService;
+    }
 
-	public boolean canFeatureRealEstate(Long userId, Long realEstateId) {
-		User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+    public boolean canFeatureRealEstate(Long userId, Long realEstateId) {
+        // USE AUTH SERVICE INSTEAD OF DUPLICATE LOGIC
+        return authService.canFeatureRealEstate(userId) && 
+               authService.hasRealEstateUpdateAccess(realEstateId);
+    }
 
-		UserLimitation limitations = limitationService.getLimitationsForUser(user);
+    public RealEstate featureRealEstate(Long userId, Long realEstateId, Integer featuredDays) {
+        // USE AUTH SERVICE FOR PERMISSION CHECK
+        if (!authService.canFeatureRealEstate(userId)) {
+            throw new LimitationExceededException("Featured listing limit reached");
+        }
 
-		// Check if user tier allows featuring
-		if (!limitations.getCanFeatureListings()) {
-			return false;
-		}
+        RealEstate realEstate = realEstateRepository.findById(realEstateId)
+                .orElseThrow(() -> new ResourceNotFoundException("Real estate not found"));
 
-		// Check if user hasn't reached the featured limit
-		Long currentFeaturedCount = realEstateRepository.countFeaturedRealEstatesByUser(userId);
-		return currentFeaturedCount < limitations.getMaxFeaturedListings();
-	}
+        // USE AUTH SERVICE FOR OWNERSHIP CHECK
+        if (!authService.isOwner(realEstateId)) {
+            throw new IllegalOperationException("User does not own this real estate");
+        }
 
-	public RealEstate featureRealEstate(Long userId, Long realEstateId, Integer featuredDays) {
-		// Check if user can feature more listings
-		if (!canFeatureRealEstate(userId, realEstateId)) {
-			User user = userRepository.findById(userId).orElseThrow();
-			UserLimitation limitations = limitationService.getLimitationsForUser(user);
-			Long currentFeaturedCount = realEstateRepository.countFeaturedRealEstatesByUser(userId);
+        realEstate.setFeatured(true, featuredDays);
+        return realEstateRepository.save(realEstate);
+    }
 
-			throw new LimitationExceededException(
-					String.format("Featured listing limit reached. You have %d featured listings out of %d allowed.",
-							currentFeaturedCount, limitations.getMaxFeaturedListings()));
-		}
+    public RealEstate unfeatureRealEstate(Long userId, Long realEstateId) {
+        RealEstate realEstate = realEstateRepository.findById(realEstateId)
+                .orElseThrow(() -> new ResourceNotFoundException("Real estate not found"));
 
-		RealEstate realEstate = realEstateRepository.findById(realEstateId)
-				.orElseThrow(() -> new RuntimeException("Real estate not found"));
+        // USE AUTH SERVICE FOR OWNERSHIP CHECK
+        if (!authService.isOwner(realEstateId)) {
+            throw new IllegalOperationException("User does not own this real estate");
+        }
 
-		// Verify ownership
-		if (!realEstate.getOwner().getId().equals(userId)) {
-			throw new RuntimeException("User does not own this real estate");
-		}
+        realEstate.setFeatured(false, null);
+        return realEstateRepository.save(realEstate);
+    }
 
-		// Set as featured
-		realEstate.setFeatured(true, featuredDays);
+    @Scheduled(cron = "0 0 2 * * ?")
+    public void unfeatureExpiredListings() {
+        List<RealEstate> expiredFeatured = realEstateRepository.findExpiredFeaturedRealEstates();
 
-		return realEstateRepository.save(realEstate);
-	}
+        for (RealEstate realEstate : expiredFeatured) {
+            realEstate.setFeatured(false, null);
+            realEstateRepository.save(realEstate);
+        }
 
-	public RealEstate unfeatureRealEstate(Long userId, Long realEstateId) {
-		RealEstate realEstate = realEstateRepository.findById(realEstateId)
-				.orElseThrow(() -> new RuntimeException("Real estate not found"));
+        if (!expiredFeatured.isEmpty()) {
+            logger.info("Unfeatured {} expired featured listings", expiredFeatured.size());
+        }
+    }
 
-		// Verify ownership
-		if (!realEstate.getOwner().getId().equals(userId)) {
-			throw new RuntimeException("User does not own this real estate");
-		}
-
-		realEstate.setFeatured(false, null);
-
-		return realEstateRepository.save(realEstate);
-	}
-
-	// Scheduled method to automatically unfeature expired listings
-	@Scheduled(cron = "0 0 2 * * ?") // Run daily at 2 AM
-	public void unfeatureExpiredListings() {
-		List<RealEstate> expiredFeatured = realEstateRepository.findExpiredFeaturedRealEstates();
-
-		for (RealEstate realEstate : expiredFeatured) {
-			realEstate.setFeatured(false, null);
-			realEstateRepository.save(realEstate);
-		}
-
-		if (!expiredFeatured.isEmpty()) {
-			System.out.println("Unfeatured " + expiredFeatured.size() + " expired featured listings");
-		}
-	}
-
-	public List<RealEstate> getActiveFeaturedListings(int limit) {
-		return realEstateRepository.findActiveFeaturedRealEstates(PageRequest.of(0, limit));
-	}
+    public List<RealEstate> getActiveFeaturedListings(int limit) {
+        return realEstateRepository.findActiveFeaturedRealEstates(PageRequest.of(0, limit));
+    }
 }

@@ -209,15 +209,19 @@ public class EmailTemplateService {
 	}
 
 	private String getTierDisplayName(UserTier tier) {
-		switch (tier) {
-		case BASIC_USER:
-			return "Osnovni korisnički";
-		case BASIC_AGENT:
-			return "Osnovni agentski";
-		case BASIC_INVESTOR:
-			return "Osnovni investitorski";
-		default:
-			return "Osnovni";
-		}
+	    if (tier == null) return "Osnovni";
+	    
+	    switch (tier) {
+	        case FREE_USER: return "Besplatni korisnički";
+	        case BASIC_USER: return "Osnovni korisnički";
+	        case PREMIUM_USER: return "Premium korisnički";
+	        case AGENCY_BASIC: return "Osnovni agencijski";
+	        case AGENCY_PREMIUM: return "Premium agencijski";
+	        case FREE_INVESTOR: return "Besplatni investitorski";
+	        case BASIC_INVESTOR: return "Osnovni investitorski";
+	        case PREMIUM_INVESTOR: return "Premium investitorski";
+	        case ADMIN: return "Administrator";
+	        default: return "Osnovni";
+	    }
 	}
 }

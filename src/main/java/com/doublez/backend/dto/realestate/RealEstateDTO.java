@@ -8,46 +8,59 @@ import com.doublez.backend.enums.ListingType;
 import com.doublez.backend.enums.PropertyType;
 
 public class RealEstateDTO {
-	
-    private Long propertyId;
-    private String title;
-    private String description;
-    private PropertyType propertyType;
-    private ListingType listingType;
-    private BigDecimal price;
-    private String address;
-    private String city;
-    private String state;
-    private String zipCode;
-    private String sizeInSqMt;
-    private List<String> features;
-    private List<String> images;
-    private Long ownerId;
-    private LocalDate createdAt;
-    private LocalDate updatedAt;
+	private Long propertyId;
+	private String title;
+	private String description;
+	private PropertyType propertyType;
+	private ListingType listingType;
+	private BigDecimal price;
+	private String address;
+	private String city;
+	private String state;
+	private String zipCode;
+	private String sizeInSqMt;
+	private List<String> features;
+	private List<String> images;
+	private Long ownerId;
+	private Long agencyId; // Agency association
+	private String agencyName; // Agency name for display
+	private String agentName; // Specific agent for this listing
+	private String agentPhone; // Agent contact
+	private String agentLicense; // Agent license
+	private Boolean isActive; // Active state
+	private LocalDate createdAt;
+	private LocalDate updatedAt;
 
-    // Constructors
-    public RealEstateDTO() {}
+	// Constructors
+	public RealEstateDTO() {
+	}
 
-    public RealEstateDTO(String title, String description, PropertyType propertyType, 
-                        ListingType listingType, BigDecimal price, String address, 
-                        String city, String state, String zipCode, String sizeInSqMt, 
-                        List<String> features, List<String> images, Long ownerId) {
-        this.title = title;
-        this.description = description;
-        this.propertyType = propertyType;
-        this.listingType = listingType;
-        this.price = price;
-        this.address = address;
-        this.city = city;
-        this.state = state;
-        this.zipCode = zipCode;
-        this.sizeInSqMt = sizeInSqMt;
-        this.features = features;
-        this.images = images;
-        this.ownerId = ownerId;
-    }
+	// Updated constructor
+	public RealEstateDTO(String title, String description, PropertyType propertyType, ListingType listingType,
+			BigDecimal price, String address, String city, String state, String zipCode, String sizeInSqMt,
+			List<String> features, List<String> images, Long ownerId, Long agencyId, String agentName,
+			String agentPhone, String agentLicense) {
+		this.title = title;
+		this.description = description;
+		this.propertyType = propertyType;
+		this.listingType = listingType;
+		this.price = price;
+		this.address = address;
+		this.city = city;
+		this.state = state;
+		this.zipCode = zipCode;
+		this.sizeInSqMt = sizeInSqMt;
+		this.features = features;
+		this.images = images;
+		this.ownerId = ownerId;
+		this.agencyId = agencyId;
+		this.agentName = agentName;
+		this.agentPhone = agentPhone;
+		this.agentLicense = agentLicense;
+		this.isActive = true; // Default to active
+	}
 
+	// Getters and setters
 	public Long getPropertyId() {
 		return propertyId;
 	}
@@ -160,6 +173,54 @@ public class RealEstateDTO {
 		this.ownerId = ownerId;
 	}
 
+	public Long getAgencyId() {
+		return agencyId;
+	}
+
+	public void setAgencyId(Long agencyId) {
+		this.agencyId = agencyId;
+	}
+
+	public String getAgencyName() {
+		return agencyName;
+	}
+
+	public void setAgencyName(String agencyName) {
+		this.agencyName = agencyName;
+	}
+
+	public String getAgentName() {
+		return agentName;
+	}
+
+	public void setAgentName(String agentName) {
+		this.agentName = agentName;
+	}
+
+	public String getAgentPhone() {
+		return agentPhone;
+	}
+
+	public void setAgentPhone(String agentPhone) {
+		this.agentPhone = agentPhone;
+	}
+
+	public String getAgentLicense() {
+		return agentLicense;
+	}
+
+	public void setAgentLicense(String agentLicense) {
+		this.agentLicense = agentLicense;
+	}
+
+	public Boolean getIsActive() {
+		return isActive;
+	}
+
+	public void setIsActive(Boolean isActive) {
+		this.isActive = isActive;
+	}
+
 	public LocalDate getCreatedAt() {
 		return createdAt;
 	}
@@ -175,7 +236,4 @@ public class RealEstateDTO {
 	public void setUpdatedAt(LocalDate updatedAt) {
 		this.updatedAt = updatedAt;
 	}
-    
-    
-
 }

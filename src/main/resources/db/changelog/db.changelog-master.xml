@@ -14,5 +14,7 @@
     <include file="20251112-userlimitation-investorrole.xml" relativeToChangelogFile="true"/>
     <include file="20251112-user-verification.xml" relativeToChangelogFile="true"/>
     <include file="20251112-trial-dates.xml" relativeToChangelogFile="true"/>
+    <include file="20251116-agent-removal.xml" relativeToChangelogFile="true"/>
+    <include file="20251117-drop-agent-related-tables.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

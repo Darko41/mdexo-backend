@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import com.doublez.backend.dto.InvestorProfileDTO;
+import com.doublez.backend.dto.agent.AgencyDTO;
 import com.doublez.backend.dto.agent.AgencyInfoDTO;
 import com.doublez.backend.enums.UserTier;
 
@@ -39,9 +40,20 @@ public class UserDTO {
 
         private List<@NotBlank String> roles = List.of("ROLE_USER");
         private UserProfileDTO profile;
-        private UserTier tier = UserTier.FREE_USER; // 🆕 ADD DEFAULT TIER
+        private UserTier tier = UserTier.FREE_USER; // ADD DEFAULT TIER
+        
+        // Agency registration fields
+        private AgencyDTO.Create agency;
 
-        // Getters and setters for Create class
+        public AgencyDTO.Create getAgency() {
+			return agency;
+		}
+
+		public void setAgency(AgencyDTO.Create agency) {
+			this.agency = agency;
+		}
+
+		// Getters and setters for Create class
         public String getEmail() {
             return email;
         }

@@ -17,7 +17,6 @@ import com.doublez.backend.entity.user.User;
 import com.doublez.backend.exception.UserNotFoundException;
 import com.doublez.backend.mapper.UserMapper;
 import com.doublez.backend.repository.UserRepository;
-import com.doublez.backend.service.user.RolePromotionService;
 import com.doublez.backend.service.user.UserService;
 
 @RestController
@@ -25,30 +24,16 @@ import com.doublez.backend.service.user.UserService;
 //@CrossOrigin(origins = "http://localhost:5173")
 public class InvestorProfileController {
 
-	private final RolePromotionService rolePromotionService;
     private final UserRepository userRepository;
     private final UserService userService;
     private final UserMapper userMapper;
     
-    public InvestorProfileController(RolePromotionService rolePromotionService,
-                                   UserRepository userRepository,
+    public InvestorProfileController(UserRepository userRepository,
                                    UserService userService,
                                    UserMapper userMapper) {
-        this.rolePromotionService = rolePromotionService;
         this.userRepository = userRepository;
         this.userService = userService;
         this.userMapper = userMapper;
-    }
-
-    @PostMapping("/apply")
-    public ResponseEntity<UserDTO> applyAsInvestor(@RequestBody InvestorProfileDTO investorProfileDto) {
-        try {
-            Long userId = userService.getCurrentUserId();
-            UserDTO updatedUser = rolePromotionService.promoteToInvestor(userId, investorProfileDto);
-            return ResponseEntity.ok(updatedUser);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
     }
 
 	@PutMapping("/profile")

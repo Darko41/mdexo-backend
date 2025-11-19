@@ -78,7 +78,6 @@ public class AdminController {
         }
         model.addAttribute("realEstateCount", realEstateService.getRealEstateCount());
         model.addAttribute("userCount", userService.getUserCount());
-        model.addAttribute("agentCount", userService.getAgentCount());
         return "admin/dashboard";
     }
 

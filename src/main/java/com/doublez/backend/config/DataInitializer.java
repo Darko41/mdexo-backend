@@ -43,15 +43,6 @@ public class DataInitializer {
 					// PREMIUM_USER: 15 real estates, 100 images total, 15 images per real estate
 					new UserLimitation(UserTier.PREMIUM_USER, 15, 100, 15, true, 5, BigDecimal.valueOf(990)),
 
-					// FREE_AGENT: 10 real estates, 100 images total, 10 images per real estate
-					new UserLimitation(UserTier.FREE_AGENT, 10, 100, 10, true, 3, BigDecimal.ZERO),
-
-					// BASIC_AGENT: 25 real estates, 250 images total, 20 images per real estate
-					new UserLimitation(UserTier.BASIC_AGENT, 25, 250, 20, true, 10, BigDecimal.valueOf(1490)),
-
-					// PREMIUM_AGENT: 100 real estates, 1000 images total, 30 images per real estate
-					new UserLimitation(UserTier.PREMIUM_AGENT, 100, 1000, 30, true, 25, BigDecimal.valueOf(2990)),
-
 					// AGENCY_BASIC: 50 real estates, 500 images total, 25 images per real estate
 					new UserLimitation(UserTier.AGENCY_BASIC, 50, 500, 25, true, 15, BigDecimal.valueOf(2490)),
 

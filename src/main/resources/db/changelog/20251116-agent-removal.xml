@@ -1,0 +1,39 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:pro="http://www.liquibase.org/xml/ns/pro" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/pro http://www.liquibase.org/xml/ns/pro/liquibase-pro-latest.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet author="Darko (generated)" id="1763254380932-8">
+        <addColumn tableName="real_estates">
+            <column name="agent_license" type="VARCHAR(255)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="Darko (generated)" id="1763254380932-9">
+        <addColumn tableName="real_estates">
+            <column name="agent_name" type="VARCHAR(255)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="Darko (generated)" id="1763254380932-10">
+        <addColumn tableName="real_estates">
+            <column name="agent_phone" type="VARCHAR(255)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="Darko (generated)" id="1763254380932-1">
+        <modifyDataType columnName="document_image_path" newDataType="varchar(255)" tableName="user_verifications"/>
+    </changeSet>
+    <changeSet author="Darko (generated)" id="1763254380932-2">
+        <dropNotNullConstraint columnDataType="boolean" columnName="is_featured" tableName="real_estates"/>
+    </changeSet>
+    <changeSet author="Darko (generated)" id="1763254380932-3">
+        <dropDefaultValue columnDataType="boolean" columnName="is_featured" tableName="real_estates"/>
+    </changeSet>
+    <changeSet author="Darko (generated)" id="1763254380932-4">
+        <dropNotNullConstraint columnDataType="varchar(255)" columnName="tier" tableName="users"/>
+    </changeSet>
+    <changeSet author="Darko (generated)" id="1763254380932-5">
+        <dropDefaultValue columnDataType="varchar(255)" columnName="tier" tableName="users"/>
+    </changeSet>
+    <changeSet author="Darko (generated)" id="1763254380932-6">
+        <dropNotNullConstraint columnDataType="boolean" columnName="trial_used" tableName="users"/>
+    </changeSet>
+    <changeSet author="Darko (generated)" id="1763254380932-7">
+        <dropDefaultValue columnDataType="boolean" columnName="trial_used" tableName="users"/>
+    </changeSet>
+</databaseChangeLog>

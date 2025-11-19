@@ -1,19 +1,15 @@
 package com.doublez.backend.entity.agency;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
 
 import com.doublez.backend.entity.user.User;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
@@ -22,6 +18,7 @@ import jakarta.validation.constraints.NotBlank;
 @Entity
 @Table(name = "agencies")
 public class Agency {
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
@@ -32,14 +29,25 @@ public class Agency {
 
 	private String description;
 	private String logo;
-	private String contactInfo;
+	
+	@Column(name = "contact_email")
+	private String contactEmail;
+	
+	@Column(name = "contact_phone")
+	private String contactPhone;
+	
+	@Column(name = "website")
+	private String website;
+	
+	@Column(name = "license_number", nullable = true)
+	private String licenseNumber;
+	
+	@Column(name = "is_active", nullable = true)
+	private Boolean isActive = true;
 
 	@OneToOne
 	@JoinColumn(name = "admin_id", nullable = false)
 	private User admin;
-
-	@OneToMany(mappedBy = "agency", cascade = CascadeType.ALL)
-	private List<AgencyMembership> memberships = new ArrayList<>();
 
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private LocalDate createdAt;
@@ -53,9 +61,22 @@ public class Agency {
 	public Agency() {
 	}
 
-	public Agency(String name, String description, User admin) {
+	public Agency(String name, String description, User admin, String licenseNumber) {
 		this.name = name;
 		this.description = description;
+		this.admin = admin;
+		this.licenseNumber = licenseNumber;
+	}
+
+	public Agency(String name, String description, String logo, String contactEmail, 
+	              String contactPhone, String website, String licenseNumber, User admin) {
+		this.name = name;
+		this.description = description;
+		this.logo = logo;
+		this.contactEmail = contactEmail;
+		this.contactPhone = contactPhone;
+		this.website = website;
+		this.licenseNumber = licenseNumber;
 		this.admin = admin;
 	}
 
@@ -92,12 +113,44 @@ public class Agency {
 		this.logo = logo;
 	}
 
-	public String getContactInfo() {
-		return contactInfo;
+	public String getContactEmail() {
+		return contactEmail;
 	}
 
-	public void setContactInfo(String contactInfo) {
-		this.contactInfo = contactInfo;
+	public void setContactEmail(String contactEmail) {
+		this.contactEmail = contactEmail;
+	}
+
+	public String getContactPhone() {
+		return contactPhone;
+	}
+
+	public void setContactPhone(String contactPhone) {
+		this.contactPhone = contactPhone;
+	}
+
+	public String getWebsite() {
+		return website;
+	}
+
+	public void setWebsite(String website) {
+		this.website = website;
+	}
+
+	public String getLicenseNumber() {
+		return licenseNumber;
+	}
+
+	public void setLicenseNumber(String licenseNumber) {
+		this.licenseNumber = licenseNumber;
+	}
+
+	public Boolean getIsActive() {
+		return isActive;
+	}
+
+	public void setIsActive(Boolean isActive) {
+		this.isActive = isActive;
 	}
 
 	public User getAdmin() {
@@ -108,19 +161,40 @@ public class Agency {
 		this.admin = admin;
 	}
 
-	public List<AgencyMembership> getMemberships() {
-		return memberships;
-	}
-
-	public void setMemberships(List<AgencyMembership> memberships) {
-		this.memberships = memberships;
-	}
-
 	public LocalDate getCreatedAt() {
 		return createdAt;
 	}
 
 	public void setCreatedAt(LocalDate createdAt) {
 		this.createdAt = createdAt;
+	}
+
+	// Helper methods
+	public String getDisplayContactInfo() {
+		StringBuilder sb = new StringBuilder();
+		if (contactEmail != null && !contactEmail.trim().isEmpty()) {
+			sb.append("Email: ").append(contactEmail);
+		}
+		if (contactPhone != null && !contactPhone.trim().isEmpty()) {
+			if (sb.length() > 0) sb.append(" | ");
+			sb.append("Phone: ").append(contactPhone);
+		}
+		if (website != null && !website.trim().isEmpty()) {
+			if (sb.length() > 0) sb.append(" | ");
+			sb.append("Website: ").append(website);
+		}
+		return sb.length() > 0 ? sb.toString() : "No contact information";
+	}
+
+	public boolean hasWebsite() {
+		return website != null && !website.trim().isEmpty();
+	}
+
+	public boolean hasContactEmail() {
+		return contactEmail != null && !contactEmail.trim().isEmpty();
+	}
+
+	public boolean hasContactPhone() {
+		return contactPhone != null && !contactPhone.trim().isEmpty();
 	}
 }

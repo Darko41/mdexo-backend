@@ -11,7 +11,9 @@ import java.util.Set;
 
 import org.springframework.format.annotation.NumberFormat;
 
+import com.doublez.backend.entity.agency.Agency;
 import com.doublez.backend.entity.user.User;
+import com.doublez.backend.entity.user.UserProfile;
 import com.doublez.backend.enums.HeatingType;
 import com.doublez.backend.enums.ListingType;
 import com.doublez.backend.enums.PropertyCondition;
@@ -113,13 +115,13 @@ public class RealEstate {
 	@Column(name = "updated_at")
 	private LocalDate updatedAt;
 	
-	@Column(name = "is_featured", nullable = false) // 🆕 TEMPORARY: nullable = true
+	@Column(name = "is_featured", nullable = false)
     private Boolean isFeatured = false;
     
-	@Column(name = "featured_until", nullable = false) // 🆕 TEMPORARY: nullable = true
+	@Column(name = "featured_until", nullable = false)
     private LocalDateTime featuredUntil;
     
-	@Column(name = "featured_at", nullable = false) // 🆕 TEMPORARY: nullable = true
+	@Column(name = "featured_at", nullable = false)
     private LocalDateTime featuredAt;
 	
 	@PrePersist
@@ -133,23 +135,23 @@ public class RealEstate {
 		this.updatedAt = LocalDate.now();
 	}
 	
-	@ManyToMany
-	@JoinTable(
-			name = "real_estate_agents",
-			joinColumns = @JoinColumn(name = "property_id"),
-			inverseJoinColumns = @JoinColumn(name = "user_id")
-			)
-	private Set<User> assignedAgents = new HashSet<>();
+	@Column(name = "agent_name")
+	private String agentName;
+
+	@Column(name = "agent_phone")
+	private String agentPhone;
+
+	@Column(name = "agent_license")
+	private String agentLicense;
 	
-	
-	// NEW: Geographic coordinates
+	// Geographic coordinates
     @Column(name = "latitude", precision = 9, scale = 6)
     private BigDecimal latitude;
     
     @Column(name = "longitude", precision = 9, scale = 6)
     private BigDecimal longitude;
     
-    // 🆕 NEW: Room and floor information
+    // Room and floor information
     @Column(name = "room_count", precision = 3, scale = 1)
     private BigDecimal roomCount; // Supports 0.5, 1, 1.5, 2, etc.
     
@@ -159,7 +161,7 @@ public class RealEstate {
     @Column(name = "total_floors")
     private Integer totalFloors;
     
-    // 🆕 NEW: Property characteristics
+    // Property characteristics
     @Column(name = "construction_year")
     private Integer constructionYear;
     
@@ -173,24 +175,61 @@ public class RealEstate {
     @Enumerated(EnumType.STRING)
     @Column(name = "property_condition", length = 50)
     private PropertyCondition propertyCondition;
+    
+    //  AGENCY SUPPORT =====
+ 	@ManyToOne(fetch = FetchType.LAZY)
+ 	@JoinColumn(name = "agency_id")
+ 	private Agency agency;  // Nullable - for individual user properties
+ 	
+ 	// ACTIVE/INACTIVE STATE =====
+ 	@Column(name = "is_active", nullable = true)
+ 	private Boolean isActive = true;
 	
-	
-	public void assignAgent(User agent) {
-		this.assignedAgents.add(agent);
-	}
-	
-	public void removeAgent(User agent) {
-        this.assignedAgents.remove(agent);
-    }
-	
-	 public boolean isAssignedToAgent(User agent) {
-	        return this.assignedAgents.contains(agent);
-	    }
 	// METHODS
 	// GETTERS AND SETTERS
+ 	
+	public Agency getAgency() {
+		return agency;
+	}
+
+	public void setAgency(Agency agency) {
+		this.agency = agency;
+	}
+
+	public Boolean getIsActive() {
+		return isActive;
+	}
+
+	public void setIsActive(Boolean isActive) {
+		this.isActive = isActive;
+	}
 
 	public Long getPropertyId() {
 		return propertyId;
+	}
+
+	public String getAgentName() {
+		return agentName;
+	}
+
+	public void setAgentName(String agentName) {
+		this.agentName = agentName;
+	}
+
+	public String getAgentPhone() {
+		return agentPhone;
+	}
+
+	public void setAgentPhone(String agentPhone) {
+		this.agentPhone = agentPhone;
+	}
+
+	public String getAgentLicense() {
+		return agentLicense;
+	}
+
+	public void setAgentLicense(String agentLicense) {
+		this.agentLicense = agentLicense;
 	}
 
 	public Boolean getIsFeatured() {
@@ -215,14 +254,6 @@ public class RealEstate {
 
 	public void setFeaturedAt(LocalDateTime featuredAt) {
 		this.featuredAt = featuredAt;
-	}
-
-	public Set<User> getAssignedAgents() {
-		return assignedAgents;
-	}
-
-	public void setAssignedAgents(Set<User> assignedAgents) {
-		this.assignedAgents = assignedAgents;
 	}
 
 	public void setPropertyId(Long propertyId) {
@@ -424,6 +455,82 @@ public class RealEstate {
 	
 	// Helper methods
 	
+	/**
+	 * Returns true if this property belongs to an agency
+	 */
+	public boolean isAgencyProperty() {
+		return this.agency != null;
+	}
+	
+	/**
+	 * Returns true if this property belongs to an individual user
+	 */
+	public boolean isIndividualProperty() {
+		return this.agency == null;
+	}
+	
+	/**
+	 * Get the effective contact info based on property type
+	 */
+	public String getEffectiveContactName() {
+		if (isAgencyProperty() && agentName != null) {
+			return agentName; // Agency admin filled this specifically for the listing
+		} else if (isIndividualProperty() && owner != null && owner.getUserProfile() != null) {
+			// Individual user's name from profile
+			UserProfile profile = owner.getUserProfile();
+			if (profile.getFirstName() != null && profile.getLastName() != null) {
+				return profile.getFirstName() + " " + profile.getLastName();
+			} else if (profile.getFirstName() != null) {
+				return profile.getFirstName();
+			}
+		}
+		return agentName != null ? agentName : "Contact Owner";
+	}
+	
+	/**
+	 * Get effective contact phone
+	 */
+	public String getEffectiveContactPhone() {
+		if (isAgencyProperty() && agentPhone != null) {
+			return agentPhone; // Agency admin filled this
+		} else if (isIndividualProperty() && owner != null && owner.getUserProfile() != null) {
+			// Individual user's phone from profile
+			return owner.getUserProfile().getPhone();
+		}
+		return agentPhone;
+	}
+	
+	/**
+	 * Get effective license number
+	 */
+	public String getEffectiveContactLicense() {
+		if (isAgencyProperty() && agentLicense != null) {
+			return agentLicense; // Agency admin filled this
+		} else if (isAgencyProperty() && agency != null) {
+			// Fallback to agency's license number
+			return agency.getLicenseNumber();
+		}
+		return agentLicense;
+	}
+	
+	/**
+	 * Get display type for UI
+	 */
+	public String getPropertyTypeDisplay() {
+		if (isAgencyProperty()) {
+			return "Agency Listing";
+		} else {
+			return "Private Listing";
+		}
+	}
+	
+	/**
+	 * Helper to check if this is a professional listing
+	 */
+	public boolean isProfessionalListing() {
+		return isAgencyProperty();
+	}
+	
 	public String getFloorDisplay() {
         if (floor == null || totalFloors == null) return "N/A";
         
@@ -455,14 +562,14 @@ public class RealEstate {
     }
     
     public boolean isCurrentlyFeatured() {
-        if (!isFeatured) {
-            return false;
-        }
-        if (featuredUntil == null) {
-            return true; // Permanent featuring
-        }
-        return LocalDateTime.now().isBefore(featuredUntil);
-    }
+		if (!isFeatured || !isActive) {  
+			return false;
+		}
+		if (featuredUntil == null) {
+			return true; // Permanent featuring
+		}
+		return LocalDateTime.now().isBefore(featuredUntil);
+	}
     
     public void setFeatured(boolean featured, Integer featuredDays) {
         this.isFeatured = featured;

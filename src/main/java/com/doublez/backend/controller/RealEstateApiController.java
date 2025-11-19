@@ -33,7 +33,6 @@ import com.doublez.backend.entity.RealEstate;
 import com.doublez.backend.enums.ListingType;
 import com.doublez.backend.enums.PropertyType;
 import com.doublez.backend.exception.ResourceNotFoundException;
-import com.doublez.backend.service.realestate.RealEstateAgentAssignmentService;
 import com.doublez.backend.service.realestate.RealEstateService;
 
 import jakarta.validation.Valid;
@@ -46,12 +45,9 @@ public class RealEstateApiController {
     private static final Logger logger = LoggerFactory.getLogger(RealEstateApiController.class);
     
     private final RealEstateService realEstateService;
-    private final RealEstateAgentAssignmentService assignmentService;
 
-    public RealEstateApiController(RealEstateService realEstateService,
-                                 RealEstateAgentAssignmentService assignmentService) {
+    public RealEstateApiController(RealEstateService realEstateService) {
         this.realEstateService = realEstateService;
-        this.assignmentService = assignmentService;
     }
 
     // === PUBLIC ENDPOINTS (no auth) ===
@@ -286,22 +282,6 @@ public class RealEstateApiController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             logger.error("❌ Failed to update real estate {}: {}", propertyId, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
-    
-    @PostMapping("/{propertyId}/assign-agent/{agentId}")
-    @PreAuthorize("hasRole('ADMIN') or @realEstateAuthorizationService.isOwner(#propertyId)")
-    public ResponseEntity<Void> assignAgentToProperty(
-            @PathVariable Long propertyId,
-            @PathVariable Long agentId) {
-        try {
-            logger.info("👨‍💼 Assigning agent {} to property {}", agentId, propertyId);
-            assignmentService.assignAgentToProperty(propertyId, agentId);
-            logger.info("✅ Successfully assigned agent {} to property {}", agentId, propertyId);
-            return ResponseEntity.ok().build();
-        } catch (Exception e) {
-            logger.error("❌ Failed to assign agent {} to property {}: {}", agentId, propertyId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

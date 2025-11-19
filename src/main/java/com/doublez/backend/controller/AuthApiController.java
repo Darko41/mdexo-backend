@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.doublez.backend.config.security.JwtTokenUtil;
 import com.doublez.backend.dto.CustomUserDetails;
+import com.doublez.backend.entity.agency.Agency;
 import com.doublez.backend.entity.user.User;
 import com.doublez.backend.service.user.UserService;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -116,6 +117,15 @@ public class AuthApiController {
             response.put("email", authenticatedEmail);
             response.put("roles", roles);
             response.put("message", "Login successful");
+            
+            //  Agency info
+            if (user.isAgencyAdmin() && !user.getOwnedAgencies().isEmpty()) {
+                Agency agency = user.getOwnedAgencies().get(0);
+                response.put("agency", Map.of(
+                    "id", agency.getId(),
+                    "name", agency.getName()
+                ));
+            }
 
             return ResponseEntity.ok(response);
 

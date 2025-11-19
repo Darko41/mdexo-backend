@@ -20,104 +20,77 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
 public class RealEstateCreateDTO {
-	
 	@NotBlank
-    private String title;
-    
-    private String description;
-    
-    @NotNull
-    private PropertyType propertyType;
-    
-    @NotNull
-    private ListingType listingType;
-    
-    @NotNull
-    @Positive
-    private BigDecimal price;
-    
-    @NotBlank
-    private String address;
-    
-    @NotBlank
-    private String city;
-    
-    @NotBlank
-    private String state;
-    
-    @NotBlank
-    private String zipCode;
-    
-    private String sizeInSqMt;
-    
-    @Nullable
-    private Long ownerId;
-    
-    @Size(max = 10)
-    private List<String> features = new ArrayList<>();
-    
-//    private List<String> images = new ArrayList<>();
-    
-    @DecimalMin(value = "-90.0", message = "Latitude must be between -90 and 90")
-    @DecimalMax(value = "90.0", message = "Latitude must be between -90 and 90")
-    private BigDecimal latitude;
-    
-    @DecimalMin(value = "-180.0", message = "Longitude must be between -180 and 180")
-    @DecimalMax(value = "180.0", message = "Longitude must be between -180 and 180")
-    private BigDecimal longitude;
-    
-    @DecimalMin(value = "0.5", message = "Room count must be at least 0.5")
-    @DecimalMax(value = "20.0", message = "Room count cannot exceed 20")
-    private BigDecimal roomCount;
-    
-    @Min(value = -5, message = "Floor cannot be lower than -5 (5th basement)")
-    @Max(value = 200, message = "Floor cannot be higher than 200")
-    private Integer floor;
-    
-    @Min(value = 1, message = "Total floors must be at least 1")
-    @Max(value = 200, message = "Total floors cannot exceed 200")
-    private Integer totalFloors;
-    
-    @Min(value = 1500, message = "Construction year must be realistic")
-    @Max(value = 2030, message = "Construction year cannot be in far future")
-    private Integer constructionYear;
-    
-    private String municipality;
-    
-    private HeatingType heatingType;
-    private PropertyCondition propertyCondition;
-    
-    public RealEstateCreateDTO() {
-    }
+	private String title;
 
-    public RealEstateCreateDTO(
-            String title, 
-            String description,
-            PropertyType propertyType,
-            ListingType listingType,
-            BigDecimal price,
-            String address,
-            String city, 
-            String state,
-            String zipCode,
-            String sizeInSqMt,
-            List<String> features,
-            Long ownerId) {
-        
-        this.title = title;
-        this.description = description;
-        this.propertyType = propertyType;
-        this.listingType = listingType;
-        this.price = price;
-        this.address = address;
-        this.city = city;
-        this.state = state;
-        this.zipCode = zipCode;
-        this.sizeInSqMt = sizeInSqMt;
-        this.features = features != null ? features : new ArrayList<>();
-        this.ownerId = ownerId;
-    }
+	private String description;
 
+	@NotNull
+	private PropertyType propertyType;
+
+	@NotNull
+	private ListingType listingType;
+
+	@NotNull
+	@Positive
+	private BigDecimal price;
+
+	@NotBlank
+	private String address;
+
+	@NotBlank
+	private String city;
+
+	@NotBlank
+	private String state;
+
+	@NotBlank
+	private String zipCode;
+
+	private String sizeInSqMt;
+
+	@Nullable
+	private Long ownerId;
+
+	@Nullable
+	private Long agencyId; // 🆕 NEW: For agency properties
+
+	private String agentName; // 🆕 NEW: Specific agent for agency listings
+	private String agentPhone; // 🆕 NEW: Agent contact
+	private String agentLicense; // 🆕 NEW: Agent license
+
+	@Size(max = 10)
+	private List<String> features = new ArrayList<>();
+
+	@DecimalMin(value = "-90.0")
+	@DecimalMax(value = "90.0")
+	private BigDecimal latitude;
+
+	@DecimalMin(value = "-180.0")
+	@DecimalMax(value = "180.0")
+	private BigDecimal longitude;
+
+	@DecimalMin(value = "0.5")
+	@DecimalMax(value = "20.0")
+	private BigDecimal roomCount;
+
+	@Min(value = -5)
+	@Max(value = 200)
+	private Integer floor;
+
+	@Min(value = 1)
+	@Max(value = 200)
+	private Integer totalFloors;
+
+	@Min(value = 1500)
+	@Max(value = 2030)
+	private Integer constructionYear;
+
+	private String municipality;
+	private HeatingType heatingType;
+	private PropertyCondition propertyCondition;
+
+	// Getters and setters for all fields
 	public String getTitle() {
 		return title;
 	}
@@ -198,20 +171,52 @@ public class RealEstateCreateDTO {
 		this.sizeInSqMt = sizeInSqMt;
 	}
 
-	public List<String> getFeatures() {
-		return features;
-	}
-
-	public void setFeatures(List<String> features) {
-		this.features = features;
-	}
-
 	public Long getOwnerId() {
 		return ownerId;
 	}
 
 	public void setOwnerId(Long ownerId) {
 		this.ownerId = ownerId;
+	}
+
+	public Long getAgencyId() {
+		return agencyId;
+	}
+
+	public void setAgencyId(Long agencyId) {
+		this.agencyId = agencyId;
+	}
+
+	public String getAgentName() {
+		return agentName;
+	}
+
+	public void setAgentName(String agentName) {
+		this.agentName = agentName;
+	}
+
+	public String getAgentPhone() {
+		return agentPhone;
+	}
+
+	public void setAgentPhone(String agentPhone) {
+		this.agentPhone = agentPhone;
+	}
+
+	public String getAgentLicense() {
+		return agentLicense;
+	}
+
+	public void setAgentLicense(String agentLicense) {
+		this.agentLicense = agentLicense;
+	}
+
+	public List<String> getFeatures() {
+		return features;
+	}
+
+	public void setFeatures(List<String> features) {
+		this.features = features;
 	}
 
 	public BigDecimal getLatitude() {
@@ -285,5 +290,4 @@ public class RealEstateCreateDTO {
 	public void setPropertyCondition(PropertyCondition propertyCondition) {
 		this.propertyCondition = propertyCondition;
 	}
-    
 }

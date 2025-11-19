@@ -578,12 +578,12 @@ public class ResendEmailService {
             case FREE_USER: return "Besplatni";
             case BASIC_USER: return "Osnovni";
             case PREMIUM_USER: return "Premium";
-            case FREE_AGENT: return "Besplatni Agent";
-            case BASIC_AGENT: return "Osnovni Agent";
-            case PREMIUM_AGENT: return "Premium Agent";
+            case AGENCY_BASIC: return "Osnovna Agencija";
+            case AGENCY_PREMIUM: return "Premium Agencija";
             case FREE_INVESTOR: return "Besplatni Investitor";
             case BASIC_INVESTOR: return "Osnovni Investitor";
             case PREMIUM_INVESTOR: return "Premium Investitor";
+            case ADMIN: return "Administrator";
             default: return "Osnovni";
         }
     }

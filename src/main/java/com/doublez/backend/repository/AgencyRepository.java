@@ -5,23 +5,26 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.doublez.backend.entity.agency.Agency;
-import com.doublez.backend.entity.user.User;
 
 @Repository
 public interface AgencyRepository extends JpaRepository<Agency, Long> {
-    Optional<Agency> findByName(String name);
-    List<Agency> findByAdmin(User admin);
+    
+	@Query("SELECT a FROM Agency a WHERE a.admin.id = :adminId")
+    List<Agency> findByAdminId(@Param("adminId") Long adminId);
+    
     boolean existsByName(String name);
     
-    @Query("SELECT a FROM Agency a WHERE a.admin.id = :adminId")
-    List<Agency> findByAdminId(Long adminId);
+    boolean existsByLicenseNumber(String licenseNumber);
     
-    @Query("SELECT a FROM Agency a JOIN a.memberships m WHERE m.user.id = :userId AND m.status = 'ACTIVE'")
-    List<Agency> findActiveAgenciesByUserId(Long userId);
+    List<Agency> findByIsActiveTrue();
     
-    @Query("SELECT COUNT(a) FROM Agency a WHERE a.admin.id = :adminId")
-    long countByAdminId(Long adminId);
+    List<Agency> findByIsActiveFalse();
+    
+    // Find agencies by admin user (active only)
+    @Query("SELECT a FROM Agency a WHERE a.admin.id = :adminId AND a.isActive = true")
+    Optional<Agency> findActiveAgencyByAdminId(@Param("adminId") Long adminId);
 }
