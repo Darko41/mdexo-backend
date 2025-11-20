@@ -1,6 +1,7 @@
 package com.doublez.backend.dto.realestate;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,8 +17,6 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 
 public class RealEstateUpdateDTO {
-
-	// Existing fields
 	private String title;
 	private String description;
 	private PropertyType propertyType;
@@ -27,7 +26,7 @@ public class RealEstateUpdateDTO {
 	private String city;
 	private String state;
 	private String zipCode;
-	private String sizeInSqMt;
+	private BigDecimal sizeInSqMt;
 	private List<String> features;
 	private Long ownerId;
 
@@ -59,8 +58,6 @@ public class RealEstateUpdateDTO {
 	private Integer constructionYear;
 
 	private String municipality;
-
-	// ENUM fields
 	private HeatingType heatingType;
 	private PropertyCondition propertyCondition;
 
@@ -72,16 +69,23 @@ public class RealEstateUpdateDTO {
 	private String agentPhone;
 	private String agentLicense;
 
+	// 🆕 ADD MISSING FIELDS FROM ENTITY
+	private Boolean isActive;
+	private Boolean isFeatured;
+	private LocalDateTime featuredAt;
+	private LocalDateTime featuredUntil;
+
 	// Constructors
 	public RealEstateUpdateDTO() {
 	}
 
 	public RealEstateUpdateDTO(String title, String description, PropertyType propertyType, ListingType listingType,
-			BigDecimal price, String address, String city, String state, String zipCode, String sizeInSqMt,
+			BigDecimal price, String address, String city, String state, String zipCode, BigDecimal  sizeInSqMt,
 			List<String> features, Long ownerId, BigDecimal latitude, BigDecimal longitude, BigDecimal roomCount,
 			Integer floor, Integer totalFloors, Integer constructionYear, String municipality, HeatingType heatingType,
 			PropertyCondition propertyCondition, Boolean replaceImages, String agentName, String agentPhone,
-			String agentLicense) {
+			String agentLicense, Boolean isActive, Boolean isFeatured, LocalDateTime featuredAt,
+			LocalDateTime featuredUntil) {
 
 		this.title = title;
 		this.description = description;
@@ -107,13 +111,19 @@ public class RealEstateUpdateDTO {
 		this.propertyCondition = propertyCondition;
 		this.replaceImages = replaceImages;
 
-		// 🆕 INITIALIZE AGENCY FIELDS
+		// 🆕 AGENCY FIELDS
 		this.agentName = agentName;
 		this.agentPhone = agentPhone;
 		this.agentLicense = agentLicense;
+
+		// 🆕 NEW FIELDS
+		this.isActive = isActive;
+		this.isFeatured = isFeatured;
+		this.featuredAt = featuredAt;
+		this.featuredUntil = featuredUntil;
 	}
 
-	// Getters and Setters for existing fields
+	// Getters and Setters for all fields
 	public String getTitle() {
 		return title;
 	}
@@ -186,11 +196,11 @@ public class RealEstateUpdateDTO {
 		this.zipCode = zipCode;
 	}
 
-	public String getSizeInSqMt() {
+	public BigDecimal  getSizeInSqMt() {
 		return sizeInSqMt;
 	}
 
-	public void setSizeInSqMt(String sizeInSqMt) {
+	public void setSizeInSqMt(BigDecimal  sizeInSqMt) {
 		this.sizeInSqMt = sizeInSqMt;
 	}
 
@@ -290,7 +300,6 @@ public class RealEstateUpdateDTO {
 		this.replaceImages = replaceImages;
 	}
 
-	// 🆕 AGENCY FIELD GETTERS/SETTERS
 	public String getAgentName() {
 		return agentName;
 	}
@@ -313,6 +322,38 @@ public class RealEstateUpdateDTO {
 
 	public void setAgentLicense(String agentLicense) {
 		this.agentLicense = agentLicense;
+	}
+
+	public Boolean getIsActive() {
+		return isActive;
+	}
+
+	public void setIsActive(Boolean isActive) {
+		this.isActive = isActive;
+	}
+
+	public Boolean getIsFeatured() {
+		return isFeatured;
+	}
+
+	public void setIsFeatured(Boolean isFeatured) {
+		this.isFeatured = isFeatured;
+	}
+
+	public LocalDateTime getFeaturedAt() {
+		return featuredAt;
+	}
+
+	public void setFeaturedAt(LocalDateTime featuredAt) {
+		this.featuredAt = featuredAt;
+	}
+
+	public LocalDateTime getFeaturedUntil() {
+		return featuredUntil;
+	}
+
+	public void setFeaturedUntil(LocalDateTime featuredUntil) {
+		this.featuredUntil = featuredUntil;
 	}
 
 	// toString method for debugging

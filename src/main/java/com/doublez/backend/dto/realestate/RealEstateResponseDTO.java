@@ -2,6 +2,7 @@ package com.doublez.backend.dto.realestate;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import com.doublez.backend.entity.RealEstate;
@@ -11,7 +12,6 @@ import com.doublez.backend.enums.PropertyCondition;
 import com.doublez.backend.enums.PropertyType;
 
 public class RealEstateResponseDTO {
-
 	private Long propertyId;
 	private String title;
 	private String description;
@@ -22,7 +22,7 @@ public class RealEstateResponseDTO {
 	private String city;
 	private String state;
 	private String zipCode;
-	private String sizeInSqMt;
+	private BigDecimal sizeInSqMt;
 	private List<String> features;
 	private List<String> images;
 	private Long ownerId;
@@ -51,6 +51,11 @@ public class RealEstateResponseDTO {
 	private String agentPhone;
 	private String agentLicense;
 	private Boolean isActive;
+
+	// 🆕 ADD MISSING FIELDS FROM ENTITY
+	private LocalDateTime featuredAt;
+	private LocalDateTime featuredUntil;
+	private Boolean isCurrentlyFeatured;
 
 	public RealEstateResponseDTO(RealEstate realEstate) {
 		if (realEstate == null) {
@@ -95,6 +100,10 @@ public class RealEstateResponseDTO {
 
 		// 🆕 INITIALIZE AGENCY FIELDS
 		this.isActive = realEstate.getIsActive();
+		this.featuredAt = realEstate.getFeaturedAt();
+		this.featuredUntil = realEstate.getFeaturedUntil();
+		this.isCurrentlyFeatured = realEstate.isCurrentlyFeatured();
+
 		if (realEstate.isAgencyProperty()) {
 			this.agencyId = realEstate.getAgency().getId();
 			this.agencyName = realEstate.getAgency().getName();
@@ -108,21 +117,13 @@ public class RealEstateResponseDTO {
 	public RealEstateResponseDTO() {
 	}
 
-	// GETTERS AND SETTERS
+	// Getters and setters for all fields
 	public Long getPropertyId() {
 		return propertyId;
 	}
 
 	public void setPropertyId(Long propertyId) {
 		this.propertyId = propertyId;
-	}
-	
-	public Boolean getIsFeatured() {
-		return isFeatured;
-	}
-
-	public void setIsFeatured(Boolean isFeatured) {
-		this.isFeatured = isFeatured;
 	}
 
 	public String getTitle() {
@@ -197,11 +198,11 @@ public class RealEstateResponseDTO {
 		this.zipCode = zipCode;
 	}
 
-	public String getSizeInSqMt() {
+	public BigDecimal getSizeInSqMt() {
 		return sizeInSqMt;
 	}
 
-	public void setSizeInSqMt(String sizeInSqMt) {
+	public void setSizeInSqMt(BigDecimal sizeInSqMt) {
 		this.sizeInSqMt = sizeInSqMt;
 	}
 
@@ -349,7 +350,14 @@ public class RealEstateResponseDTO {
 		this.propertyAge = propertyAge;
 	}
 
-	// 🆕 AGENCY FIELD GETTERS/SETTERS
+	public Boolean getIsFeatured() {
+		return isFeatured;
+	}
+
+	public void setIsFeatured(Boolean isFeatured) {
+		this.isFeatured = isFeatured;
+	}
+
 	public Long getAgencyId() {
 		return agencyId;
 	}
@@ -396,5 +404,29 @@ public class RealEstateResponseDTO {
 
 	public void setIsActive(Boolean isActive) {
 		this.isActive = isActive;
+	}
+
+	public LocalDateTime getFeaturedAt() {
+		return featuredAt;
+	}
+
+	public void setFeaturedAt(LocalDateTime featuredAt) {
+		this.featuredAt = featuredAt;
+	}
+
+	public LocalDateTime getFeaturedUntil() {
+		return featuredUntil;
+	}
+
+	public void setFeaturedUntil(LocalDateTime featuredUntil) {
+		this.featuredUntil = featuredUntil;
+	}
+
+	public Boolean getIsCurrentlyFeatured() {
+		return isCurrentlyFeatured;
+	}
+
+	public void setIsCurrentlyFeatured(Boolean isCurrentlyFeatured) {
+		this.isCurrentlyFeatured = isCurrentlyFeatured;
 	}
 }

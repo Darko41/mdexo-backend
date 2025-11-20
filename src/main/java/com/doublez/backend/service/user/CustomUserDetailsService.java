@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.doublez.backend.dto.CustomUserDetails;
+import com.doublez.backend.entity.user.User;
 import com.doublez.backend.repository.UserRepository;
 
 // Manages the user authentication part. It loads user details based on the username, handles roles, etc
@@ -26,7 +27,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     @Transactional
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        com.doublez.backend.entity.user.User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
         
         return new CustomUserDetails(

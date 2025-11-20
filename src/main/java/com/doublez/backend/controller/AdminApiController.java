@@ -17,6 +17,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -28,13 +29,12 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.doublez.backend.dto.realestate.RealEstateCreateDTO;
+import com.doublez.backend.dto.realestate.RealEstateFormUpdateDTO;
 import com.doublez.backend.dto.realestate.RealEstateResponseDTO;
 import com.doublez.backend.dto.realestate.RealEstateUpdateDTO;
 import com.doublez.backend.dto.user.UserDTO;
 import com.doublez.backend.enums.ListingType;
 import com.doublez.backend.enums.PropertyType;
-import com.doublez.backend.exception.IllegalOperationException;
-import com.doublez.backend.exception.SelfDeletionException;
 import com.doublez.backend.exception.UserNotFoundException;
 import com.doublez.backend.response.ApiResponse;
 import com.doublez.backend.service.realestate.AdminRealEstateService;
@@ -48,158 +48,197 @@ import jakarta.validation.Valid;
 @RequestMapping("/api/admin")
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminApiController {
+
 	private final AdminRealEstateService adminRealEstateService;
-    private final RealEstateService realEstateService;
-    private final UserService userService;
-    
-    private static final Logger logger = LoggerFactory.getLogger(AdminApiController.class);
-    
-    public AdminApiController(AdminRealEstateService adminRealEstateService, 
-            UserService userService,
-            RealEstateService realEstateService) {
-			this.adminRealEstateService = adminRealEstateService;
-			this.userService = userService;
-			this.realEstateService = realEstateService;
-}
+	private final RealEstateService realEstateService;
+	private final UserService userService;
 
-    // Real Estate Endpoints
-    
-    @PostMapping(value = "/real-estates", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<RealEstateResponseDTO> createRealEstate(
-            @RequestPart @Valid RealEstateCreateDTO createDto,
-            @RequestPart(required = false) MultipartFile[] images) {
-        
-        RealEstateResponseDTO response = realEstateService.createRealEstateForUser(createDto, images);
-        return ResponseEntity
-            .status(HttpStatus.CREATED)
-            .header("Location", "/api/real-estates/" + response.getPropertyId())
-            .body(response);
-    }
+	private static final Logger logger = LoggerFactory.getLogger(AdminApiController.class);
 
-    @GetMapping("/real-estates")
-    public ResponseEntity<Page<RealEstateResponseDTO>> getAllRealEstates(
-            @RequestParam(required = false) String searchTerm,
-            @RequestParam(required = false) BigDecimal priceMin,
-            @RequestParam(required = false) BigDecimal priceMax,
-            @RequestParam(required = false) PropertyType propertyType,
-            @RequestParam(required = false) List<String> features,
-            @RequestParam(required = false) String city,
-            @RequestParam(required = false) String state,
-            @RequestParam(required = false) String zipCode,
-            @RequestParam(required = false) ListingType listingType,
-            Pageable pageable) {
-        
-        return ResponseEntity.ok(realEstateService.searchRealEstates(
-            searchTerm, 
-            priceMin, 
-            priceMax, 
-            propertyType, 
-            features,
-            city, 
-            state, 
-            zipCode, 
-            listingType, 
-            pageable));
-    }
+	public AdminApiController(AdminRealEstateService adminRealEstateService, UserService userService,
+			RealEstateService realEstateService) {
+		this.adminRealEstateService = adminRealEstateService;
+		this.userService = userService;
+		this.realEstateService = realEstateService;
+	}
 
-    /**
-     * ENHANCED ADMIN UPDATE with image support
-     */
-    @PutMapping(value = "/real-estates/{propertyId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Map<String, Object>> updateRealEstate(
-            @PathVariable Long propertyId,
-            @ModelAttribute RealEstateUpdateDTO updateDto,
-            @RequestParam(required = false) MultipartFile[] images,
-            @RequestParam(required = false) List<String> imagesToRemove,
-            HttpServletRequest request) {
-        
-        if (updateDto == null) {
-            throw new IllegalArgumentException("UpdateDTO cannot be null");
-        }
-        
-        try {
-            logger.info("👑 Admin updating real estate {} with image changes", propertyId);
-            
-            // Use the enhanced method with image support
-            RealEstateResponseDTO response = adminRealEstateService.updateRealEstate(
-                propertyId, updateDto, images, imagesToRemove);
-            
-            Map<String, Object> result = new HashMap<>();
-            result.put("success", true);
-            result.put("message", "Real estate updated successfully");
-            result.put("redirectUrl", "/admin/real-estates/" + propertyId + "/view");
-            result.put("propertyId", propertyId);
-            result.put("property", response);
-            
-            return ResponseEntity.ok(result);
-            
-        } catch (Exception e) {
-            logger.error("❌ Admin failed to update real estate {}: {}", propertyId, e.getMessage(), e);
-            Map<String, Object> result = new HashMap<>();
-            result.put("success", false);
-            result.put("message", "Failed to update real estate: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
-        }
-    }
+	// ========================
+	// REAL ESTATE ENDPOINTS
+	// ========================
 
-    @DeleteMapping("/real-estates/{propertyId}")
-    public ResponseEntity<Void> deleteRealEstate(@PathVariable Long propertyId) {
-        adminRealEstateService.deleteRealEstate(propertyId);
-        return ResponseEntity.noContent().build();
-    }
-    
-    @GetMapping("/real-estates/{propertyId}")
-    public ResponseEntity<RealEstateResponseDTO> getRealEstate(@PathVariable Long propertyId) {
-        RealEstateResponseDTO realEstate = adminRealEstateService.getRealEstateById(propertyId);
-        return ResponseEntity.ok(realEstate);
-    }
+	@PostMapping(value = "/real-estates", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<RealEstateResponseDTO> createRealEstate(@RequestPart @Valid RealEstateCreateDTO createDto,
+			@RequestPart(required = false) MultipartFile[] images) {
 
-    // User Management Endpoints
-    @PostMapping("/users")
-    public ResponseEntity<UserDTO> createUser(
-            @RequestBody @Valid UserDTO.Create createDto) {
-        UserDTO response = userService.registerUser(createDto, true);
-        return ResponseEntity
-            .status(HttpStatus.CREATED)
-            .header("Location", "/api/users/" + response.getId())
-            .body(response);
-    }
+		logger.info("👑 Admin creating real estate for user: {}",
+				createDto.getOwnerId() != null ? createDto.getOwnerId() : "current user");
 
-    @PutMapping("/users/{id}")
-    public ResponseEntity<UserDTO> updateUser(
-            @PathVariable Long id,
-            @RequestBody @Valid UserDTO.Update updateDto) {
-        UserDTO updatedUser = userService.updateUser(id, updateDto);
-        return ResponseEntity.ok(updatedUser);
-    }
+		RealEstateResponseDTO response = realEstateService.createRealEstateForUser(createDto, images);
+		return ResponseEntity.status(HttpStatus.CREATED)
+				.header("Location", "/api/real-estates/" + response.getPropertyId()).body(response);
+	}
 
-    @GetMapping("/users")
-    public ResponseEntity<List<UserDTO>> getAllUsers() {
-        return ResponseEntity.ok(userService.getAllUsers());
-    }
+	@GetMapping("/real-estates")
+	public ResponseEntity<Page<RealEstateResponseDTO>> getAllRealEstates(
+			@RequestParam(required = false) String searchTerm, @RequestParam(required = false) BigDecimal priceMin,
+			@RequestParam(required = false) BigDecimal priceMax,
+			@RequestParam(required = false) PropertyType propertyType,
+			@RequestParam(required = false) List<String> features, @RequestParam(required = false) String city,
+			@RequestParam(required = false) String state, @RequestParam(required = false) String zipCode,
+			@RequestParam(required = false) ListingType listingType, Pageable pageable) {
 
-    @DeleteMapping("/users/{id}")
-    public ResponseEntity<ApiResponse<String>> deleteUser(@PathVariable Long id) {
-        try {
-            userService.deleteUserAsAdmin(id);
-            return ResponseEntity.ok(ApiResponse.success("User deleted successfully"));
-        } catch (UserNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                    .body(ApiResponse.error("Failed to delete user: " + e.getMessage()));
-        }
-    }
-    
-    @GetMapping("/verify")
-    public ResponseEntity<?> verifyAdminAccess(Authentication authentication) {
-        if (authentication != null && 
-            authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
-            return ResponseEntity.ok().build();
-        }
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-    }
-    
-    
+		logger.info("👑 Admin searching real estates - filters: searchTerm={}, propertyType={}, city={}", searchTerm,
+				propertyType, city);
+
+		return ResponseEntity.ok(realEstateService.searchRealEstates(searchTerm, priceMin, priceMax, propertyType,
+				features, city, state, zipCode, listingType, pageable));
+	}
+
+	/**
+	 * ENHANCED ADMIN UPDATE with image support
+	 */
+	@PutMapping(value = "/real-estates/{propertyId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<Map<String, Object>> updateRealEstate(@PathVariable Long propertyId,
+			@ModelAttribute @Valid RealEstateFormUpdateDTO formUpdateDto, HttpServletRequest request) {
+
+		if (formUpdateDto == null || formUpdateDto.getUpdateDto() == null) {
+			throw new IllegalArgumentException("Update data cannot be null");
+		}
+
+		try {
+			logger.info("👑 Admin updating real estate {} with image changes", propertyId);
+
+			RealEstateUpdateDTO updateDto = formUpdateDto.getUpdateDto();
+			MultipartFile[] images = formUpdateDto.getImages();
+
+			// Use the enhanced method with image support
+			RealEstateResponseDTO response = adminRealEstateService.updateRealEstate(propertyId, updateDto, images,
+					null); // 🆕 imagesToRemove can be handled via updateDto
+
+			Map<String, Object> result = new HashMap<>();
+			result.put("success", true);
+			result.put("message", "Real estate updated successfully");
+			result.put("redirectUrl", "/admin/real-estates/" + propertyId + "/view");
+			result.put("propertyId", propertyId);
+			result.put("property", response);
+
+			return ResponseEntity.ok(result);
+
+		} catch (Exception e) {
+			logger.error("❌ Admin failed to update real estate {}: {}", propertyId, e.getMessage(), e);
+			Map<String, Object> result = new HashMap<>();
+			result.put("success", false);
+			result.put("message", "Failed to update real estate: " + e.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
+		}
+	}
+
+	@DeleteMapping("/real-estates/{propertyId}")
+	public ResponseEntity<Void> deleteRealEstate(@PathVariable Long propertyId) {
+		logger.info("👑 Admin deleting real estate: {}", propertyId);
+		adminRealEstateService.deleteRealEstate(propertyId);
+		return ResponseEntity.noContent().build();
+	}
+
+	@GetMapping("/real-estates/{propertyId}")
+	public ResponseEntity<RealEstateResponseDTO> getRealEstate(@PathVariable Long propertyId) {
+		logger.info("👑 Admin fetching real estate: {}", propertyId);
+		RealEstateResponseDTO realEstate = adminRealEstateService.getRealEstateById(propertyId);
+		return ResponseEntity.ok(realEstate);
+	}
+
+	// ========================
+	// USER MANAGEMENT ENDPOINTS
+	// ========================
+
+	@PostMapping("/users")
+	public ResponseEntity<UserDTO> createUser(@RequestBody @Valid UserDTO.Create createDto) {
+		logger.info("👑 Admin creating user: {}", createDto.getEmail());
+		UserDTO response = userService.registerUser(createDto, true);
+		return ResponseEntity.status(HttpStatus.CREATED).header("Location", "/api/users/" + response.getId())
+				.body(response);
+	}
+
+	@PutMapping("/users/{id}")
+	public ResponseEntity<UserDTO> updateUser(@PathVariable Long id, @RequestBody @Valid UserDTO.Update updateDto) {
+		logger.info("👑 Admin updating user: {}", id);
+		UserDTO updatedUser = userService.updateUser(id, updateDto);
+		return ResponseEntity.ok(updatedUser);
+	}
+
+	@GetMapping("/users")
+	public ResponseEntity<List<UserDTO>> getAllUsers() {
+		logger.info("👑 Admin fetching all users");
+		return ResponseEntity.ok(userService.getAllUsers());
+	}
+
+	@DeleteMapping("/users/{id}")
+	public ResponseEntity<ApiResponse<String>> deleteUser(@PathVariable Long id) {
+		logger.info("👑 Admin deleting user: {}", id);
+		try {
+			userService.deleteUserAsAdmin(id);
+			return ResponseEntity.ok(ApiResponse.success("User deleted successfully"));
+		} catch (UserNotFoundException e) {
+			logger.warn("⚠️ User not found for deletion: {}", id);
+			return ResponseEntity.notFound().build();
+		} catch (Exception e) {
+			logger.error("❌ Failed to delete user {}: {}", id, e.getMessage());
+			return ResponseEntity.internalServerError()
+					.body(ApiResponse.error("Failed to delete user: " + e.getMessage()));
+		}
+	}
+
+	// ========================
+	// ADMIN UTILITY ENDPOINTS
+	// ========================
+
+	@GetMapping("/verify")
+	public ResponseEntity<?> verifyAdminAccess(Authentication authentication) {
+		logger.info("🔐 Admin access verification");
+		if (authentication != null
+				&& authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+			return ResponseEntity.ok().build();
+		}
+		return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+	}
+
+	// 🆕 ADDITIONAL ADMIN ENDPOINTS YOU MIGHT NEED
+
+	@PatchMapping("/real-estates/{propertyId}/activate")
+	public ResponseEntity<ApiResponse<String>> activateProperty(@PathVariable Long propertyId) {
+		logger.info("👑 Admin activating property: {}", propertyId);
+		try {
+			realEstateService.activateProperty(propertyId);
+			return ResponseEntity.ok(ApiResponse.success("Property activated successfully"));
+		} catch (Exception e) {
+			logger.error("❌ Failed to activate property {}: {}", propertyId, e.getMessage());
+			return ResponseEntity.internalServerError()
+					.body(ApiResponse.error("Failed to activate property: " + e.getMessage()));
+		}
+	}
+
+	@PatchMapping("/real-estates/{propertyId}/deactivate")
+	public ResponseEntity<ApiResponse<String>> deactivateProperty(@PathVariable Long propertyId) {
+		logger.info("👑 Admin deactivating property: {}", propertyId);
+		try {
+			realEstateService.deactivateProperty(propertyId);
+			return ResponseEntity.ok(ApiResponse.success("Property deactivated successfully"));
+		} catch (Exception e) {
+			logger.error("❌ Failed to deactivate property {}: {}", propertyId, e.getMessage());
+			return ResponseEntity.internalServerError()
+					.body(ApiResponse.error("Failed to deactivate property: " + e.getMessage()));
+		}
+	}
+
+	@GetMapping("/dashboard/stats")
+	public ResponseEntity<Map<String, Object>> getDashboardStats() {
+		logger.info("👑 Admin fetching dashboard stats");
+		// You can implement this in a separate service
+		Map<String, Object> stats = new HashMap<>();
+		stats.put("totalUsers", userService.getUserCount());
+		stats.put("totalProperties", realEstateService.getRealEstateCount());
+		stats.put("activeProperties",
+				realEstateService.getAllRealEstates().stream().filter(RealEstateResponseDTO::getIsActive).count());
+		return ResponseEntity.ok(stats);
+	}
 }

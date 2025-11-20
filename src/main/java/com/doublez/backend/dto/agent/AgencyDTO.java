@@ -19,6 +19,13 @@ public class AgencyDTO {
     private Boolean isActive;
     private UserDTO admin;
     private LocalDate createdAt;
+    
+    // 🆕 ADD MISSING FIELDS
+    private String address;
+    private String city;
+    private String state;
+    private String zipCode;
+    private String country;
 
     public static class Create {
         @NotBlank
@@ -35,6 +42,13 @@ public class AgencyDTO {
         
         @NotBlank
         private String licenseNumber;
+        
+        // 🆕 ADD LOCATION FIELDS
+        private String address;
+        private String city;
+        private String state;
+        private String zipCode;
+        private String country;
 
         // Getters and setters
         public String getName() {
@@ -92,6 +106,46 @@ public class AgencyDTO {
         public void setLicenseNumber(String licenseNumber) {
             this.licenseNumber = licenseNumber;
         }
+
+        public String getAddress() {
+            return address;
+        }
+
+        public void setAddress(String address) {
+            this.address = address;
+        }
+
+        public String getCity() {
+            return city;
+        }
+
+        public void setCity(String city) {
+            this.city = city;
+        }
+
+        public String getState() {
+            return state;
+        }
+
+        public void setState(String state) {
+            this.state = state;
+        }
+
+        public String getZipCode() {
+            return zipCode;
+        }
+
+        public void setZipCode(String zipCode) {
+            this.zipCode = zipCode;
+        }
+
+        public String getCountry() {
+            return country;
+        }
+
+        public void setCountry(String country) {
+            this.country = country;
+        }
     }
 
     public static class Update {
@@ -103,6 +157,13 @@ public class AgencyDTO {
         private String website;
         private String licenseNumber;
         private Boolean isActive;
+        
+        // 🆕 ADD LOCATION FIELDS
+        private String address;
+        private String city;
+        private String state;
+        private String zipCode;
+        private String country;
 
         // Getters and setters
         public String getName() {
@@ -167,6 +228,46 @@ public class AgencyDTO {
 
         public void setIsActive(Boolean isActive) {
             this.isActive = isActive;
+        }
+
+        public String getAddress() {
+            return address;
+        }
+
+        public void setAddress(String address) {
+            this.address = address;
+        }
+
+        public String getCity() {
+            return city;
+        }
+
+        public void setCity(String city) {
+            this.city = city;
+        }
+
+        public String getState() {
+            return state;
+        }
+
+        public void setState(String state) {
+            this.state = state;
+        }
+
+        public String getZipCode() {
+            return zipCode;
+        }
+
+        public void setZipCode(String zipCode) {
+            this.zipCode = zipCode;
+        }
+
+        public String getCountry() {
+            return country;
+        }
+
+        public void setCountry(String country) {
+            this.country = country;
         }
     }
 
@@ -257,5 +358,45 @@ public class AgencyDTO {
 
     public void setCreatedAt(LocalDate createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
+    }
+
+    public String getZipCode() {
+        return zipCode;
+    }
+
+    public void setZipCode(String zipCode) {
+        this.zipCode = zipCode;
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
     }
 }

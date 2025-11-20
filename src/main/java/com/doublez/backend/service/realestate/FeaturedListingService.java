@@ -17,7 +17,6 @@ import com.doublez.backend.service.user.UserService;
 
 import jakarta.transaction.Transactional;
 
-//service/FeaturedListingService.java
 @Service
 @Transactional
 public class FeaturedListingService {

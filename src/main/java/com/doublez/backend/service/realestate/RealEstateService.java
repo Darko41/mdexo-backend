@@ -3,6 +3,7 @@ package com.doublez.backend.service.realestate;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -203,49 +204,49 @@ public class RealEstateService {
 
 	// CREATE METHOD WITH USAGE TRACKING
 	public RealEstateResponseDTO createRealEstate(RealEstateCreateDTO createDto, MultipartFile[] images) {
-        User currentUser = userService.getAuthenticatedUser();
-        User owner = resolveOwner(createDto.getOwnerId(), currentUser);
+	    User currentUser = userService.getAuthenticatedUser();
+	    User owner = resolveOwner(createDto.getOwnerId(), currentUser);
 
-        // 🆕 CHECK IF USER CAN CREATE MORE REAL ESTATES USING AUTH SERVICE
-        if (!authService.canCreateRealEstate(owner.getId())) {
-            throw new LimitationExceededException("Real estate limit exceeded");
-        }
+	    if (!authService.canCreateRealEstate(owner.getId())) {
+	        throw new LimitationExceededException("Real estate limit exceeded");
+	    }
 
-        // Handle image upload if provided
-        List<String> imageUrls = Collections.emptyList();
-        if (images != null && images.length > 0) {
-            // 🆕 CHECK IMAGE UPLOAD LIMITS USING AUTH SERVICE
-            if (!authService.canUploadImages(owner.getId(), images.length)) {
-                throw new LimitationExceededException("Image upload limit exceeded");
-            }
-            imageUrls = realEstateImageService.uploadRealEstateImages(images);
-        }
+	    // Handle image upload if provided
+	    List<String> imageUrls = Collections.emptyList();
+	    if (images != null && images.length > 0) {
+	        if (!authService.canUploadImages(owner.getId(), images.length)) {
+	            throw new LimitationExceededException("Image upload limit exceeded");
+	        }
+	        imageUrls = realEstateImageService.uploadRealEstateImages(images);
+	    }
 
-        // 🆕 HANDLE AGENCY PROPERTY CREATION
-        RealEstate entity = realEstateMapper.toEntity(createDto, owner, imageUrls);
-        
-        if (currentUser.isAgencyAdmin() && createDto.getAgencyId() != null) {
-            Agency agency = agencyRepository.findById(createDto.getAgencyId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Agency not found"));
-            
-            // Verify user owns this agency
-            if (!agency.getAdmin().getId().equals(currentUser.getId())) {
-                throw new IllegalOperationException("You don't have permission to create properties for this agency");
-            }
-            
-            entity.setAgency(agency);
-            entity.setAgentName(createDto.getAgentName());
-            entity.setAgentPhone(createDto.getAgentPhone());
-            entity.setAgentLicense(createDto.getAgentLicense());
-        }
+	    // CREATE ENTITY USING MAPPER (it now handles all required fields)
+	    RealEstate entity = realEstateMapper.toEntity(createDto, owner, imageUrls);
+	    
+	    // DEBUG: Log the values before saving
+	    logger.info("🔍 Creating property with featuredAt: {}, isActive: {}, isFeatured: {}", 
+	        entity.getFeaturedAt(), entity.getIsActive(), entity.getIsFeatured());
 
-        entity.setCreatedAt(LocalDate.now());
-        entity.setIsActive(true);
+	    if (currentUser.isAgencyAdmin() && createDto.getAgencyId() != null) {
+	        Agency agency = agencyRepository.findById(createDto.getAgencyId())
+	                .orElseThrow(() -> new ResourceNotFoundException("Agency not found"));
+	        
+	        if (!agency.getAdmin().getId().equals(currentUser.getId())) {
+	            throw new IllegalOperationException("You don't have permission to create properties for this agency");
+	        }
+	        
+	        entity.setAgency(agency);
+	        entity.setAgentName(createDto.getAgentName());
+	        entity.setAgentPhone(createDto.getAgentPhone());
+	        entity.setAgentLicense(createDto.getAgentLicense());
+	    }
 
-        RealEstate saved = realEstateRepository.save(entity);
-        logger.info("✅ Real estate created successfully for user {} (ID: {})", owner.getEmail(), owner.getId());
-        return realEstateMapper.toResponseDto(saved);
-    }
+	    entity.setCreatedAt(LocalDate.now());
+
+	    RealEstate saved = realEstateRepository.save(entity);
+	    logger.info("✅ Real estate created successfully for user {} (ID: {})", owner.getEmail(), owner.getId());
+	    return realEstateMapper.toResponseDto(saved);
+	}
 
 	private User resolveOwner(@Nullable Long ownerId, User currentUser) {
 		// Default to current user if no override
@@ -288,6 +289,20 @@ public class RealEstateService {
 	    // 🆕 HANDLE AGENCY PROPERTY CREATION (if applicable)
 	    RealEstate entity = realEstateMapper.toEntity(createDto, owner, imageUrls);
 	    
+	    // 🆕 CRITICAL: Set the required fields that might not be handled by the mapper
+	    if (entity.getFeaturedAt() == null) {
+	        entity.setFeaturedAt(createDto.getFeaturedAt() != null ? createDto.getFeaturedAt() : LocalDateTime.now());
+	    }
+	    if (entity.getIsActive() == null) {
+	        entity.setIsActive(createDto.getIsActive() != null ? createDto.getIsActive() : true);
+	    }
+	    if (entity.getIsFeatured() == null) {
+	        entity.setIsFeatured(createDto.getIsFeatured() != null ? createDto.getIsFeatured() : false);
+	    }
+	    if (entity.getFeaturedUntil() == null && createDto.getFeaturedUntil() != null) {
+	        entity.setFeaturedUntil(createDto.getFeaturedUntil());
+	    }
+
 	    if (currentUser.isAgencyAdmin() && createDto.getAgencyId() != null) {
 	        Agency agency = agencyRepository.findById(createDto.getAgencyId())
 	                .orElseThrow(() -> new ResourceNotFoundException("Agency not found"));
@@ -304,7 +319,6 @@ public class RealEstateService {
 	    }
 
 	    entity.setCreatedAt(LocalDate.now());
-	    entity.setIsActive(true);
 
 	    RealEstate saved = realEstateRepository.save(entity);
 

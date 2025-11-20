@@ -5,9 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Year;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.springframework.format.annotation.NumberFormat;
 
@@ -31,8 +29,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
@@ -84,8 +80,8 @@ public class RealEstate {
 	@Column(name = "zip_code", nullable = false)
 	private String zipCode;
 	
-	@Column(name = "size_in_sqmt")
-	private String sizeInSqMt;
+	@Column(name = "size_in_sqmt", nullable = false)
+    private BigDecimal sizeInSqMt;
 	
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "user_id", nullable = false)
@@ -118,10 +114,10 @@ public class RealEstate {
 	@Column(name = "is_featured", nullable = false)
     private Boolean isFeatured = false;
     
-	@Column(name = "featured_until", nullable = false)
+	@Column(name = "featured_until")
     private LocalDateTime featuredUntil;
     
-	@Column(name = "featured_at", nullable = false)
+	@Column(name = "featured_at")
     private LocalDateTime featuredAt;
 	
 	@PrePersist
@@ -324,11 +320,11 @@ public class RealEstate {
 		this.zipCode = zipCode;
 	}
 
-	public String getSizeInSqMt() {
+	public BigDecimal  getSizeInSqMt() {
 		return sizeInSqMt;
 	}
 
-	public void setSizeInSqMt(String sizeInSqMt) {
+	public void setSizeInSqMt(BigDecimal  sizeInSqMt) {
 		this.sizeInSqMt = sizeInSqMt;
 	}
 

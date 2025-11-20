@@ -5,16 +5,7 @@
     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
                       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd">
 
-    <include file="0001-new-baseline.xml" relativeToChangelogFile="true"/>
-    <include file="20250425-add-real-estate-agents.xml" relativeToChangelogFile="true"/>
-    <include file="20250427-changes.xml" relativeToChangelogFile="true"/>
-    <include file="20250427-userprofile.xml" relativeToChangelogFile="true"/>
-    <include file="20251107-agent-user-changes.xml" relativeToChangelogFile="true"/>
-    <include file="20251107-agent-profile-entity.xml" relativeToChangelogFile="true"/>
-    <include file="20251112-userlimitation-investorrole.xml" relativeToChangelogFile="true"/>
-    <include file="20251112-user-verification.xml" relativeToChangelogFile="true"/>
-    <include file="20251112-trial-dates.xml" relativeToChangelogFile="true"/>
-    <include file="20251116-agent-removal.xml" relativeToChangelogFile="true"/>
-    <include file="20251117-drop-agent-related-tables.xml" relativeToChangelogFile="true"/>
+    <!-- <include file="0001-new-baseline.xml" relativeToChangelogFile="true"/> -->
+
 
 </databaseChangeLog>

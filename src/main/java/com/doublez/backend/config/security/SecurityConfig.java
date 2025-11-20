@@ -80,73 +80,177 @@ public class SecurityConfig {
                 // CDN test endpoint
                 .requestMatchers("/api/cdn-test").permitAll()
                 
-                // Public API endpoints (EXPLICITLY LIST ALL PUBLIC API ENDPOINTS)
+                // =============================================
+                // PUBLIC AUTH & REGISTRATION ENDPOINTS
+                // =============================================
                 .requestMatchers(
                     "/api/users/register",
-                    "/api/agencies",
                     "/api/auth/authenticate",
-                    "/api/auth/me"
+                    "/api/auth/me",
+                    "/api/auth/validate",
+                    "/api/auth/refresh"
                 ).permitAll()
                 
-                // PUBLIC VERIFICATION ENDPOINTS
-                .requestMatchers(HttpMethod.GET, "/api/verification/public/user/**").permitAll()
-                
-                // Public real estate API endpoints (search and get by ID)
+                // =============================================
+                // PUBLIC REAL ESTATE ENDPOINTS
+                // =============================================
                 .requestMatchers(HttpMethod.GET, "/api/real-estates/search").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/real-estates/features").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/real-estates/{propertyId}").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/real-estates/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/real-estates/featured/active").permitAll()
                 
                 // =============================================
-                // PROTECTED API ENDPOINTS (JWT authentication)
+                // PUBLIC FEATURED LISTINGS ENDPOINTS
+                // =============================================
+                .requestMatchers(HttpMethod.GET, "/api/featured/active").permitAll()
+                
+                // =============================================
+                // PUBLIC AGENCY ENDPOINTS
+                // =============================================
+                .requestMatchers(HttpMethod.GET, "/api/agencies").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/agencies/{agencyId}").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/agencies/search").permitAll()
+                
+                // =============================================
+                // PUBLIC TIER & BENEFITS ENDPOINTS
+                // =============================================
+                .requestMatchers(HttpMethod.GET, "/api/tiers/benefits").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/tiers/benefits/individual").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/tiers/benefits/agency").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/tiers/benefits/investor").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/tiers/benefits/{tier}").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/tiers/compare").permitAll()
+                
+                // =============================================
+                // PUBLIC VERIFICATION ENDPOINTS
+                // =============================================
+                .requestMatchers(HttpMethod.GET, "/api/verification/public/user/**").permitAll()
+                
+                // =============================================
+                // AUTHENTICATED USER ENDPOINTS (JWT authentication)
                 // =============================================
                 
-                // PUBLIC USAGE TRACKING ENDPOINTS
-                .requestMatchers(HttpMethod.GET, "/api/usage/**").authenticated() // Users can check their own usage
-                .requestMatchers(HttpMethod.GET, "/api/usage-tracking/**").authenticated() // Users can check their own usage
+                // USAGE TRACKING ENDPOINTS
+                .requestMatchers(HttpMethod.GET, "/api/usage/**").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/usage-tracking/**").authenticated()
                 
-                // Protected real estate endpoints (JWT authentication)
+                // =============================================
+                // REAL ESTATE MANAGEMENT ENDPOINTS
+                // =============================================
                 .requestMatchers(HttpMethod.POST, "/api/real-estates/**").authenticated()
-                .requestMatchers(HttpMethod.PUT, "/api/real-estates/**").authenticated() 
+                .requestMatchers(HttpMethod.PUT, "/api/real-estates/**").authenticated()
                 .requestMatchers(HttpMethod.DELETE, "/api/real-estates/**").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/real-estates/my-properties").authenticated()
                 
-                // VERIFICATION ENDPOINTS - USER ROLE
+                // =============================================
+                // USER MANAGEMENT ENDPOINTS
+                // =============================================
+                .requestMatchers(HttpMethod.GET, "/api/users/me").hasRole("USER")
+                .requestMatchers(HttpMethod.PUT, "/api/users/me").hasRole("USER")
+                .requestMatchers(HttpMethod.DELETE, "/api/users/me").hasRole("USER")
+                .requestMatchers(HttpMethod.GET, "/api/users/me/**").hasRole("USER")
+                .requestMatchers(HttpMethod.POST, "/api/users/me/start-trial").hasRole("USER")
+                
+                // User endpoints with ID-based access control
+                .requestMatchers(HttpMethod.GET, "/api/users/{id}").hasRole("USER")
+                .requestMatchers(HttpMethod.PUT, "/api/users/{id}").hasRole("USER")
+                .requestMatchers(HttpMethod.DELETE, "/api/users/{id}").hasRole("USER")
+                
+                // =============================================
+                // TRIAL MANAGEMENT ENDPOINTS
+                // =============================================
+                .requestMatchers(HttpMethod.GET, "/api/trial/my-status").hasRole("USER")
+                .requestMatchers(HttpMethod.GET, "/api/trial/my-progress").hasRole("USER")
+                .requestMatchers(HttpMethod.GET, "/api/trial/can-start").hasRole("USER")
+                .requestMatchers(HttpMethod.POST, "/api/trial/start").hasRole("USER")
+                .requestMatchers(HttpMethod.GET, "/api/trial/agency-status").hasRole("AGENCY_ADMIN")
+                
+                // =============================================
+                // TIER MANAGEMENT ENDPOINTS
+                // =============================================
+                .requestMatchers(HttpMethod.GET, "/api/tiers/my-tier").authenticated()
+                
+                // =============================================
+                // INVESTOR ENDPOINTS
+                // =============================================
+                .requestMatchers("/api/investor/**").hasRole("INVESTOR")
+                
+                // =============================================
+                // FEATURED LISTINGS MANAGEMENT ENDPOINTS
+                // =============================================
+                .requestMatchers(HttpMethod.POST, "/api/featured/{realEstateId}").authenticated()
+                .requestMatchers(HttpMethod.DELETE, "/api/featured/{realEstateId}").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/featured/can-feature/{realEstateId}").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/featured/my-featured").authenticated()
+                
+                // =============================================
+                // AGENCY MANAGEMENT ENDPOINTS
+                // =============================================
+                // Agency creation
+                .requestMatchers(HttpMethod.POST, "/api/agencies").hasAnyRole("ADMIN", "AGENCY_ADMIN")
+                
+                // Agency admin endpoints
+                .requestMatchers(HttpMethod.GET, "/api/agencies/my-agency").hasRole("AGENCY_ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/agencies/{agencyId}").hasAnyRole("AGENCY_ADMIN", "ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/agencies/{agencyId}/properties").hasAnyRole("AGENCY_ADMIN", "ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/agencies/{agencyId}/properties/paged").hasAnyRole("AGENCY_ADMIN", "ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/agencies/{agencyId}/deactivate").hasAnyRole("AGENCY_ADMIN", "ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/agencies/{agencyId}/activate").hasAnyRole("AGENCY_ADMIN", "ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/agencies/{agencyId}/statistics").hasAnyRole("AGENCY_ADMIN", "ADMIN")
+                
+                // Agency membership endpoints
+                .requestMatchers(HttpMethod.POST, "/api/agencies/{agencyId}/apply").hasRole("AGENT")
+                .requestMatchers(HttpMethod.GET, "/api/agencies/my-memberships").hasRole("AGENT")
+                .requestMatchers(HttpMethod.DELETE, "/api/agencies/memberships/{membershipId}").hasRole("AGENT")
+                .requestMatchers(HttpMethod.POST, "/api/agencies/memberships/{membershipId}/approve").hasRole("AGENCY_ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/agencies/{agencyId}/pending-memberships").hasRole("AGENCY_ADMIN")
+                
+                // =============================================
+                // VERIFICATION ENDPOINTS
+                // =============================================
                 .requestMatchers(HttpMethod.POST, "/api/verification/submit").hasRole("USER")
                 .requestMatchers(HttpMethod.GET, "/api/verification/my-status").hasRole("USER")
                 .requestMatchers(HttpMethod.GET, "/api/verification/my-history").hasRole("USER")
                 .requestMatchers(HttpMethod.GET, "/api/verification/can-apply/**").hasRole("USER")
                 
-                // VERIFICATION ENDPOINTS - ADMIN ROLE
+                // Verification admin endpoints
                 .requestMatchers(HttpMethod.GET, "/api/verification/admin/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/api/verification/admin/**").hasRole("ADMIN")
                 
-                // INVESTOR ENDPOINTS
-                .requestMatchers(HttpMethod.POST, "/api/investor/apply").hasRole("USER")
-                .requestMatchers(HttpMethod.PUT, "/api/investor/profile").hasRole("INVESTOR")
-                .requestMatchers(HttpMethod.GET, "/api/investor/profile").hasRole("INVESTOR")
-                
+                // =============================================
                 // USER PROMOTION ENDPOINTS
+                // =============================================
                 .requestMatchers(HttpMethod.POST, "/api/users/request-agent-promotion").hasRole("USER")
                 .requestMatchers(HttpMethod.POST, "/api/users/request-investor-promotion").hasRole("USER")
                 
-                // AGENCY ENDPOINTS - AGENT ROLE
-                .requestMatchers(HttpMethod.POST, "/api/agencies/{agencyId}/apply").hasRole("AGENT")
-                .requestMatchers(HttpMethod.GET, "/api/agencies/my-memberships").hasRole("AGENT")
-                .requestMatchers(HttpMethod.DELETE, "/api/agencies/memberships/{membershipId}").hasRole("AGENT")
-                
-                // AGENCY ENDPOINTS - AGENCY_ADMIN ROLE
-                .requestMatchers(HttpMethod.POST, "/api/agencies/memberships/{membershipId}/approve").hasRole("AGENCY_ADMIN")
-                .requestMatchers(HttpMethod.GET, "/api/agencies/{agencyId}/pending-memberships").hasRole("AGENCY_ADMIN")
-                
-                // AGENCY ENDPOINTS - ADMIN ROLE (Promotion endpoints)
+                // Agency promotion endpoints (admin only)
                 .requestMatchers(HttpMethod.POST, "/api/agencies/promote/agent").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.POST, "/api/agencies/promote/agency-admin").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.POST, "/api/agencies/demote/agent").hasRole("ADMIN")
                 
-                // Admin API endpoints (JWT + ROLE_ADMIN)
+                // =============================================
+                // ADMIN API ENDPOINTS
+                // =============================================
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 
-                // General API protection (catch-all for other API endpoints)
+                // Admin-specific user management
+                .requestMatchers(HttpMethod.POST, "/api/users").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/users").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/users/statistics").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/users/{id}/image-count").hasRole("ADMIN")
+                
+                // Admin trial management
+                .requestMatchers(HttpMethod.POST, "/api/trial/{id}/extend-trial").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/trial/{id}/expire-trial").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/trial/statistics").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/trial/expiring-soon").hasRole("ADMIN")
+                
+                // Admin featured listings
+                .requestMatchers(HttpMethod.GET, "/api/featured/statistics").hasRole("ADMIN")
+                
+                // =============================================
+                // GENERAL API PROTECTION (catch-all)
+                // =============================================
                 .requestMatchers("/api/**").authenticated()
                 
                 // =============================================
@@ -211,8 +315,8 @@ public class SecurityConfig {
             .csrf(csrf -> csrf
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                 .ignoringRequestMatchers(
-                		"/api/**",					// Disable CSRF for API endpoints
-                		"/api/auth/authenticate")	// Specific auth endpoint
+                        "/api/**",                    // Disable CSRF for API endpoints
+                        "/api/auth/authenticate")    // Specific auth endpoint
             )
             // =============================================
             // EXCEPTION HANDLING

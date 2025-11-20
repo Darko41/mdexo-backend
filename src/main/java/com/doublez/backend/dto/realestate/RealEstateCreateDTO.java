@@ -1,6 +1,7 @@
 package com.doublez.backend.dto.realestate;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,17 +48,19 @@ public class RealEstateCreateDTO {
 	@NotBlank
 	private String zipCode;
 
-	private String sizeInSqMt;
+	@NotNull(message = "Size in square meters is required")
+    @DecimalMin(value = "1.0", message = "Size must be at least 1 square meter")
+    private BigDecimal sizeInSqMt;
 
 	@Nullable
 	private Long ownerId;
 
 	@Nullable
-	private Long agencyId; // 🆕 NEW: For agency properties
+	private Long agencyId;
 
-	private String agentName; // 🆕 NEW: Specific agent for agency listings
-	private String agentPhone; // 🆕 NEW: Agent contact
-	private String agentLicense; // 🆕 NEW: Agent license
+	private String agentName;
+	private String agentPhone;
+	private String agentLicense;
 
 	@Size(max = 10)
 	private List<String> features = new ArrayList<>();
@@ -70,8 +73,8 @@ public class RealEstateCreateDTO {
 	@DecimalMax(value = "180.0")
 	private BigDecimal longitude;
 
-	@DecimalMin(value = "0.5")
-	@DecimalMax(value = "20.0")
+	@DecimalMin(value = "0.5", message = "Room count must be at least 0.5 (studio)")
+    @DecimalMax(value = "20.0", message = "Room count cannot exceed 20")
 	private BigDecimal roomCount;
 
 	@Min(value = -5)
@@ -89,6 +92,18 @@ public class RealEstateCreateDTO {
 	private String municipality;
 	private HeatingType heatingType;
 	private PropertyCondition propertyCondition;
+
+	// 🆕 ADD MISSING REQUIRED FIELDS FROM ENTITY
+	@NotNull
+	private Boolean isActive = true;
+
+	@NotNull
+	private Boolean isFeatured = false;
+
+	@NotNull
+	private LocalDateTime featuredAt;
+
+	private LocalDateTime featuredUntil;
 
 	// Getters and setters for all fields
 	public String getTitle() {
@@ -163,11 +178,11 @@ public class RealEstateCreateDTO {
 		this.zipCode = zipCode;
 	}
 
-	public String getSizeInSqMt() {
+	public BigDecimal  getSizeInSqMt() {
 		return sizeInSqMt;
 	}
 
-	public void setSizeInSqMt(String sizeInSqMt) {
+	public void setSizeInSqMt(BigDecimal  sizeInSqMt) {
 		this.sizeInSqMt = sizeInSqMt;
 	}
 
@@ -289,5 +304,37 @@ public class RealEstateCreateDTO {
 
 	public void setPropertyCondition(PropertyCondition propertyCondition) {
 		this.propertyCondition = propertyCondition;
+	}
+
+	public Boolean getIsActive() {
+		return isActive;
+	}
+
+	public void setIsActive(Boolean isActive) {
+		this.isActive = isActive;
+	}
+
+	public Boolean getIsFeatured() {
+		return isFeatured;
+	}
+
+	public void setIsFeatured(Boolean isFeatured) {
+		this.isFeatured = isFeatured;
+	}
+
+	public LocalDateTime getFeaturedAt() {
+		return featuredAt;
+	}
+
+	public void setFeaturedAt(LocalDateTime featuredAt) {
+		this.featuredAt = featuredAt;
+	}
+
+	public LocalDateTime getFeaturedUntil() {
+		return featuredUntil;
+	}
+
+	public void setFeaturedUntil(LocalDateTime featuredUntil) {
+		this.featuredUntil = featuredUntil;
 	}
 }

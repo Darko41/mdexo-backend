@@ -190,7 +190,7 @@ public class RealEstateAuthorizationService {
         if (countToUpload == null || countToUpload <= 0) countToUpload = 1;
 
         UsageStatsDTO stats = getUsageStats(userId);
-        long available = stats.getLimitations().getMaxImages() - stats.getCurrentImages();
+        long available = stats.getLimitations().getMaxImages() - stats.getCurrentImages(); // ✅ FIXED: getMaxImages()
         return available >= countToUpload;
     }
 

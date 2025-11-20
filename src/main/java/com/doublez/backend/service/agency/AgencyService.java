@@ -71,17 +71,8 @@ public class AgencyService {
             throw new IllegalOperationException("License number already exists: " + createDto.getLicenseNumber());
         }
 
-        // Create agency with all fields
-        Agency agency = new Agency(
-                createDto.getName(),
-                createDto.getDescription(),
-                createDto.getLogo(),
-                createDto.getContactEmail(),
-                createDto.getContactPhone(),
-                createDto.getWebsite(),
-                createDto.getLicenseNumber(),
-                admin
-        );
+        // ✅ FIX: Use the full class name AgencyDTO.Create
+        Agency agency = Agency.fromCreateDto(createDto, admin);
 
         Agency saved = agencyRepository.save(agency);
         
