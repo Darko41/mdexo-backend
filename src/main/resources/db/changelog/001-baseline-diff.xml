@@ -1,0 +1,482 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:pro="http://www.liquibase.org/xml/ns/pro" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/pro http://www.liquibase.org/xml/ns/pro/liquibase-pro-latest.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    
+    <!-- ==================== -->
+    <!-- CREATE BASE TABLES -->
+    <!-- ==================== -->
+    
+    <changeSet author="manual" id="create-users-table-001">
+        <createTable tableName="users">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="users_pkey"/>
+            </column>
+            <column name="email" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uk_users_email"/>
+            </column>
+            <column name="password" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="tier" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITHOUT TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="trial_start_date" type="date"/>
+            <column name="trial_end_date" type="date"/>
+            <column name="trial_used" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="manual" id="create-roles-table-002">
+        <createTable tableName="roles">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="roles_pkey"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uk_roles_name"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="manual" id="create-user-limitations-table-003">
+        <createTable tableName="user_limitations">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="user_limitations_pkey"/>
+            </column>
+            <column name="tier" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uk_user_limitations_tier"/>
+            </column>
+            <column name="max_listings" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="max_images" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="max_images_per_listing" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="can_feature_listings" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="max_featured_listings" type="INTEGER"/>
+            <column name="price_per_month" type="numeric(38, 2)"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="manual" id="create-agencies-table-004">
+        <createTable tableName="agencies">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="agencies_pkey"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="VARCHAR(255)"/>
+            <column name="logo" type="VARCHAR(255)"/>
+            <column name="contact_email" type="VARCHAR(255)"/>
+            <column name="contact_phone" type="VARCHAR(255)"/>
+            <column name="website" type="VARCHAR(255)"/>
+            <column name="license_number" type="VARCHAR(255)"/>
+            <column name="is_active" type="BOOLEAN"/>
+            <column name="admin_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITHOUT TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="address" type="VARCHAR(255)"/>
+            <column name="city" type="VARCHAR(255)"/>
+            <column name="state" type="VARCHAR(255)"/>
+            <column name="zip_code" type="VARCHAR(255)"/>
+            <column name="country" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="manual" id="create-real-estates-table-005">
+        <createTable tableName="real_estates">
+            <column autoIncrement="true" name="property_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="real_estates_pkey"/>
+            </column>
+            <column name="title" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="TEXT"/>
+            <column name="property_type" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="listing_type" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="price" type="numeric(38, 2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="address" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="city" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="state" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="zip_code" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="size_in_sqmt" type="numeric(38, 2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="agency_id" type="BIGINT"/>
+            <column name="created_at" type="date">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="date"/>
+            <column name="is_featured" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="featured_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="featured_until" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="agent_name" type="VARCHAR(255)"/>
+            <column name="agent_phone" type="VARCHAR(255)"/>
+            <column name="agent_license" type="VARCHAR(255)"/>
+            <column name="latitude" type="numeric(9, 6)"/>
+            <column name="longitude" type="numeric(9, 6)"/>
+            <column name="room_count" type="numeric(3, 1)"/>
+            <column name="floor" type="INTEGER"/>
+            <column name="total_floors" type="INTEGER"/>
+            <column name="construction_year" type="INTEGER"/>
+            <column name="municipality" type="VARCHAR(100)"/>
+            <column name="heating_type" type="VARCHAR(50)"/>
+            <column name="property_condition" type="VARCHAR(50)"/>
+            <column name="is_active" type="BOOLEAN"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="manual" id="create-user-profiles-table-006">
+        <createTable tableName="user_profiles">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="user_profiles_pkey"/>
+            </column>
+            <column name="first_name" type="VARCHAR(255)"/>
+            <column name="last_name" type="VARCHAR(255)"/>
+            <column name="phone" type="VARCHAR(255)"/>
+            <column name="bio" type="TEXT"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="manual" id="create-investor-profiles-table-007">
+        <createTable tableName="investor_profiles">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="investor_profiles_pkey"/>
+            </column>
+            <column name="company_name" type="VARCHAR(255)"/>
+            <column name="pib" type="VARCHAR(9)"/>
+            <column name="mb" type="VARCHAR(8)"/>
+            <column name="website" type="VARCHAR(255)"/>
+            <column name="contact_person" type="VARCHAR(255)"/>
+            <column name="phone_number" type="VARCHAR(255)"/>
+            <column name="investor_type" type="VARCHAR(255)"/>
+            <column name="years_in_business" type="INTEGER"/>
+            <column name="portfolio_size" type="INTEGER"/>
+            <column name="investment_focus" type="VARCHAR(500)"/>
+            <column name="preferred_locations" type="VARCHAR(1000)"/>
+            <column name="min_investment_amount" type="numeric(38, 2)"/>
+            <column name="max_investment_amount" type="numeric(38, 2)"/>
+        </createTable>
+    </changeSet>
+
+    <!-- ==================== -->
+    <!-- CREATE JOIN TABLES -->
+    <!-- ==================== -->
+    
+    <changeSet author="manual" id="create-user-roles-table-008">
+        <createTable tableName="user_roles">
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="role_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="manual" id="create-real-estate-features-table-009">
+        <createTable tableName="real_estate_features">
+            <column name="property_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="feature_value" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="manual" id="create-real-estate-images-table-010">
+        <createTable tableName="real_estate_images">
+            <column name="property_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="image_url" type="VARCHAR(512)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <!-- ==================== -->
+    <!-- ADD PRIMARY KEYS FOR JOIN TABLES -->
+    <!-- ==================== -->
+    
+    <changeSet author="manual" id="add-join-table-primary-keys-011">
+        <addPrimaryKey 
+            columnNames="user_id, role_id" 
+            constraintName="pk_user_roles" 
+            tableName="user_roles"/>
+            
+        <addPrimaryKey 
+            columnNames="property_id, feature_value" 
+            constraintName="pk_real_estate_features" 
+            tableName="real_estate_features"/>
+            
+        <addPrimaryKey 
+            columnNames="property_id, image_url" 
+            constraintName="pk_real_estate_images" 
+            tableName="real_estate_images"/>
+    </changeSet>
+
+    <!-- ==================== -->
+    <!-- ADD FOREIGN KEY CONSTRAINTS -->
+    <!-- ==================== -->
+    
+    <changeSet author="manual" id="add-foreign-keys-012">
+        <!-- User relationships -->
+        <addForeignKeyConstraint 
+            baseColumnNames="id" 
+            baseTableName="user_profiles"
+            constraintName="fk_user_profiles_user" 
+            referencedColumnNames="id" 
+            referencedTableName="users"/>
+            
+        <addForeignKeyConstraint 
+            baseColumnNames="id" 
+            baseTableName="investor_profiles"
+            constraintName="fk_investor_profiles_user" 
+            referencedColumnNames="id" 
+            referencedTableName="users"/>
+
+        <!-- User roles relationships -->
+        <addForeignKeyConstraint 
+            baseColumnNames="user_id" 
+            baseTableName="user_roles"
+            constraintName="fk_user_roles_user" 
+            referencedColumnNames="id" 
+            referencedTableName="users"/>
+            
+        <addForeignKeyConstraint 
+            baseColumnNames="role_id" 
+            baseTableName="user_roles"
+            constraintName="fk_user_roles_role" 
+            referencedColumnNames="id" 
+            referencedTableName="roles"/>
+
+        <!-- Agency relationships -->
+        <addForeignKeyConstraint 
+            baseColumnNames="admin_id" 
+            baseTableName="agencies"
+            constraintName="fk_agencies_admin" 
+            referencedColumnNames="id" 
+            referencedTableName="users"/>
+            
+        <addUniqueConstraint 
+            columnNames="admin_id" 
+            constraintName="uk_agencies_admin_id"
+            tableName="agencies"/>
+            
+        <addUniqueConstraint 
+            columnNames="name" 
+            constraintName="uk_agencies_name"
+            tableName="agencies"/>
+
+        <!-- Real estate relationships -->
+        <addForeignKeyConstraint 
+            baseColumnNames="user_id" 
+            baseTableName="real_estates"
+            constraintName="fk_real_estates_user" 
+            referencedColumnNames="id" 
+            referencedTableName="users"/>
+            
+        <addForeignKeyConstraint 
+            baseColumnNames="agency_id" 
+            baseTableName="real_estates"
+            constraintName="fk_real_estates_agency" 
+            referencedColumnNames="id" 
+            referencedTableName="agencies"/>
+            
+        <addForeignKeyConstraint 
+            baseColumnNames="property_id" 
+            baseTableName="real_estate_features"
+            constraintName="fk_real_estate_features_property" 
+            referencedColumnNames="property_id" 
+            referencedTableName="real_estates"/>
+            
+        <addForeignKeyConstraint 
+            baseColumnNames="property_id" 
+            baseTableName="real_estate_images"
+            constraintName="fk_real_estate_images_property" 
+            referencedColumnNames="property_id" 
+            referencedTableName="real_estates"/>
+    </changeSet>
+
+    <!-- ==================== -->
+    <!-- ADD INDEXES FOR PERFORMANCE -->
+    <!-- ==================== -->
+    
+    <changeSet author="manual" id="add-indexes-013">
+        <!-- User indexes -->
+        <createIndex indexName="idx_users_email" tableName="users">
+            <column name="email"/>
+        </createIndex>
+        
+        <createIndex indexName="idx_users_tier" tableName="users">
+            <column name="tier"/>
+        </createIndex>
+
+        <!-- Agency indexes -->
+        <createIndex indexName="idx_agencies_admin" tableName="agencies">
+            <column name="admin_id"/>
+        </createIndex>
+        
+        <createIndex indexName="idx_agencies_city" tableName="agencies">
+            <column name="city"/>
+        </createIndex>
+        
+        <createIndex indexName="idx_agencies_active" tableName="agencies">
+            <column name="is_active"/>
+        </createIndex>
+
+        <!-- Real estate indexes -->
+        <createIndex indexName="idx_real_estates_user" tableName="real_estates">
+            <column name="user_id"/>
+        </createIndex>
+        
+        <createIndex indexName="idx_real_estates_agency" tableName="real_estates">
+            <column name="agency_id"/>
+        </createIndex>
+        
+        <createIndex indexName="idx_real_estates_city" tableName="real_estates">
+            <column name="city"/>
+        </createIndex>
+        
+        <createIndex indexName="idx_real_estates_property_type" tableName="real_estates">
+            <column name="property_type"/>
+        </createIndex>
+        
+        <createIndex indexName="idx_real_estates_listing_type" tableName="real_estates">
+            <column name="listing_type"/>
+        </createIndex>
+        
+        <createIndex indexName="idx_real_estates_price" tableName="real_estates">
+            <column name="price"/>
+        </createIndex>
+        
+        <createIndex indexName="idx_real_estates_featured" tableName="real_estates">
+            <column name="is_featured"/>
+        </createIndex>
+        
+        <createIndex indexName="idx_real_estates_active" tableName="real_estates">
+            <column name="is_active"/>
+        </createIndex>
+        
+        <createIndex indexName="idx_real_estates_created" tableName="real_estates">
+            <column name="created_at"/>
+        </createIndex>
+
+        <!-- Join table indexes -->
+        <createIndex indexName="idx_user_roles_user" tableName="user_roles">
+            <column name="user_id"/>
+        </createIndex>
+        
+        <createIndex indexName="idx_user_roles_role" tableName="user_roles">
+            <column name="role_id"/>
+        </createIndex>
+        
+        <createIndex indexName="idx_features_property" tableName="real_estate_features">
+            <column name="property_id"/>
+        </createIndex>
+        
+        <createIndex indexName="idx_images_property" tableName="real_estate_images">
+            <column name="property_id"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- ==================== -->
+    <!-- ADD DEFAULT DATA -->
+    <!-- ==================== -->
+    
+    <changeSet author="manual" id="add-default-roles-014">
+        <insert tableName="roles">
+            <column name="name" value="ROLE_USER"/>
+        </insert>
+        <insert tableName="roles">
+            <column name="name" value="ROLE_ADMIN"/>
+        </insert>
+        <insert tableName="roles">
+            <column name="name" value="ROLE_AGENCY_ADMIN"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="manual" id="add-default-user-limitations-015">
+        <insert tableName="user_limitations">
+            <column name="tier" value="FREE_USER"/>
+            <column name="max_listings" value="3"/>
+            <column name="max_images" value="10"/>
+            <column name="max_images_per_listing" value="5"/>
+            <column name="can_feature_listings" value="false"/>
+            <column name="max_featured_listings" value="0"/>
+            <column name="price_per_month" value="0.00"/>
+        </insert>
+        <insert tableName="user_limitations">
+            <column name="tier" value="BASIC_USER"/>
+            <column name="max_listings" value="10"/>
+            <column name="max_images" value="50"/>
+            <column name="max_images_per_listing" value="8"/>
+            <column name="can_feature_listings" value="true"/>
+            <column name="max_featured_listings" value="2"/>
+            <column name="price_per_month" value="9.99"/>
+        </insert>
+        <insert tableName="user_limitations">
+            <column name="tier" value="PREMIUM_USER"/>
+            <column name="max_listings" value="50"/>
+            <column name="max_images" value="200"/>
+            <column name="max_images_per_listing" value="12"/>
+            <column name="can_feature_listings" value="true"/>
+            <column name="max_featured_listings" value="5"/>
+            <column name="price_per_month" value="19.99"/>
+        </insert>
+        <insert tableName="user_limitations">
+            <column name="tier" value="AGENCY_BASIC"/>
+            <column name="max_listings" value="100"/>
+            <column name="max_images" value="500"/>
+            <column name="max_images_per_listing" value="15"/>
+            <column name="can_feature_listings" value="true"/>
+            <column name="max_featured_listings" value="10"/>
+            <column name="price_per_month" value="49.99"/>
+        </insert>
+        <insert tableName="user_limitations">
+            <column name="tier" value="AGENCY_PREMIUM"/>
+            <column name="max_listings" value="500"/>
+            <column name="max_images" value="2000"/>
+            <column name="max_images_per_listing" value="20"/>
+            <column name="can_feature_listings" value="true"/>
+            <column name="max_featured_listings" value="25"/>
+            <column name="price_per_month" value="99.99"/>
+        </insert>
+        <!-- Add investor tiers as needed -->
+    </changeSet>
+
+</databaseChangeLog>
