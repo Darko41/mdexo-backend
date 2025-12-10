@@ -25,6 +25,7 @@ import com.doublez.backend.mapper.TeamDashboardMapper;
 import com.doublez.backend.repository.AgencyRepository;
 import com.doublez.backend.repository.AgentRepository;
 import com.doublez.backend.repository.UserRepository;
+import com.doublez.backend.service.usage.PermissionService;
 import com.doublez.backend.service.usage.TierLimitationService;
 
 @Service
@@ -53,6 +54,9 @@ public class TeamService {
     
     @Autowired
     private TierLimitationService tierLimitationService;
+    
+    @Autowired
+    private PermissionService permissionService;
     
     /**
      * Add a new agent to an agency
@@ -218,22 +222,11 @@ public class TeamService {
      * Verify if user can add/remove agents with specific role
      */
     private void verifyCanManageTeam(User currentUser, Agency agency, AgentRole roleToAssign) {
-        // Check if user is agent in this agency
-        Agent currentAgent = agentRepository.findByUserIdAndAgencyId(currentUser.getId(), agency.getId())
-                .orElseThrow(() -> new BusinessRuleException("You are not a member of this agency"));
-        
-        // Check if agent is active
-        if (!currentAgent.getIsActive()) {
-            throw new BusinessRuleException("Your agent account is not active");
-        }
-        
-        // Check if agent has permission to manage team
-        if (!currentAgent.getCanInviteAgents()) {
+        if (!permissionService.canManageTeam(currentUser, agency)) {
             throw new BusinessRuleException("You don't have permission to manage team members");
         }
         
-        // Check if agent can assign this specific role
-        if (!currentAgent.getRole().canManage(roleToAssign)) {
+        if (!permissionService.canAssignRole(currentUser, agency, roleToAssign)) {
             throw new BusinessRuleException("You don't have permission to assign the role: " + roleToAssign.getDisplayName());
         }
     }
@@ -258,11 +251,7 @@ public class TeamService {
      * Verify if user can view team information
      */
     private void verifyCanViewTeam(User currentUser, Agency agency) {
-        // Check if user is agent in this agency
-        Agent currentAgent = agentRepository.findByUserIdAndAgencyId(currentUser.getId(), agency.getId())
-                .orElseThrow(() -> new BusinessRuleException("You are not a member of this agency"));
-        
-        if (!currentAgent.getCanViewAnalytics() && currentAgent.getRole() != AgentRole.OWNER) {
+        if (!permissionService.canViewTeam(currentUser, agency)) {
             throw new BusinessRuleException("You don't have permission to view team information");
         }
     }

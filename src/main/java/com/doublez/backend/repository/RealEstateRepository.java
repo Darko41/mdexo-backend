@@ -14,6 +14,8 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.doublez.backend.entity.RealEstate;
+import com.doublez.backend.entity.agency.Agency;
+import com.doublez.backend.entity.agency.Agent;
 import com.doublez.backend.entity.user.User;
 import com.doublez.backend.enums.ListingType;
 import com.doublez.backend.enums.property.EnergyEfficiency;
@@ -248,4 +250,23 @@ public interface RealEstateRepository extends JpaRepository<RealEstate, Long>, J
 
     @Query("SELECT re.imageCount FROM RealEstate re WHERE re.id = :realEstateId")
     Integer getImageCountByRealEstateId(@Param("realEstateId") Long realEstateId);
+    
+ // Custom query methods for visibility
+    @Query("SELECT re FROM RealEstate re WHERE " +
+           "re.isActive = true OR " +
+           "re.owner.id = :userId OR " +
+           "(re.agency IS NOT NULL AND re.agency.id IN (SELECT a.agency.id FROM Agent a WHERE a.user.id = :userId AND a.isActive = true))")
+    Page<RealEstate> findVisibleToUser(@Param("userId") Long userId, Pageable pageable);
+
+    @Query("SELECT re FROM RealEstate re WHERE " +
+           "re.isActive = true OR " +
+           "re.agency.id IN :agencyIds")
+    Page<RealEstate> findVisibleToAgencies(@Param("agencyIds") List<Long> agencyIds, Pageable pageable);
+
+    List<RealEstate> findByAgency(Agency agency);
+
+    List<RealEstate> findByAgencyAndListingAgent(Agency agency, Agent listingAgent);
+
+    @Query("SELECT COUNT(re) FROM RealEstate re WHERE re.agency = :agency AND re.listingAgent = :agent")
+    Long countByAgencyAndAgent(@Param("agency") Agency agency, @Param("agent") Agent agent);
 }

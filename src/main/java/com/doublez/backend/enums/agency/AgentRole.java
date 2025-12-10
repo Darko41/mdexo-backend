@@ -1,7 +1,12 @@
 package com.doublez.backend.enums.agency;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
+import com.doublez.backend.enums.PermissionType;
 
 public enum AgentRole {
     OWNER("Vlasnik Agencije", "Full access to all agency features and team management"),
@@ -38,5 +43,67 @@ public enum AgentRole {
             }
         }
         return manageable;
+    }
+    
+    /**
+     * Get default permissions for this role
+     */
+    public Set<PermissionType> getDefaultPermissions() {
+        Set<PermissionType> permissions = new HashSet<>();
+        
+        switch (this) {
+            case OWNER:
+                permissions.addAll(Arrays.asList(
+                    PermissionType.VIEW_TEAM,
+                    PermissionType.MANAGE_TEAM,
+                    PermissionType.INVITE_AGENTS,
+                    PermissionType.CREATE_LISTING,
+                    PermissionType.VIEW_LISTING,
+                    PermissionType.EDIT_LISTING,
+                    PermissionType.DELETE_LISTING,
+                    PermissionType.MANAGE_LISTINGS,
+                    PermissionType.VIEW_BILLING,
+                    PermissionType.MANAGE_BILLING,
+                    PermissionType.PURCHASE_CREDITS,
+                    PermissionType.VIEW_ANALYTICS,
+                    PermissionType.VIEW_AGENT_PERFORMANCE,
+                    PermissionType.MANAGE_AGENCY_SETTINGS,
+                    PermissionType.VERIFY_AGENTS
+                ));
+                break;
+                
+            case SUPER_AGENT:
+                permissions.addAll(Arrays.asList(
+                    PermissionType.VIEW_TEAM,
+                    PermissionType.MANAGE_TEAM,
+                    PermissionType.INVITE_AGENTS,
+                    PermissionType.CREATE_LISTING,
+                    PermissionType.VIEW_LISTING,
+                    PermissionType.EDIT_LISTING,
+                    PermissionType.MANAGE_LISTINGS,
+                    PermissionType.VIEW_BILLING,
+                    PermissionType.VIEW_ANALYTICS,
+                    PermissionType.VIEW_AGENT_PERFORMANCE
+                ));
+                break;
+                
+            case AGENT:
+                permissions.addAll(Arrays.asList(
+                    PermissionType.VIEW_TEAM,
+                    PermissionType.CREATE_LISTING,
+                    PermissionType.VIEW_LISTING,
+                    PermissionType.EDIT_LISTING
+                ));
+                break;
+        }
+        
+        return permissions;
+    }
+    
+    /**
+     * Check if role has specific permission
+     */
+    public boolean hasPermission(PermissionType permission) {
+        return getDefaultPermissions().contains(permission);
     }
 }

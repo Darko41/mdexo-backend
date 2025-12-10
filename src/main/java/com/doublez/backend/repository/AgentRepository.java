@@ -64,4 +64,5 @@ public interface AgentRepository extends JpaRepository<Agent, Long> {
     // Find top performing agents by deals closed
     @Query("SELECT a FROM Agent a WHERE a.agency = :agency ORDER BY a.dealsClosed DESC")
     List<Agent> findTopPerformers(@Param("agency") Agency agency);
+    
 }

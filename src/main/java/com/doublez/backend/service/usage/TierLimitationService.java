@@ -9,8 +9,10 @@ import com.doublez.backend.dto.analytics.AgencyUsageStats;
 import com.doublez.backend.entity.ContractorProfile;
 import com.doublez.backend.entity.OwnerProfile;
 import com.doublez.backend.entity.agency.Agency;
+import com.doublez.backend.entity.agency.Agent;
 import com.doublez.backend.entity.user.User;
 import com.doublez.backend.entity.user.UserTier;
+import com.doublez.backend.enums.agency.AgentRole;
 import com.doublez.backend.exception.BusinessRuleException;
 import com.doublez.backend.exception.LimitExceededException;
 import com.doublez.backend.repository.AgencyRepository;
@@ -282,6 +284,10 @@ public class TierLimitationService {
     public int getMaxAgentsForAgency(Agency agency) {
         UserTier effectiveTier = agency.getEffectiveTier();
         
+        if (!effectiveTier.isAgencyTier()) {
+            return 1; // Not an agency
+        }
+        
         switch (effectiveTier) {
             case AGENCY_FREE:
                 return 1; // Only the owner
@@ -291,8 +297,6 @@ public class TierLimitationService {
                 return 10; // Owner + 9 agents
             case AGENCY_PREMIUM:
                 return 25; // Owner + 24 agents
-            case ADMIN:
-                return 100; // Unlimited for admin
             default:
                 return 1;
         }
@@ -304,6 +308,10 @@ public class TierLimitationService {
     public int getMaxSuperAgentsForAgency(Agency agency) {
         UserTier effectiveTier = agency.getEffectiveTier();
         
+        if (!effectiveTier.isAgencyTier()) {
+            return 0; // Not an agency
+        }
+        
         switch (effectiveTier) {
             case AGENCY_FREE:
                 return 0; // No super agents on free tier
@@ -313,8 +321,6 @@ public class TierLimitationService {
                 return 3; // 3 super agents
             case AGENCY_PREMIUM:
                 return 5; // 5 super agents
-            case ADMIN:
-                return 10; // 10 for admin
             default:
                 return 0;
         }
@@ -326,22 +332,92 @@ public class TierLimitationService {
     public int getMaxListingsPerAgent(Agency agency, AgentRole agentRole) {
         UserTier effectiveTier = agency.getEffectiveTier();
         
+        if (!effectiveTier.isAgencyTier()) {
+            return 0; // Not an agency
+        }
+        
+        // Calculate based on agency's total listing limit divided by max agents
+        int maxAgents = getMaxAgentsForAgency(agency);
+        
         switch (effectiveTier) {
             case AGENCY_FREE:
-                return agentRole == AgentRole.OWNER ? 5 : 0;
+                // Free tier has 3 total listings, only owner can list
+                return agentRole == AgentRole.OWNER ? 3 : 0;
             case AGENCY_BASIC:
-                return agentRole == AgentRole.OWNER ? 20 : 
-                       agentRole == AgentRole.SUPER_AGENT ? 15 : 10;
+                // Basic: 20 total listings ÷ 3 agents ≈ 6-7 per agent
+                // But give owners/super-agents more
+                return agentRole == AgentRole.OWNER ? 10 : 
+                       agentRole == AgentRole.SUPER_AGENT ? 7 : 5;
             case AGENCY_PRO:
+                // Pro: 60 total listings ÷ 10 agents = 6 per agent
+                return agentRole == AgentRole.OWNER ? 15 : 
+                       agentRole == AgentRole.SUPER_AGENT ? 10 : 6;
+            case AGENCY_PREMIUM:
+                // Premium: unlimited listings theoretically
+                // But set reasonable limits per agent
                 return agentRole == AgentRole.OWNER ? 50 : 
                        agentRole == AgentRole.SUPER_AGENT ? 30 : 20;
-            case AGENCY_PREMIUM:
-                return agentRole == AgentRole.OWNER ? 100 : 
-                       agentRole == AgentRole.SUPER_AGENT ? 50 : 30;
-            case ADMIN:
-                return 1000; // Essentially unlimited
             default:
                 return 10;
+        }
+    }
+    
+    /**
+     * Check if agent has reached their image limit
+     */
+    public boolean hasAgentReachedImageLimit(Agent agent, int currentImageCount) {
+        int agentLimit = getMaxImagesPerAgent(agent.getAgency(), agent.getRole());
+        return currentImageCount >= agentLimit;
+    }
+    
+    /**
+     * Check if agent has reached their listing limit
+     */
+    public boolean hasAgentReachedListingLimit(Agent agent) {
+        if (agent.getMaxListings() != null) {
+            // Agent has custom limit
+            return agent.getActiveListingsCount() != null && 
+                   agent.getActiveListingsCount() >= agent.getMaxListings();
+        }
+        
+        // Use tier-based limit
+        int agentLimit = getMaxListingsPerAgent(agent.getAgency(), agent.getRole());
+        return agent.getActiveListingsCount() != null && 
+               agent.getActiveListingsCount() >= agentLimit;
+    }
+    
+    /**
+     * Get maximum images per agent based on agency tier
+     */
+    public int getMaxImagesPerAgent(Agency agency, AgentRole agentRole) {
+        UserTier effectiveTier = agency.getEffectiveTier();
+        
+        if (!effectiveTier.isAgencyTier()) {
+            return 0;
+        }
+        
+        // Calculate based on agency's total image limit divided by max agents
+        int maxAgents = getMaxAgentsForAgency(agency);
+        int agencyTotalImages = effectiveTier.getMaxImagesSafe();
+        
+        switch (effectiveTier) {
+            case AGENCY_FREE:
+                // Free: 30 total images, only owner
+                return agentRole == AgentRole.OWNER ? 30 : 0;
+            case AGENCY_BASIC:
+                // Basic: 200 total images ÷ 3 agents ≈ 66 per agent
+                return agentRole == AgentRole.OWNER ? 80 : 
+                       agentRole == AgentRole.SUPER_AGENT ? 70 : 60;
+            case AGENCY_PRO:
+                // Pro: 500 total images ÷ 10 agents = 50 per agent
+                return agentRole == AgentRole.OWNER ? 100 : 
+                       agentRole == AgentRole.SUPER_AGENT ? 70 : 50;
+            case AGENCY_PREMIUM:
+                // Premium: 1000 total images ÷ 25 agents = 40 per agent
+                return agentRole == AgentRole.OWNER ? 200 : 
+                       agentRole == AgentRole.SUPER_AGENT ? 100 : 50;
+            default:
+                return 50;
         }
     }
 
