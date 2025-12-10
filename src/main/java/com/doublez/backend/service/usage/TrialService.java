@@ -1,6 +1,6 @@
 package com.doublez.backend.service.usage;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
@@ -13,9 +13,8 @@ import org.springframework.stereotype.Service;
 
 import com.doublez.backend.entity.agency.Agency;
 import com.doublez.backend.entity.user.User;
-import com.doublez.backend.enums.UserTier;
 import com.doublez.backend.exception.UserNotFoundException;
-import com.doublez.backend.repository.UserLimitationRepository;
+import com.doublez.backend.repository.AgencyRepository;
 import com.doublez.backend.repository.UserRepository;
 import com.doublez.backend.service.email.ResendEmailService;
 
@@ -28,41 +27,41 @@ public class TrialService {
     private static final Logger logger = LoggerFactory.getLogger(TrialService.class);
     
     private final UserRepository userRepository;
-    private final UserLimitationRepository limitationRepository; // only if you need to compute effective limits (optional)
     private final ResendEmailService resendEmailService;
     private final int TRIAL_MONTHS = 6;
+    private final AgencyRepository agencyRepository;
 
     public TrialService(UserRepository userRepository,
-                        UserLimitationRepository limitationRepository,
-                        ResendEmailService resendEmailService) {
+                        ResendEmailService resendEmailService, AgencyRepository agencyRepository) {
         this.userRepository = userRepository;
-        this.limitationRepository = limitationRepository;
         this.resendEmailService = resendEmailService;
+        this.agencyRepository = agencyRepository;
     }
 
     public void startTrial(User user) {
-        logger.info("Starting {} month trial for user: {}", TRIAL_MONTHS, user.getEmail());
-        user.setTrialStartDate(LocalDate.now());
-        user.setTrialEndDate(LocalDate.now().plusMonths(TRIAL_MONTHS));
-        user.setTrialUsed(true);
-
-        // Set tier for trial participants:
-        // Regular registrants -> FREE_USER
-        // Agency account creators (ROLE_AGENCY_ADMIN) -> AGENCY_BASIC during trial period
+        logger.info("Starting 45-day trial for user: {}", user.getEmail());
+        
+        user.startTrial(45); // Use entity method
+        
+        // Set appropriate tier based on role
         if (user.isAgencyAdmin()) {
-            user.setTier(UserTier.AGENCY_BASIC);
+            // Agency users get PRO features during trial
+            // The effective tier calculation happens in Agency entity
         } else if (user.isInvestor()) {
-            user.setTier(UserTier.FREE_INVESTOR);
-        } else {
-            user.setTier(UserTier.FREE_USER);
+            // Investor specific logic if needed
         }
+        // Regular users don't need tier changes
 
         userRepository.save(user);
 
         try {
-            resendEmailService.sendTrialStartedEmail(user.getEmail(), getUserDisplayName(user), TRIAL_MONTHS);
+            resendEmailService.sendTrialStartedEmail(
+                user.getEmail(), 
+                getUserDisplayName(user), 
+                45 // 45 days trial
+            );
         } catch (Exception e) {
-        	logger.warn("Failed to send trial started email: {}", e.getMessage());
+            logger.warn("Failed to send trial started email: {}", e.getMessage());
         }
 
         logger.info("Trial started for user {} until {}", user.getEmail(), user.getTrialEndDate());
@@ -77,7 +76,7 @@ public class TrialService {
             return 0;
         }
         long totalDays = ChronoUnit.DAYS.between(user.getTrialStartDate(), user.getTrialEndDate());
-        long daysPassed = ChronoUnit.DAYS.between(user.getTrialStartDate(), LocalDate.now());
+        long daysPassed = ChronoUnit.DAYS.between(user.getTrialStartDate(), LocalDateTime.now());
         if (totalDays <= 0) return 100;
         int percentage = (int) ((daysPassed * 100) / totalDays);
         return Math.min(Math.max(percentage, 0), 100);
@@ -85,7 +84,7 @@ public class TrialService {
 
     public void expireTrial(Long userId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
-        user.setTrialEndDate(LocalDate.now().minusDays(1));
+        user.setTrialEndDate(LocalDateTime.now().minusDays(1));
         userRepository.save(user);
         handleTrialExpiration(user);
     }
@@ -93,7 +92,7 @@ public class TrialService {
     public void extendTrial(Long userId, int additionalMonths) {
         User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
         if (user.getTrialEndDate() == null) {
-            user.setTrialEndDate(LocalDate.now().plusMonths(additionalMonths));
+            user.setTrialEndDate(LocalDateTime.now().plusMonths(additionalMonths));
         } else {
             user.setTrialEndDate(user.getTrialEndDate().plusMonths(additionalMonths));
         }
@@ -105,28 +104,70 @@ public class TrialService {
         }
     }
 
-    @Scheduled(cron = "0 0 8 * * ?")
+    @Scheduled(cron = "0 0 9 * * ?") // Daily at 9 AM
     public void checkExpiringTrials() {
-        LocalDate warning7 = LocalDate.now().plusDays(7);
-        LocalDate warning1 = LocalDate.now().plusDays(1);
+        LocalDateTime now = LocalDateTime.now();
         
-        List<User> exp7 = userRepository.findByTrialEndDate(warning7);
-        List<User> exp1 = userRepository.findByTrialEndDate(warning1);
-        List<User> exp0 = userRepository.findByTrialEndDate(LocalDate.now());
+        // Notifications at 15, 7, 3, and 1 days before expiry
+        sendTrialNotifications(now.plusDays(15), 15);
+        sendTrialNotifications(now.plusDays(7), 7);
+        sendTrialNotifications(now.plusDays(3), 3);
+        sendTrialNotifications(now.plusDays(1), 1);
         
-        exp7.stream().filter(this::isInTrial).forEach(u -> sendTrialExpirationWarning(u, 7));
-        exp1.stream().filter(this::isInTrial).forEach(u -> sendTrialExpirationWarning(u, 1));
-        exp0.stream().filter(this::isInTrial).forEach(u -> sendTrialExpirationWarning(u, 0));
+        // Handle expired trials
+        handleExpiredTrials(now);
+    }
+    
+    private void sendTrialNotifications(LocalDateTime targetDate, int daysRemaining) {
+        List<User> users = userRepository.findUsersWithTrialEndingBetween(
+            targetDate.minusHours(1), targetDate.plusHours(1)
+        );
         
-        List<User> expired = userRepository.findByTrialEndDateBefore(LocalDate.now());
-        expired.stream().filter(this::isTrialExpired).forEach(user -> {
-            if (user.isAgencyAdmin() && !user.getOwnedAgencies().isEmpty()) {
-                Agency agency = user.getOwnedAgencies().get(0);
-                handleAgencyTrialExpiration(user, agency);
-            } else {
-                handleTrialExpiration(user);
-            }
-        });
+        users.stream()
+            .filter(this::isInTrial)
+            .forEach(user -> sendTrialExpirationWarning(user, daysRemaining));
+    }
+
+    private void handleExpiredTrials(LocalDateTime now) {
+        List<User> expiredUsers = userRepository.findByTrialEndDateBefore(now);
+        
+        expiredUsers.stream()
+            .filter(this::isTrialExpired)
+            .forEach(user -> {
+                // Auto-downgrade logic
+                if (user.isAgencyAdmin() && user.getOwnedAgency().isPresent()) {
+                    handleAgencyTrialExpiration(user, user.getOwnedAgency().get());
+                } else {
+                    handleTrialExpiration(user);
+                }
+                
+                // Send final expiration notice - FIXED: Use the method we just created
+                sendTrialExpiredNotification(user);
+            });
+    }
+    
+ // 🆕 TRIAL SUNSET MECHANISM (remove trial option after 2-3 months)
+    public boolean isTrialAvailable() {
+        // After 3 months, disable trial registrations
+        LocalDateTime cutoffDate = LocalDateTime.now().minusMonths(3);
+        long agenciesCreatedAfterCutoff = agencyRepository.countByCreatedAtAfter(cutoffDate);
+        
+        // Only allow trials for first 100 agencies or first 3 months
+        return agenciesCreatedAfterCutoff < 100;
+    }
+
+    // 🆕 GET TRIAL AVAILABILITY STATUS
+    public Map<String, Object> getTrialAvailability() {
+        LocalDateTime cutoffDate = LocalDateTime.now().minusMonths(3);
+        long recentAgencies = agencyRepository.countByCreatedAtAfter(cutoffDate);
+        
+        Map<String, Object> availability = new HashMap<>();
+        availability.put("trialAvailable", recentAgencies < 100);
+        availability.put("agenciesCreatedInPeriod", recentAgencies);
+        availability.put("maxAgenciesForTrial", 100);
+        availability.put("cutoffDate", cutoffDate);
+        
+        return availability;
     }
 
     private void sendTrialExpirationWarning(User user, int daysRemaining) {
@@ -138,29 +179,26 @@ public class TrialService {
     }
 
     private void handleTrialExpiration(User user) {
-        // Decide new tier based on account type
-        UserTier newTier;
-        if (user.isAgencyAdmin()) {
-            newTier = UserTier.AGENCY_BASIC; // keep them on basic agency tier after trial
-        } else if (user.isInvestor()) {
-            newTier = UserTier.BASIC_INVESTOR;
-        } else {
-            newTier = UserTier.BASIC_USER;
-        }
-        user.setTier(newTier);
-        userRepository.save(user);
+        // For regular users, just mark trial as expired
+        // No tier changes needed as per business model
+        logger.info("Trial expired for user: {}", user.getEmail());
         
         try {
-            resendEmailService.sendTrialExpiredEmail(user.getEmail(), getUserDisplayName(user), newTier);
+            resendEmailService.sendTrialExpiredEmail(
+                user.getEmail(), 
+                getUserDisplayName(user), 
+                null // No tier info needed
+            );
         } catch (Exception e) {
             logger.warn("Failed to send trial expired email: {}", e.getMessage());
         }
     }
 
     private String getUserDisplayName(User user) {
-        if (user.getUserProfile() != null && user.getUserProfile().getFirstName() != null) {
-            String last = user.getUserProfile().getLastName() != null ? " " + user.getUserProfile().getLastName() : "";
-            return user.getUserProfile().getFirstName() + last;
+        if (user.getFirstName() != null && user.getLastName() != null) {
+            return user.getFirstName() + " " + user.getLastName();
+        } else if (user.getFirstName() != null) {
+            return user.getFirstName();
         }
         return user.getEmail();
     }
@@ -185,15 +223,11 @@ public class TrialService {
     public void startAgencyTrial(User user, Agency agency) {
         logger.info("Starting {} month agency trial for agency: {}", TRIAL_MONTHS, agency.getName());
         
-        user.setTrialStartDate(LocalDate.now());
-        user.setTrialEndDate(LocalDate.now().plusMonths(TRIAL_MONTHS));
-        user.setTrialUsed(true);
-        user.setTier(UserTier.AGENCY_BASIC); // Start with agency basic during trial
-
+        user.startTrial(TRIAL_MONTHS * 30); // Convert months to days
+        
         userRepository.save(user);
 
         try {
-            // Use existing email method with agency context
             resendEmailService.sendTrialStartedEmail(
                 user.getEmail(), 
                 getUserDisplayName(user),
@@ -210,21 +244,20 @@ public class TrialService {
     // Check if agency is in trial
     public boolean isAgencyInTrial(Agency agency) {
         User admin = agency.getAdmin();
-        return isInTrial(admin) && (admin.getTier() == UserTier.AGENCY_BASIC || admin.getTier() == UserTier.AGENCY_PREMIUM);
+        return isInTrial(admin); // Trial is based on dates, not tier
     }
 
     // Agency trial expiration handler
     private void handleAgencyTrialExpiration(User user, Agency agency) {
-        // After trial, keep them on AGENCY_BASIC but they'll need to pay
-        user.setTier(UserTier.AGENCY_BASIC);
-        userRepository.save(user);
+        // After trial, agency keeps their chosen tier but loses PRO features
+        // The effective tier calculation in Agency entity handles this
+        logger.info("Agency trial expired for user: {}, agency: {}", user.getEmail(), agency.getName());
         
         try {
-            // Use existing email method with agency context
             resendEmailService.sendTrialExpiredEmail(
                 user.getEmail(),
                 getUserDisplayName(user),
-                UserTier.AGENCY_BASIC
+                agency.getTier() // Send their base tier
             );
         } catch (Exception e) {
             logger.warn("Failed to send agency trial expired email: {}", e.getMessage());
@@ -259,5 +292,17 @@ public class TrialService {
         stats.put("agencyTrialRate", agencyUsers > 0 ? (agencyInTrial * 100.0 / agencyUsers) : 0);
         
         return stats;
+    }
+    
+    private void sendTrialExpiredNotification(User user) {
+        try {
+            resendEmailService.sendTrialExpiredEmail(
+                user.getEmail(),
+                getUserDisplayName(user),
+                null // No tier info needed for basic users
+            );
+        } catch (Exception e) {
+            logger.warn("Failed to send trial expired notification to {}: {}", user.getEmail(), e.getMessage());
+        }
     }
 }

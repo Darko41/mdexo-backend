@@ -248,6 +248,8 @@
             constraintName="pk_real_estate_images" 
             tableName="real_estate_images"/>
     </changeSet>
+    
+    
 
     <!-- ==================== -->
     <!-- ADD FOREIGN KEY CONSTRAINTS -->
@@ -477,6 +479,25 @@
             <column name="price_per_month" value="99.99"/>
         </insert>
         <!-- Add investor tiers as needed -->
+    </changeSet>
+    
+    <changeSet author="manual" id="fix-data-type-mismatches-016">
+        <!-- Fix Agency entity date fields -->
+        <modifyDataType 
+            columnName="created_at" 
+            newDataType="date"
+            tableName="agencies"/>
+            
+        <!-- Fix User entity date fields -->
+        <modifyDataType 
+            columnName="created_at" 
+            newDataType="date"
+            tableName="users"/>
+            
+        <modifyDataType 
+            columnName="updated_at" 
+            newDataType="date"
+            tableName="users"/>
     </changeSet>
 
 </databaseChangeLog>

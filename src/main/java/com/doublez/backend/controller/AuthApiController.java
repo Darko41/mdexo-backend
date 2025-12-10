@@ -26,8 +26,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.doublez.backend.config.security.JwtTokenUtil;
-import com.doublez.backend.dto.CustomUserDetails;
-import com.doublez.backend.dto.agent.AgencyDTO;
+import com.doublez.backend.dto.agency.AgencyDTO;
+import com.doublez.backend.dto.auth.CustomUserDetails;
 import com.doublez.backend.entity.agency.Agency;
 import com.doublez.backend.entity.user.User;
 import com.doublez.backend.request.AuthenticationRequest;

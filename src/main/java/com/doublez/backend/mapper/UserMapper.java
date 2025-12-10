@@ -1,154 +1,334 @@
 package com.doublez.backend.mapper;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.stereotype.Component;
 
-import com.doublez.backend.dto.InvestorProfileDTO;
-import com.doublez.backend.dto.agent.AgencyInfoDTO;
-import com.doublez.backend.dto.user.UserDTO;
+import com.doublez.backend.dto.agency.AgencyInfoDTO;
+import com.doublez.backend.dto.contractor.ContractorProfileCreateDTO;
+import com.doublez.backend.dto.contractor.ContractorProfileResponseDTO;
+import com.doublez.backend.dto.contractor.ContractorProfileUpdateDTO;
+import com.doublez.backend.dto.investor.InvestorProfileCreateDTO;
+import com.doublez.backend.dto.investor.InvestorProfileResponseDTO;
+import com.doublez.backend.dto.investor.InvestorProfileUpdateDTO;
+import com.doublez.backend.dto.owner.OwnerProfileCreateDTO;
+import com.doublez.backend.dto.owner.OwnerProfileResponseDTO;
+import com.doublez.backend.dto.owner.OwnerProfileUpdateDTO;
+import com.doublez.backend.dto.trial.TrialInfoDTO;
+import com.doublez.backend.dto.user.UserCreateDTO;
 import com.doublez.backend.dto.user.UserProfileDTO;
+import com.doublez.backend.dto.user.UserResponseDTO;
+import com.doublez.backend.dto.user.UserUpdateDTO;
+import com.doublez.backend.entity.ContractorProfile;
 import com.doublez.backend.entity.InvestorProfile;
+import com.doublez.backend.entity.OwnerProfile;
 import com.doublez.backend.entity.Role;
 import com.doublez.backend.entity.agency.Agency;
 import com.doublez.backend.entity.user.User;
-import com.doublez.backend.entity.user.UserProfile;
 
 @Component
 public class UserMapper {
 
     // ===== USER MAPPING =====
 
-    public UserDTO toDTO(User user) {
+    public UserResponseDTO toResponseDTO(User user) {
         if (user == null) return null;
 
-        UserDTO dto = new UserDTO();
+        UserResponseDTO dto = new UserResponseDTO();
         dto.setId(user.getId());
         dto.setEmail(user.getEmail());
         dto.setRoles(mapRoles(user.getRoles()));
         dto.setCreatedAt(user.getCreatedAt());
         dto.setUpdatedAt(user.getUpdatedAt());
-        dto.setTier(user.getTier());
-
-        // Map profile
-        if (user.getUserProfile() != null) {
-            dto.setProfile(toProfileDto(user.getUserProfile()));
-        }
+        
+        // Map profile (direct from User entity - no more UserProfile)
+        UserProfileDTO profileDto = new UserProfileDTO(
+            user.getFirstName(),
+            user.getLastName(),
+            user.getPhone(),
+            user.getBio()
+        );
+        dto.setProfile(profileDto);
 
         // Map investor profile
         if (user.getInvestorProfile() != null) {
-        	dto.setInvestorProfile(user.getOrCreateInvestorProfile() != null ? toInvestorProfileDTO(user.getOrCreateInvestorProfile()) : null);
+            dto.setInvestorProfile(toInvestorProfileResponseDTO(user.getInvestorProfile()));
         }
 
-        if (user.isAgencyAdmin() && user.getOwnedAgencies() != null && !user.getOwnedAgencies().isEmpty()) {
-            Agency agency = user.getOwnedAgencies().get(0);
+        // Map owner profile
+        if (user.getOwnerProfile() != null) {
+            dto.setOwnerProfile(toOwnerProfileResponseDTO(user.getOwnerProfile()));
+        }
+
+        // Map contractor profile
+        if (user.getContractorProfile() != null) {
+            dto.setContractorProfile(toContractorProfileResponseDTO(user.getContractorProfile()));
+        }
+
+        // Map administered agency (only for AGENCY users)
+        user.getOwnedAgency().ifPresent(agency -> {
             AgencyInfoDTO agencyInfo = new AgencyInfoDTO();
             agencyInfo.setId(agency.getId());
             agencyInfo.setName(agency.getName());
             agencyInfo.setDescription(agency.getDescription());
-            dto.setCurrentAgency(agencyInfo);
-        }
+            agencyInfo.setLogo(agency.getLogo());
+            agencyInfo.setContactEmail(agency.getContactEmail());
+            agencyInfo.setContactPhone(agency.getContactPhone());
+            agencyInfo.setWebsite(agency.getWebsite());
+            agencyInfo.setEffectiveTier(agency.getEffectiveTier());
+            agencyInfo.setIsActive(agency.getIsActive());
+            dto.setAdministeredAgency(agencyInfo);
+        });
+
+        // Map trial info
+        TrialInfoDTO trialInfo = new TrialInfoDTO();
+        trialInfo.setTrialUsed(user.getTrialUsed());
+        trialInfo.setTrialStartDate(user.getTrialStartDate());
+        trialInfo.setTrialEndDate(user.getTrialEndDate());
+        trialInfo.setInTrialPeriod(user.isInTrialPeriod());
+        trialInfo.setDaysRemaining(user.getTrialDaysRemaining());
+        dto.setTrialInfo(trialInfo);
 
         return dto;
     }
 
-    public User toEntity(UserDTO.Create createDto) {
+    public User toEntityFromCreateDTO(UserCreateDTO createDto) {
         if (createDto == null) return null;
 
         User user = new User();
         user.setEmail(createDto.getEmail());
-        user.setTier(createDto.getTier());
-
-        if (createDto.getProfile() != null) {
-            UserProfile profile = new UserProfile();
-            profile.setUser(user);
-            updateProfileFromDTO(createDto.getProfile(), profile);
-            user.setUserProfile(profile);
-        }
+        user.setPassword(createDto.getPassword()); // Password should be encoded in service
+        
+        // Set personal info directly on User entity
+        user.setFirstName(createDto.getFirstName());
+        user.setLastName(createDto.getLastName());
+        user.setPhone(createDto.getPhone());
+        user.setBio(createDto.getBio());
 
         return user;
     }
 
-    public void updateEntity(UserDTO.Update updateDto, User user) {
+    public void updateEntityFromUpdateDTO(UserUpdateDTO updateDto, User user) {
         if (updateDto == null || user == null) return;
 
-        if (updateDto.getEmail() != null && !updateDto.getEmail().isEmpty()) {
-            user.setEmail(updateDto.getEmail());
+        // Update personal info directly on User entity
+        if (updateDto.getFirstName() != null) {
+            user.setFirstName(updateDto.getFirstName());
         }
-
-        if (updateDto.getProfile() != null) {
-            updateUserProfile(updateDto.getProfile(), user);
+        if (updateDto.getLastName() != null) {
+            user.setLastName(updateDto.getLastName());
         }
+        if (updateDto.getPhone() != null) {
+            user.setPhone(updateDto.getPhone());
+        }
+        if (updateDto.getBio() != null) {
+            user.setBio(updateDto.getBio());
+        }
+        
+        user.preUpdate(); // Update timestamp
     }
 
-    // ===== PROFILE MAPPING =====
+    // ===== INVESTOR PROFILE MAPPING =====
 
-    public UserProfileDTO toProfileDto(UserProfile profile) {
+    public InvestorProfileResponseDTO toInvestorProfileResponseDTO(InvestorProfile profile) {
         if (profile == null) return null;
 
-        return new UserProfileDTO(
-            profile.getFirstName(),
-            profile.getLastName(),
-            profile.getPhone(),
-            profile.getBio()
-        );
+        InvestorProfileResponseDTO dto = new InvestorProfileResponseDTO();
+        dto.setId(profile.getId());
+        dto.setCompanyName(profile.getCompanyName());
+        dto.setPib(profile.getPib());
+        dto.setMb(profile.getMb());
+        dto.setWebsite(profile.getWebsite());
+        dto.setContactPerson(profile.getContactPerson());
+        dto.setPhoneNumber(profile.getPhoneNumber());
+        dto.setInvestorType(profile.getInvestorType());
+        dto.setYearsInBusiness(profile.getYearsInBusiness());
+        dto.setPortfolioSize(profile.getPortfolioSize());
+        dto.setInvestmentFocus(profile.getInvestmentFocus());
+        dto.setPreferredLocations(profile.getPreferredLocationsList());
+        dto.setMinInvestmentAmount(profile.getMinInvestmentAmount());
+        dto.setMaxInvestmentAmount(profile.getMaxInvestmentAmount());
+        dto.setCompletedInvestments(profile.getCompletedInvestments());
+        dto.setActiveInvestments(profile.getActiveInvestments());
+        dto.setVerificationStatus(profile.getVerificationStatus());
+        dto.setVerifiedAt(profile.getVerifiedAt());
+
+        return dto;
     }
 
-    public void updateUserProfile(UserProfileDTO profileDto, User user) {
-        if (profileDto == null || user == null) return;
+    public InvestorProfile toInvestorProfileEntity(InvestorProfileCreateDTO createDto, User user) {
+        if (createDto == null) return null;
 
-        UserProfile profile = user.getOrCreateProfile();
-        updateProfileFromDTO(profileDto, profile);
-        user.setUserProfile(profile);
+        InvestorProfile profile = new InvestorProfile(user);
+        updateInvestorProfileFromCreateDTO(createDto, profile);
+        return profile;
     }
 
-    public void updateProfileFromDTO(UserProfileDTO profileDto, UserProfile profile) {
-        if (profileDto == null || profile == null) return;
+    public void updateInvestorProfileFromCreateDTO(InvestorProfileCreateDTO createDto, InvestorProfile profile) {
+        if (createDto == null || profile == null) return;
 
-        if (profileDto.getFirstName() != null) profile.setFirstName(profileDto.getFirstName());
-        if (profileDto.getLastName() != null) profile.setLastName(profileDto.getLastName());
-        if (profileDto.getPhone() != null) profile.setPhone(profileDto.getPhone());
-        if (profileDto.getBio() != null) profile.setBio(profileDto.getBio());
+        if (createDto.getCompanyName() != null) profile.setCompanyName(createDto.getCompanyName());
+        if (createDto.getPib() != null) profile.setPib(createDto.getPib());
+        if (createDto.getMb() != null) profile.setMb(createDto.getMb());
+        if (createDto.getWebsite() != null) profile.setWebsite(createDto.getWebsite());
+        if (createDto.getContactPerson() != null) profile.setContactPerson(createDto.getContactPerson());
+        if (createDto.getPhoneNumber() != null) profile.setPhoneNumber(createDto.getPhoneNumber());
+        if (createDto.getInvestorType() != null) profile.setInvestorType(createDto.getInvestorType());
+        if (createDto.getYearsInBusiness() != null) profile.setYearsInBusiness(createDto.getYearsInBusiness());
+        if (createDto.getInvestmentFocus() != null) profile.setInvestmentFocus(createDto.getInvestmentFocus());
+        if (createDto.getPreferredLocations() != null) profile.setPreferredLocations(createDto.getPreferredLocations());
+        if (createDto.getMinInvestmentAmount() != null) profile.setMinInvestmentAmount(createDto.getMinInvestmentAmount());
+        if (createDto.getMaxInvestmentAmount() != null) profile.setMaxInvestmentAmount(createDto.getMaxInvestmentAmount());
     }
 
-    // ===== INVESTOR PROFILE =====
+    public void updateInvestorProfileFromUpdateDTO(InvestorProfileUpdateDTO updateDto, InvestorProfile profile) {
+        if (updateDto == null || profile == null) return;
 
-    public InvestorProfileDTO toInvestorProfileDTO(InvestorProfile profile) {
+        if (updateDto.getCompanyName() != null) profile.setCompanyName(updateDto.getCompanyName());
+        if (updateDto.getWebsite() != null) profile.setWebsite(updateDto.getWebsite());
+        if (updateDto.getContactPerson() != null) profile.setContactPerson(updateDto.getContactPerson());
+        if (updateDto.getPhoneNumber() != null) profile.setPhoneNumber(updateDto.getPhoneNumber());
+        if (updateDto.getInvestorType() != null) profile.setInvestorType(updateDto.getInvestorType());
+        if (updateDto.getYearsInBusiness() != null) profile.setYearsInBusiness(updateDto.getYearsInBusiness());
+        if (updateDto.getInvestmentFocus() != null) profile.setInvestmentFocus(updateDto.getInvestmentFocus());
+        if (updateDto.getPreferredLocations() != null) profile.setPreferredLocations(updateDto.getPreferredLocations());
+        if (updateDto.getMinInvestmentAmount() != null) profile.setMinInvestmentAmount(updateDto.getMinInvestmentAmount());
+        if (updateDto.getMaxInvestmentAmount() != null) profile.setMaxInvestmentAmount(updateDto.getMaxInvestmentAmount());
+    }
+
+    // ===== OWNER PROFILE MAPPING =====
+
+    public OwnerProfileResponseDTO toOwnerProfileResponseDTO(OwnerProfile profile) {
         if (profile == null) return null;
 
-        return new InvestorProfileDTO(
-            profile.getCompanyName(),
-            profile.getPib(),
-            profile.getMb(),
-            profile.getWebsite(),
-            profile.getContactPerson(),
-            profile.getPhoneNumber(),
-            profile.getInvestorType(),
-            profile.getYearsInBusiness(),
-            profile.getPortfolioSize(),
-            profile.getInvestmentFocus(),
-            profile.getPreferredLocations(),
-            profile.getMinInvestmentAmount(),
-            profile.getMaxInvestmentAmount()
-        );
+        OwnerProfileResponseDTO dto = new OwnerProfileResponseDTO();
+        dto.setId(profile.getId());
+        dto.setPropertyOwnershipDocs(profile.getPropertyOwnershipDocs());
+        dto.setOwnershipDocsList(profile.getOwnershipDocsList());
+        dto.setIdDocumentNumber(profile.getIdDocumentNumber());
+        dto.setIdDocumentType(profile.getIdDocumentType());
+        dto.setTaxNumber(profile.getTaxNumber());
+        dto.setBankAccountNumber(profile.getBankAccountNumber());
+        dto.setPreferredContactMethod(profile.getPreferredContactMethod());
+        dto.setContactHours(profile.getContactHours());
+        dto.setPropertiesOwned(profile.getPropertiesOwned());
+        dto.setPropertiesListed(profile.getPropertiesListed());
+        dto.setPropertiesSold(profile.getPropertiesSold());
+        dto.setVerificationStatus(profile.getVerificationStatus());
+        dto.setVerifiedAt(profile.getVerifiedAt());
+        dto.setVerificationNotes(profile.getVerificationNotes());
+
+        return dto;
     }
 
-    public void updateInvestorProfileFromDTO(InvestorProfileDTO profileDto, InvestorProfile profile) {
-        if (profileDto == null || profile == null) return;
+    public OwnerProfile toOwnerProfileEntity(OwnerProfileCreateDTO createDto, User user) {
+        if (createDto == null) return null;
 
-        if (profileDto.getCompanyName() != null) profile.setCompanyName(profileDto.getCompanyName());
-        if (profileDto.getPib() != null) profile.setPib(profileDto.getPib());
-        if (profileDto.getMb() != null) profile.setMb(profileDto.getMb());
-        if (profileDto.getWebsite() != null) profile.setWebsite(profileDto.getWebsite());
-        if (profileDto.getContactPerson() != null) profile.setContactPerson(profileDto.getContactPerson());
-        if (profileDto.getPhoneNumber() != null) profile.setPhoneNumber(profileDto.getPhoneNumber());
-        if (profileDto.getInvestorType() != null) profile.setInvestorType(profileDto.getInvestorType());
-        if (profileDto.getYearsInBusiness() != null) profile.setYearsInBusiness(profileDto.getYearsInBusiness());
-        if (profileDto.getPortfolioSize() != null) profile.setPortfolioSize(profileDto.getPortfolioSize());
-        if (profileDto.getInvestmentFocus() != null) profile.setInvestmentFocus(profileDto.getInvestmentFocus());
-        if (profileDto.getPreferredLocations() != null) profile.setPreferredLocations(profileDto.getPreferredLocations());
-        if (profileDto.getMinInvestmentAmount() != null) profile.setMinInvestmentAmount(profileDto.getMinInvestmentAmount());
-        if (profileDto.getMaxInvestmentAmount() != null) profile.setMaxInvestmentAmount(profileDto.getMaxInvestmentAmount());
+        OwnerProfile profile = new OwnerProfile(user);
+        updateOwnerProfileFromCreateDTO(createDto, profile);
+        return profile;
+    }
+
+    public void updateOwnerProfileFromCreateDTO(OwnerProfileCreateDTO createDto, OwnerProfile profile) {
+        if (createDto == null || profile == null) return;
+
+        if (createDto.getPropertyOwnershipDocs() != null) profile.setPropertyOwnershipDocs(createDto.getPropertyOwnershipDocs());
+        if (createDto.getIdDocumentNumber() != null) profile.setIdDocumentNumber(createDto.getIdDocumentNumber());
+        if (createDto.getIdDocumentType() != null) profile.setIdDocumentType(createDto.getIdDocumentType());
+        if (createDto.getTaxNumber() != null) profile.setTaxNumber(createDto.getTaxNumber());
+        if (createDto.getBankAccountNumber() != null) profile.setBankAccountNumber(createDto.getBankAccountNumber());
+        if (createDto.getPreferredContactMethod() != null) profile.setPreferredContactMethod(createDto.getPreferredContactMethod());
+        if (createDto.getContactHours() != null) profile.setContactHours(createDto.getContactHours());
+    }
+
+    // ===== CONTRACTOR PROFILE MAPPING =====
+
+    public ContractorProfileResponseDTO toContractorProfileResponseDTO(ContractorProfile profile) {
+        if (profile == null) return null;
+
+        ContractorProfileResponseDTO dto = new ContractorProfileResponseDTO();
+        dto.setId(profile.getId());
+        dto.setCompanyName(profile.getCompanyName());
+        dto.setPib(profile.getPib());
+        dto.setMb(profile.getMb());
+        dto.setWebsite(profile.getWebsite());
+        dto.setContactPerson(profile.getContactPerson());
+        dto.setPhoneNumber(profile.getPhoneNumber());
+        dto.setServiceCategories(profile.getServiceCategoriesList());
+        dto.setServiceAreas(profile.getServiceAreasList());
+        dto.setYearsExperience(profile.getYearsExperience());
+        dto.setPortfolioDescription(profile.getPortfolioDescription());
+        dto.setCertifications(profile.getCertifications() != null ? Arrays.asList(profile.getCertifications().split(",")) : new ArrayList<>());
+        dto.setInsuranceInfo(profile.getInsuranceInfo());
+        dto.setHourlyRate(profile.getHourlyRate());
+        dto.setMinProjectSize(profile.getMinProjectSize());
+        dto.setIsVisible(profile.getIsVisible());
+        dto.setIsFeatured(profile.getIsFeatured());
+        dto.setRating(profile.getRating());
+        dto.setReviewCount(profile.getReviewCount());
+        dto.setCompletedProjects(profile.getCompletedProjects());
+
+        return dto;
+    }
+
+    public ContractorProfile toContractorProfileEntity(ContractorProfileCreateDTO createDto, User user) {
+        if (createDto == null) return null;
+
+        ContractorProfile profile = new ContractorProfile(user);
+        updateContractorProfileFromCreateDTO(createDto, profile);
+        return profile;
+    }
+
+    public void updateContractorProfileFromCreateDTO(ContractorProfileCreateDTO createDto, ContractorProfile profile) {
+        if (createDto == null || profile == null) return;
+
+        if (createDto.getCompanyName() != null) profile.setCompanyName(createDto.getCompanyName());
+        if (createDto.getPib() != null) profile.setPib(createDto.getPib());
+        if (createDto.getMb() != null) profile.setMb(createDto.getMb());
+        if (createDto.getWebsite() != null) profile.setWebsite(createDto.getWebsite());
+        if (createDto.getContactPerson() != null) profile.setContactPerson(createDto.getContactPerson());
+        if (createDto.getPhoneNumber() != null) profile.setPhoneNumber(createDto.getPhoneNumber());
+        if (createDto.getServiceCategories() != null) profile.setServiceCategories(createDto.getServiceCategories());
+        if (createDto.getServiceAreas() != null) profile.setServiceAreas(createDto.getServiceAreas());
+        if (createDto.getYearsExperience() != null) profile.setYearsExperience(createDto.getYearsExperience());
+        if (createDto.getPortfolioDescription() != null) profile.setPortfolioDescription(createDto.getPortfolioDescription());
+        if (createDto.getCertifications() != null) profile.setCertifications(createDto.getCertifications());
+        if (createDto.getInsuranceInfo() != null) profile.setInsuranceInfo(createDto.getInsuranceInfo());
+        if (createDto.getHourlyRate() != null) profile.setHourlyRate(createDto.getHourlyRate());
+        if (createDto.getMinProjectSize() != null) profile.setMinProjectSize(createDto.getMinProjectSize());
+        if (createDto.getIsVisible() != null) profile.setIsVisible(createDto.getIsVisible());
+    }
+    
+    public void updateOwnerProfileFromUpdateDTO(OwnerProfileUpdateDTO updateDto, OwnerProfile profile) {
+        if (updateDto == null || profile == null) return;
+
+        if (updateDto.getPropertyOwnershipDocs() != null) profile.setPropertyOwnershipDocs(updateDto.getPropertyOwnershipDocs());
+        if (updateDto.getIdDocumentNumber() != null) profile.setIdDocumentNumber(updateDto.getIdDocumentNumber());
+        if (updateDto.getIdDocumentType() != null) profile.setIdDocumentType(updateDto.getIdDocumentType());
+        if (updateDto.getTaxNumber() != null) profile.setTaxNumber(updateDto.getTaxNumber());
+        if (updateDto.getBankAccountNumber() != null) profile.setBankAccountNumber(updateDto.getBankAccountNumber());
+        if (updateDto.getPreferredContactMethod() != null) profile.setPreferredContactMethod(updateDto.getPreferredContactMethod());
+        if (updateDto.getContactHours() != null) profile.setContactHours(updateDto.getContactHours());
+    }
+    
+    public void updateContractorProfileFromUpdateDTO(ContractorProfileUpdateDTO updateDto, ContractorProfile profile) {
+        if (updateDto == null || profile == null) return;
+
+        if (updateDto.getCompanyName() != null) profile.setCompanyName(updateDto.getCompanyName());
+        if (updateDto.getWebsite() != null) profile.setWebsite(updateDto.getWebsite());
+        if (updateDto.getContactPerson() != null) profile.setContactPerson(updateDto.getContactPerson());
+        if (updateDto.getPhoneNumber() != null) profile.setPhoneNumber(updateDto.getPhoneNumber());
+        if (updateDto.getServiceCategories() != null) profile.setServiceCategories(updateDto.getServiceCategories());
+        if (updateDto.getServiceAreas() != null) profile.setServiceAreas(updateDto.getServiceAreas());
+        if (updateDto.getYearsExperience() != null) profile.setYearsExperience(updateDto.getYearsExperience());
+        if (updateDto.getPortfolioDescription() != null) profile.setPortfolioDescription(updateDto.getPortfolioDescription());
+        if (updateDto.getCertifications() != null) profile.setCertifications(updateDto.getCertifications());
+        if (updateDto.getInsuranceInfo() != null) profile.setInsuranceInfo(updateDto.getInsuranceInfo());
+        if (updateDto.getHourlyRate() != null) profile.setHourlyRate(updateDto.getHourlyRate());
+        if (updateDto.getMinProjectSize() != null) profile.setMinProjectSize(updateDto.getMinProjectSize());
+        if (updateDto.getIsVisible() != null) profile.setIsVisible(updateDto.getIsVisible());
     }
 
     // ===== HELPERS =====
@@ -156,17 +336,5 @@ public class UserMapper {
     private List<String> mapRoles(List<Role> roles) {
         if (roles == null) return List.of();
         return roles.stream().map(Role::getName).toList();
-    }
-
-    public void updateFromDTO(UserDTO userDTO, User user) {
-        if (userDTO == null || user == null) return;
-
-        if (userDTO.getEmail() != null && !userDTO.getEmail().isEmpty()) {
-            user.setEmail(userDTO.getEmail());
-        }
-
-        if (userDTO.getProfile() != null) {
-            updateUserProfile(userDTO.getProfile(), user);
-        }
     }
 }

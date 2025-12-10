@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.doublez.backend.entity.InvestorProfile;
 import com.doublez.backend.entity.agency.Agency;
 import com.doublez.backend.entity.user.User;
-import com.doublez.backend.enums.UserTier;
+import com.doublez.backend.entity.user.UserTier;
 import com.doublez.backend.service.usage.TierBenefitsService;
 import com.doublez.backend.service.usage.TrialService;
 import com.doublez.backend.service.user.UserService;

@@ -22,12 +22,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.doublez.backend.dto.InvestorProfileDTO;
-import com.doublez.backend.dto.agent.AgencyDTO;
+import com.doublez.backend.dto.agency.AgencyDTO;
+import com.doublez.backend.dto.investor.InvestorProfileDTO;
 import com.doublez.backend.dto.user.UserDTO;
 import com.doublez.backend.entity.agency.Agency;
 import com.doublez.backend.entity.user.User;
-import com.doublez.backend.enums.UserTier;
+import com.doublez.backend.entity.user.UserTier;
 import com.doublez.backend.exception.EmailExistsException;
 import com.doublez.backend.exception.IllegalOperationException;
 import com.doublez.backend.exception.UserNotFoundException;

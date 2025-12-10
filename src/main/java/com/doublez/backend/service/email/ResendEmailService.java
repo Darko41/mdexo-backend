@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.doublez.backend.config.security.JwtAuthenticationFilter;
-import com.doublez.backend.enums.UserTier;
+import com.doublez.backend.entity.user.UserTier;
 import com.resend.Resend;
 import com.resend.core.exception.ResendException;
 import com.resend.services.emails.model.CreateEmailOptions;
@@ -516,6 +516,121 @@ public class ResendEmailService {
             "</body>" +
             "</html>";
     }
+    
+    private String createTeamInvitationHtml(String userName, String agencyName, String inviterName, 
+                                           String role, String token) {
+        String invitationLink = "https://yourdomain.com/accept-invitation?token=" + token;
+        
+        return """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                    .header { background-color: #4CAF50; color: white; padding: 20px; text-align: center; }
+                    .content { padding: 30px; background-color: #f9f9f9; }
+                    .button { display: inline-block; padding: 12px 24px; background-color: #4CAF50; 
+                             color: white; text-decoration: none; border-radius: 4px; margin: 20px 0; }
+                    .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; 
+                             font-size: 12px; color: #666; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>Pozivnica za tim</h1>
+                    </div>
+                    <div class="content">
+                        <h2>Pozdrav %s,</h2>
+                        <p><strong>%s</strong> vas poziva da se pridružite timu agencije <strong>%s</strong>.</p>
+                        <p>Pozicija: <strong>%s</strong></p>
+                        <p>Pozivnica važi 7 dana.</p>
+                        <a href="%s" class="button">Prihvati pozivnicu</a>
+                        <p>Ili kopirajte ovaj link u pretraživač: %s</p>
+                        <p>Ako niste zainteresovani, ignorišite ovaj email.</p>
+                    </div>
+                    <div class="footer">
+                        <p>Ovo je automatski generisan email. Molimo ne odgovarajte na njega.</p>
+                        <p>&copy; 2024 Real Estate Platform. Sva prava zadržana.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """.formatted(userName, inviterName, agencyName, role, invitationLink, invitationLink);
+    }
+
+    private String createInvitationAcceptedHtml(String inviterName, String newMemberName, 
+                                              String agencyName, String role) {
+        return """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                    .header { background-color: #4CAF50; color: white; padding: 20px; text-align: center; }
+                    .content { padding: 30px; background-color: #f9f9f9; }
+                    .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; 
+                             font-size: 12px; color: #666; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>Pozivnica prihvaćena</h1>
+                    </div>
+                    <div class="content">
+                        <h2>Poštovani/poštovana %s,</h2>
+                        <p><strong>%s</strong> je prihvatio/la vašu pozivnicu i sada je deo tima agencije <strong>%s</strong>.</p>
+                        <p>Pozicija: <strong>%s</strong></p>
+                        <p>Novi član tima je sada aktivan i može početi sa radom.</p>
+                        <p>Pozdrav,<br>Real Estate Platform Team</p>
+                    </div>
+                    <div class="footer">
+                        <p>Ovo je automatski generisan email. Molimo ne odgovarajte na njega.</p>
+                        <p>&copy; 2024 Real Estate Platform. Sva prava zadržana.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """.formatted(inviterName, newMemberName, agencyName, role);
+    }
+
+    private String createInvitationRejectedHtml(String inviterName, String rejecterName, String agencyName) {
+        return """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                    .header { background-color: #f44336; color: white; padding: 20px; text-align: center; }
+                    .content { padding: 30px; background-color: #f9f9f9; }
+                    .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; 
+                             font-size: 12px; color: #666; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>Pozivnica odbijena</h1>
+                    </div>
+                    <div class="content">
+                        <h2>Poštovani/poštovana %s,</h2>
+                        <p><strong>%s</strong> je odbio/la vašu pozivnicu za pridruživanje timu agencije <strong>%s</strong>.</p>
+                        <p>Možete poslati novu pozivnicu drugom kandidatu ili kontaktirati ovu osobu direktno za više informacija.</p>
+                        <p>Pozdrav,<br>Real Estate Platform Team</p>
+                    </div>
+                    <div class="footer">
+                        <p>Ovo je automatski generisan email. Molimo ne odgovarajte na njega.</p>
+                        <p>&copy; 2024 Real Estate Platform. Sva prava zadržana.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """.formatted(inviterName, rejecterName, agencyName);
+    }
 
     // PLAIN TEXT TEMPLATES
     private String createWelcomeEmailText(String userName) {
@@ -586,5 +701,90 @@ public class ResendEmailService {
             case ADMIN: return "Administrator";
             default: return "Osnovni";
         }
+    }
+    
+    
+    
+    
+    
+ // Team invitation email
+    public void sendTeamInvitationEmail(String userEmail, String userName, String agencyName, 
+                                       String inviterName, String role, String token) {
+        String subject = "Pozivnica za pridruživanje timu - " + agencyName;
+        String htmlContent = createTeamInvitationHtml(userName, agencyName, inviterName, role, token);
+        String textContent = createTeamInvitationText(userName, agencyName, inviterName, role, token);
+        sendEmail(userEmail, subject, htmlContent, textContent);
+    }
+
+    // Invitation accepted email (to inviter)
+    public void sendInvitationAcceptedEmail(String inviterEmail, String inviterName, 
+                                           String newMemberName, String agencyName, String role) {
+        String subject = "Pozivnica prihvaćena - " + newMemberName + " se pridružio/la timu";
+        String htmlContent = createInvitationAcceptedHtml(inviterName, newMemberName, agencyName, role);
+        String textContent = createInvitationAcceptedText(inviterName, newMemberName, agencyName, role);
+        sendEmail(inviterEmail, subject, htmlContent, textContent);
+    }
+
+    // Invitation rejected email (to inviter)
+    public void sendInvitationRejectedEmail(String inviterEmail, String inviterName, 
+                                           String rejecterName, String agencyName) {
+        String subject = "Pozivnica odbijena - " + rejecterName;
+        String htmlContent = createInvitationRejectedHtml(inviterName, rejecterName, agencyName);
+        String textContent = createInvitationRejectedText(inviterName, rejecterName, agencyName);
+        sendEmail(inviterEmail, subject, htmlContent, textContent);
+    }
+
+    
+
+    // Plain text templates (similar structure but plain text)
+    private String createTeamInvitationText(String userName, String agencyName, String inviterName, 
+                                           String role, String token) {
+        String invitationLink = "https://yourdomain.com/accept-invitation?token=" + token;
+        
+        return """
+            Pozdrav %s,
+            
+            %s vas poziva da se pridružite timu agencije %s.
+            
+            Pozicija: %s
+            
+            Pozivnica važi 7 dana.
+            
+            Prihvatite pozivnicu ovde: %s
+            
+            Ako niste zainteresovani, ignorišite ovaj email.
+            
+            Pozdrav,
+            Real Estate Platform Team
+            """.formatted(userName, inviterName, agencyName, role, invitationLink);
+    }
+
+    private String createInvitationAcceptedText(String inviterName, String newMemberName, 
+                                              String agencyName, String role) {
+        return """
+            Poštovani/poštovana %s,
+            
+            %s je prihvatio/la vašu pozivnicu i sada je deo tima agencije %s.
+            
+            Pozicija: %s
+            
+            Novi član tima je sada aktivan i može početi sa radom.
+            
+            Pozdrav,
+            Real Estate Platform Team
+            """.formatted(inviterName, newMemberName, agencyName, role);
+    }
+
+    private String createInvitationRejectedText(String inviterName, String rejecterName, String agencyName) {
+        return """
+            Poštovani/poštovana %s,
+            
+            %s je odbio/la vašu pozivnicu za pridruživanje timu agencije %s.
+            
+            Možete poslati novu pozivnicu drugom kandidatu ili kontaktirati ovu osobu direktno za više informacija.
+            
+            Pozdrav,
+            Real Estate Platform Team
+            """.formatted(inviterName, rejecterName, agencyName);
     }
 }

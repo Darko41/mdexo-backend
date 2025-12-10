@@ -1,9 +1,14 @@
 package com.doublez.backend.entity;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import com.doublez.backend.entity.user.User;
 import com.doublez.backend.enums.InvestorType;
+import com.doublez.backend.enums.VerificationStatus;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -19,64 +24,118 @@ import jakarta.persistence.Table;
 @Table(name = "investor_profiles")
 public class InvestorProfile {
 
-	@Id
-	private Long id;
+    @Id
+    private Long id;
 
-	@Column(name = "company_name")
-	private String companyName;
+    @Column(name = "company_name")
+    private String companyName;
 
-	@Column(name = "pib", length = 9) // Serbian Tax ID (9 digits)
-	private String pib;
+    @Column(name = "pib", length = 9)
+    private String pib;
 
-	@Column(name = "mb", length = 8) // Serbian Registration Number (8 digits)
-	private String mb;
+    @Column(name = "mb", length = 8)
+    private String mb;
 
-	@Column(name = "website")
-	private String website;
+    @Column(name = "website")
+    private String website;
 
-	@Column(name = "contact_person")
-	private String contactPerson;
+    @Column(name = "contact_person")
+    private String contactPerson;
 
-	@Column(name = "phone_number")
-	private String phoneNumber;
+    @Column(name = "phone_number")
+    private String phoneNumber;
 
-	@Enumerated(EnumType.STRING)
-	@Column(name = "investor_type")
-	private InvestorType investorType;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "investor_type")
+    private InvestorType investorType;
 
-	@Column(name = "years_in_business")
-	private Integer yearsInBusiness;
+    @Column(name = "years_in_business")
+    private Integer yearsInBusiness;
 
-	@Column(name = "portfolio_size")
-	private Integer portfolioSize; // Number of properties in portfolio
+    @Column(name = "portfolio_size")
+    private Integer portfolioSize = 0;
 
-	@Column(name = "investment_focus", length = 500)
-	private String investmentFocus; // Description of investment strategy
+    @Column(name = "investment_focus", length = 500)
+    private String investmentFocus;
 
-	@Column(name = "preferred_locations", length = 1000)
-	private String preferredLocations; // JSON or comma-separated locations
+    @Column(name = "preferred_locations", length = 1000)
+    private String preferredLocations;
 
-	@Column(name = "min_investment_amount")
-	private BigDecimal minInvestmentAmount;
+    @Column(name = "min_investment_amount")
+    private BigDecimal minInvestmentAmount;
 
-	@Column(name = "max_investment_amount")
-	private BigDecimal maxInvestmentAmount;
+    @Column(name = "max_investment_amount")
+    private BigDecimal maxInvestmentAmount;
 
-	@OneToOne
-	@MapsId
-	@JoinColumn(name = "id")
-	private User user;
+    @Column(name = "completed_investments")
+    private Integer completedInvestments = 0;
 
-	// Constructors
-	public InvestorProfile() {
-	}
+    @Column(name = "active_investments")
+    private Integer activeInvestments = 0;
 
-	public InvestorProfile(User user) {
-		this.user = user;
-	}
+    @Column(name = "verification_status")
+    @Enumerated(EnumType.STRING)
+    private VerificationStatus verificationStatus = VerificationStatus.PENDING;
 
-	// Getters and Setters
-	public Long getId() {
+    @Column(name = "verified_at")
+    private LocalDateTime verifiedAt;
+
+    @OneToOne
+    @MapsId
+    @JoinColumn(name = "id")
+    private User user;
+
+    // ========================
+    // CONSTRUCTORS
+    // ========================
+
+    public InvestorProfile() {
+    }
+
+    public InvestorProfile(User user) {
+        this.user = user;
+    }
+
+    // ========================
+    // BUSINESS METHODS
+    // ========================
+
+    public void incrementPortfolioSize() {
+        this.portfolioSize = (this.portfolioSize == null) ? 1 : this.portfolioSize + 1;
+    }
+
+    public void incrementCompletedInvestments() {
+        this.completedInvestments = (this.completedInvestments == null) ? 1 : this.completedInvestments + 1;
+    }
+
+    public void incrementActiveInvestments() {
+        this.activeInvestments = (this.activeInvestments == null) ? 1 : this.activeInvestments + 1;
+    }
+
+    public void verify() {
+        this.verificationStatus = VerificationStatus.VERIFIED;
+        this.verifiedAt = LocalDateTime.now();
+    }
+
+    public boolean isVerified() {
+        return verificationStatus == VerificationStatus.VERIFIED;
+    }
+
+    public List<String> getPreferredLocationsList() {
+        if (preferredLocations == null || preferredLocations.trim().isEmpty()) {
+            return new ArrayList<>();
+        }
+        return Arrays.asList(preferredLocations.split(","));
+    }
+
+    public boolean hasCompanyInfo() {
+        return companyName != null && !companyName.trim().isEmpty() &&
+               pib != null && !pib.trim().isEmpty();
+    }
+
+    
+
+    public Long getId() {
 		return id;
 	}
 
@@ -188,6 +247,38 @@ public class InvestorProfile {
 		this.maxInvestmentAmount = maxInvestmentAmount;
 	}
 
+	public Integer getCompletedInvestments() {
+		return completedInvestments;
+	}
+
+	public void setCompletedInvestments(Integer completedInvestments) {
+		this.completedInvestments = completedInvestments;
+	}
+
+	public Integer getActiveInvestments() {
+		return activeInvestments;
+	}
+
+	public void setActiveInvestments(Integer activeInvestments) {
+		this.activeInvestments = activeInvestments;
+	}
+
+	public VerificationStatus getVerificationStatus() {
+		return verificationStatus;
+	}
+
+	public void setVerificationStatus(VerificationStatus verificationStatus) {
+		this.verificationStatus = verificationStatus;
+	}
+
+	public LocalDateTime getVerifiedAt() {
+		return verifiedAt;
+	}
+
+	public void setVerifiedAt(LocalDateTime verifiedAt) {
+		this.verifiedAt = verifiedAt;
+	}
+
 	public User getUser() {
 		return user;
 	}
@@ -195,4 +286,15 @@ public class InvestorProfile {
 	public void setUser(User user) {
 		this.user = user;
 	}
+
+	@Override
+    public String toString() {
+        return "InvestorProfile{" +
+                "id=" + id +
+                ", companyName='" + companyName + '\'' +
+                ", investorType=" + investorType +
+                ", portfolioSize=" + portfolioSize +
+                ", verificationStatus=" + verificationStatus +
+                '}';
+    }
 }

@@ -12,8 +12,7 @@ public class UserProfileDTO {
     private String bio;
 
     // Constructors
-    public UserProfileDTO() {
-    }
+    public UserProfileDTO() {}
 
     public UserProfileDTO(String firstName, String lastName, String phone, String bio) {
         this.firstName = firstName;
@@ -22,36 +21,22 @@ public class UserProfileDTO {
         this.bio = bio;
     }
 
+    // Helper methods
+    public String getFullName() {
+        return (firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "");
+    }
+
+    public boolean hasContactInfo() {
+        return phone != null && !phone.trim().isEmpty();
+    }
+
     // Getters and Setters
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
-
-    public String getPhone() {
-        return phone;
-    }
-
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
-
-    public String getBio() {
-        return bio;
-    }
-
-    public void setBio(String bio) {
-        this.bio = bio;
-    }
+    public String getFirstName() { return firstName; }
+    public void setFirstName(String firstName) { this.firstName = firstName; }
+    public String getLastName() { return lastName; }
+    public void setLastName(String lastName) { this.lastName = lastName; }
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
+    public String getBio() { return bio; }
+    public void setBio(String bio) { this.bio = bio; }
 }

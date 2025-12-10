@@ -14,12 +14,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import com.doublez.backend.dto.InvestorProfileDTO;
+import com.doublez.backend.dto.investor.InvestorProfileDTO;
 import com.doublez.backend.dto.realestate.RealEstateResponseDTO;
 import com.doublez.backend.dto.user.UserDTO;
 import com.doublez.backend.entity.InvestorProfile;
 import com.doublez.backend.entity.user.User;
-import com.doublez.backend.enums.PropertyType;
+import com.doublez.backend.enums.property.PropertyType;
 import com.doublez.backend.exception.IllegalOperationException;
 import com.doublez.backend.exception.ResourceNotFoundException;
 import com.doublez.backend.exception.UserNotFoundException;

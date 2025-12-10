@@ -1,6 +1,5 @@
 package com.doublez.backend.exception;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -19,7 +18,7 @@ import com.doublez.backend.response.ApiResponse;
 public class GlobalExceptionHandler {
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    // Unified handler for all custom exceptions - ADD LimitationExceededException
+    // Unified handler for all custom exceptions
     @ExceptionHandler({
         ApiException.class,
         SelfDeletionException.class,
@@ -30,8 +29,10 @@ public class GlobalExceptionHandler {
         ImageOperationException.class,        
         ImageValidationException.class,       
         ImageUploadException.class,
-        LimitationExceededException.class,    // 🆕 ADDED
-        UserNotFoundException.class           // 🆕 ADDED (if you have this)
+        LimitationExceededException.class,
+        UserNotFoundException.class,
+        FeatureNotImplementedException.class,  // 🆕 ADDED
+        BusinessRuleException.class           // 🆕 ADDED (if you have this)
     })
     public ResponseEntity<ApiResponse<?>> handleCustomExceptions(Exception ex) {
         HttpStatus status = determineStatus(ex);
@@ -61,7 +62,15 @@ public class GlobalExceptionHandler {
                 ));
         }
 
-        // 🆕 ADD HANDLING FOR LIMITATION EXCEPTIONS
+        // 🆕 ADD HANDLING FOR FEATURE NOT IMPLEMENTED
+        if (ex instanceof FeatureNotImplementedException) {
+            return ResponseEntity.status(status)
+                .body(ApiResponse.error(
+                    ex.getMessage(),
+                    Map.of("errorType", "FEATURE_NOT_IMPLEMENTED", "status", "coming_soon")
+                ));
+        }
+
         if (ex instanceof LimitationExceededException) {
             return ResponseEntity.status(status)
                 .body(ApiResponse.error(
@@ -70,7 +79,6 @@ public class GlobalExceptionHandler {
                 ));
         }
 
-        // 🆕 ADD HANDLING FOR USER NOT FOUND
         if (ex instanceof UserNotFoundException) {
             return ResponseEntity.status(status)
                 .body(ApiResponse.error(
@@ -79,7 +87,15 @@ public class GlobalExceptionHandler {
                 ));
         }
 
-        // 🆕 ADD HANDLING FOR IMAGE EXCEPTIONS
+        // 🆕 ADD HANDLING FOR BUSINESS RULE EXCEPTIONS
+        if (ex instanceof BusinessRuleException) {
+            return ResponseEntity.status(status)
+                .body(ApiResponse.error(
+                    ex.getMessage(),
+                    Map.of("errorType", "BUSINESS_RULE_VIOLATION")
+                ));
+        }
+
         if (ex instanceof ImageOperationException) {
             return ResponseEntity.status(status)
                 .body(ApiResponse.error("Image operation failed: " + ex.getMessage()));
@@ -116,8 +132,10 @@ public class GlobalExceptionHandler {
         if (ex instanceof ImageValidationException) return HttpStatus.BAD_REQUEST;
         if (ex instanceof ImageUploadException) return HttpStatus.INTERNAL_SERVER_ERROR; 
         if (ex instanceof ImageOperationException) return HttpStatus.INTERNAL_SERVER_ERROR;
-        if (ex instanceof LimitationExceededException) return HttpStatus.FORBIDDEN;      // 🆕 ADDED
-        if (ex instanceof UserNotFoundException) return HttpStatus.NOT_FOUND;            // 🆕 ADDED
+        if (ex instanceof LimitationExceededException) return HttpStatus.FORBIDDEN;
+        if (ex instanceof UserNotFoundException) return HttpStatus.NOT_FOUND;
+        if (ex instanceof FeatureNotImplementedException) return HttpStatus.NOT_IMPLEMENTED; // 🆕 501 status
+        if (ex instanceof BusinessRuleException) return HttpStatus.BAD_REQUEST;             // 🆕 400 status
         return HttpStatus.INTERNAL_SERVER_ERROR;
     }
 }

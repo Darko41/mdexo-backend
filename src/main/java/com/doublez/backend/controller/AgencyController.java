@@ -23,10 +23,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.doublez.backend.dto.agent.AgencyDTO;
+import com.doublez.backend.dto.agency.AgencyDTO;
 import com.doublez.backend.dto.realestate.RealEstateResponseDTO;
 import com.doublez.backend.enums.ListingType;
-import com.doublez.backend.enums.PropertyType;
+import com.doublez.backend.enums.property.PropertyType;
 import com.doublez.backend.response.ApiResponse;
 import com.doublez.backend.service.agency.AgencyService;
 import com.doublez.backend.service.realestate.RealEstateService;

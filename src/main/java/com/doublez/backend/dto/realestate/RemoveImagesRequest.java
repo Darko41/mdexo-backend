@@ -1,5 +1,7 @@
 package com.doublez.backend.dto.realestate;
 
+// RODO Look for usage of this class and remove if unneeded
+
 import java.util.Collections;
 import java.util.List;
 

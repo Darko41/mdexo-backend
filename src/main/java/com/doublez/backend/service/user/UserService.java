@@ -12,15 +12,25 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.doublez.backend.dto.CustomUserDetails;
-import com.doublez.backend.dto.agent.AgencyDTO;
-import com.doublez.backend.dto.user.UserDTO;
+import com.doublez.backend.dto.agency.AgencyCreateDTO;
+import com.doublez.backend.dto.agency.AgencyResponseDTO;
+import com.doublez.backend.dto.auth.CustomUserDetails;
+import com.doublez.backend.dto.contractor.ContractorProfileUpdateDTO;
+import com.doublez.backend.dto.investor.InvestorProfileUpdateDTO;
+import com.doublez.backend.dto.owner.OwnerProfileUpdateDTO;
+import com.doublez.backend.dto.user.UserCreateDTO;
 import com.doublez.backend.dto.user.UserProfileDTO;
+import com.doublez.backend.dto.user.UserResponseDTO;
+import com.doublez.backend.dto.user.UserUpdateDTO;
+import com.doublez.backend.entity.ContractorProfile;
+import com.doublez.backend.entity.InvestorProfile;
+import com.doublez.backend.entity.OwnerProfile;
 import com.doublez.backend.entity.RealEstate;
 import com.doublez.backend.entity.Role;
 import com.doublez.backend.entity.agency.Agency;
 import com.doublez.backend.entity.user.User;
 import com.doublez.backend.entity.user.UserProfile;
+import com.doublez.backend.entity.user.UserRole;
 import com.doublez.backend.exception.CustomAuthenticationException;
 import com.doublez.backend.exception.EmailExistsException;
 import com.doublez.backend.exception.IllegalOperationException;
@@ -31,6 +41,7 @@ import com.doublez.backend.repository.RealEstateRepository;
 import com.doublez.backend.repository.RoleRepository;
 import com.doublez.backend.repository.UserRepository;
 import com.doublez.backend.service.agency.AgencyService;
+import com.doublez.backend.service.credit.CreditInitializationService;
 import com.doublez.backend.service.usage.TrialService;
 
 import jakarta.transaction.Transactional; // TODO check if another package is required
@@ -49,10 +60,11 @@ public class UserService {
 	private final AgencyRepository agencyRepository;
 	private final TrialService trialService;
 	private final AgencyService agencyService;
+	private final CreditInitializationService creditInitializationService;
 
 	public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, RoleRepository roleRepository,
 			UserMapper userMapper, RealEstateRepository realEstateRepository, AgencyRepository agencyRepository,
-			TrialService trialService, AgencyService agencyService) {
+			TrialService trialService, AgencyService agencyService, CreditInitializationService creditInitializationService) {
 		this.userRepository = userRepository;
 		this.passwordEncoder = passwordEncoder;
 		this.roleRepository = roleRepository;
@@ -61,151 +73,264 @@ public class UserService {
 		this.agencyRepository = agencyRepository;
 		this.trialService = trialService;
 		this.agencyService = agencyService;
+		this.creditInitializationService = creditInitializationService;
 	}
 
 	// Consolidated user registration
-	public UserDTO registerUser(UserDTO.Create createDto, boolean isAdminOperation) {
-		if (userRepository.findByEmail(createDto.getEmail()).isPresent()) {
-			throw new EmailExistsException("Email already in use: " + createDto.getEmail());
-		}
+	public UserResponseDTO registerUser(UserCreateDTO createDto, boolean isAdminOperation) {
+        // Validate email uniqueness
+        if (userRepository.findByEmail(createDto.getEmail()).isPresent()) {
+            throw new EmailExistsException("Email already in use: " + createDto.getEmail());
+        }
 
-		validatePassword(createDto.getPassword());
+        // Validate password
+        validatePassword(createDto.getPassword());
 
-		User user = new User();
-		user.setEmail(createDto.getEmail());
-		user.setPassword(passwordEncoder.encode(createDto.getPassword()));
-		user.setTier(createDto.getTier());
+        // Create user entity from DTO
+        User user = userMapper.toEntityFromCreateDTO(createDto);
+        user.setPassword(passwordEncoder.encode(createDto.getPassword()));
+        
+        // Role assignment - users register with ONE primary role
+        UserRole primaryRole = createDto.getRole();
+        List<String> rolesToAssign;
+        
+        if (isAdminOperation) {
+            // Admin can assign any role during creation
+            rolesToAssign = createDto.getRolesAsList();
+        } else {
+            // Self-registration - use the single role from DTO
+            rolesToAssign = createDto.getRolesAsList();
+        }
+        
+        user.setRoles(resolveRoles(rolesToAssign));
 
-		// Role assignment with agency support
-		List<String> rolesToAssign;
-		if (isAdminOperation) {
-			rolesToAssign = createDto.getRoles();
-		} else {
-			// Self-registration - check if agency data is provided
-			if (createDto.getAgency() != null) {
-				// User provided agency data -> make them AGENCY_ADMIN
-				rolesToAssign = List.of("ROLE_USER", "ROLE_AGENCY_ADMIN");
-			} else {
-				// Regular user registration
-				rolesToAssign = List.of("ROLE_USER");
-			}
-		}
-		user.setRoles(resolveRoles(rolesToAssign));
+        // Validate role-specific data consistency
+        if (!createDto.hasValidRoleDataCombination()) {
+            throw new IllegalArgumentException("Invalid role data combination provided");
+        }
 
-		// Handle profile creation
-		if (createDto.getProfile() != null) {
-			UserProfile profile = new UserProfile();
-			profile.setUser(user);
-			updateProfileFromDTO(createDto.getProfile(), profile);
-			user.setUserProfile(profile);
-		}
+        // Save user first
+        User savedUser = userRepository.save(user);
+        
+        // 🆕 INITIALIZE USER CREDITS
+        try {
+            creditInitializationService.initializeUserCredits(savedUser);
+        } catch (Exception e) {
+            logger.error("⚠️ Credit initialization failed but registration succeeded: {}", e.getMessage());
+        }
 
-		User savedUser = userRepository.save(user);
+        // Handle role-specific profile creation
+        createRoleSpecificProfile(createDto, savedUser);
 
-		// Create agency if agency data provided
-		if (!isAdminOperation && createDto.getAgency() != null) {
-			try {
-				createAgencyForUser(createDto.getAgency(), savedUser);
-			} catch (Exception e) {
-				// Log but don't fail registration - user can create agency later
-				logger.error("⚠️ Agency creation failed but user registration succeeded: {}", e.getMessage());
-				// You might want to notify admin about this failure
-			}
-		}
+        // Handle agency creation for AGENCY role
+        if (primaryRole == UserRole.AGENCY && createDto.getAgency() != null) {
+            try {
+                createAgencyForUser(createDto.getAgency(), savedUser);
+            } catch (Exception e) {
+                logger.error("⚠️ Agency creation failed but user registration succeeded: {}", e.getMessage());
+                // User can create agency later via profile
+            }
+        }
 
-		// START FREE TRIAL for non-admin registrations
-		if (!isAdminOperation) {
-			try {
-				trialService.startTrial(savedUser);
-			} catch (Exception e) {
-				// Log the error but registration succeeded
-				logger.error("⚠️ Trial service failed but registration completed: {}", e.getMessage());
-			}
-		}
+        // Start trial for non-admin registrations
+        if (!isAdminOperation) {
+            try {
+                trialService.startTrial(savedUser);
+            } catch (Exception e) {
+                logger.error("⚠️ Trial service failed but registration completed: {}", e.getMessage());
+            }
+        }
 
-		return userMapper.toDTO(savedUser);
-	}
+        return userMapper.toResponseDTO(savedUser);
+    }
+	
+	// Create role-specific profiles
+	private void createRoleSpecificProfile(UserCreateDTO createDto, User user) {
+        switch (createDto.getRole()) {
+            case INVESTOR:
+                if (createDto.getInvestorProfile() != null) {
+                    InvestorProfile profile = userMapper.toInvestorProfileEntity(createDto.getInvestorProfile(), user);
+                    user.setInvestorProfile(profile);
+                }
+                break;
+            case OWNER:
+                if (createDto.getOwnerProfile() != null) {
+                    OwnerProfile profile = userMapper.toOwnerProfileEntity(createDto.getOwnerProfile(), user);
+                    user.setOwnerProfile(profile);
+                }
+                break;
+            case CONTRACTOR:
+                if (createDto.getContractorProfile() != null) {
+                    ContractorProfile profile = userMapper.toContractorProfileEntity(createDto.getContractorProfile(), user);
+                    user.setContractorProfile(profile);
+                }
+                break;
+            case AGENCY:
+                // Agency profile is handled separately via Agency entity
+                break;
+            case USER:
+            case BUSINESS:
+                // No additional profiles needed
+                break;
+        }
+        
+        if (createDto.getRole() != UserRole.USER && createDto.getRole() != UserRole.BUSINESS) {
+            userRepository.save(user); // Save profile changes
+        }
+    }
 
 	// Agency creation helper method
-	private void createAgencyForUser(AgencyDTO.Create agencyDto, User user) {
-		// Validate agency data
-		if (agencyDto.getName() == null || agencyDto.getName().trim().isEmpty()) {
-			throw new IllegalArgumentException("Agency name is required");
-		}
-		if (agencyDto.getLicenseNumber() == null || agencyDto.getLicenseNumber().trim().isEmpty()) {
-			throw new IllegalArgumentException("Agency license number is required");
-		}
+	private void createAgencyForUser(AgencyCreateDTO agencyDto, User user) {
+        // Validate user has AGENCY role
+        if (!user.isAgencyAdmin()) {
+            throw new IllegalOperationException("Only agency users can create agencies");
+        }
 
-		// Check if agency name already exists
-		if (agencyRepository.existsByName(agencyDto.getName())) {
-			throw new IllegalOperationException("Agency name already exists: " + agencyDto.getName());
-		}
+        // Validate agency data
+        if (agencyDto.getName() == null || agencyDto.getName().trim().isEmpty()) {
+            throw new IllegalArgumentException("Agency name is required");
+        }
 
-		// Check if license number already exists
-		if (agencyRepository.existsByLicenseNumber(agencyDto.getLicenseNumber())) {
-			throw new IllegalOperationException("License number already exists: " + agencyDto.getLicenseNumber());
-		}
+        // Check if agency name already exists
+        if (agencyRepository.existsByName(agencyDto.getName())) {
+            throw new IllegalOperationException("Agency name already exists: " + agencyDto.getName());
+        }
 
-		// Create agency
-		Agency agency = new Agency(agencyDto.getName(), agencyDto.getDescription(), agencyDto.getLogo(),
-				agencyDto.getContactEmail(), agencyDto.getContactPhone(), agencyDto.getWebsite(),
-				agencyDto.getLicenseNumber(), user);
+        // Create agency using the static factory method
+        Agency agency = Agency.fromCreateDto(agencyDto, user);
+        Agency savedAgency = agencyRepository.save(agency);
 
-		Agency savedAgency = agencyRepository.save(agency);
+        // Set the agency relationship (now OneToOne)
+        user.setOwnedAgency(savedAgency);
+        userRepository.save(user);
 
-		// Update user's owned agencies
-		user.getOwnedAgencies().add(savedAgency);
-		userRepository.save(user);
+        logger.info("✅ Agency created successfully: {} for user: {}", agencyDto.getName(), user.getEmail());
+    }
+	
+	// Update user method - only personal info, no email/role
+    public UserResponseDTO updateUser(Long id, UserUpdateDTO updateDto) {
+        User user = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException(id));
 
-		logger.info("✅ Agency created successfully: {} for user: {}", agencyDto.getName(), user.getEmail());
-	}
+        boolean wasUpdated = false;
 
-	// Consolidated update method
-	public UserDTO updateUser(Long id, UserDTO.Update updateDto) {
-		User user = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException(id));
+        // Only update personal info - email and role require separate endpoints
+        if (updateDto.getFirstName() != null && !updateDto.getFirstName().equals(user.getFirstName())) {
+            user.setFirstName(updateDto.getFirstName());
+            wasUpdated = true;
+        }
+        if (updateDto.getLastName() != null && !updateDto.getLastName().equals(user.getLastName())) {
+            user.setLastName(updateDto.getLastName());
+            wasUpdated = true;
+        }
+        if (updateDto.getPhone() != null && !updateDto.getPhone().equals(user.getPhone())) {
+            user.setPhone(updateDto.getPhone());
+            wasUpdated = true;
+        }
+        if (updateDto.getBio() != null && !updateDto.getBio().equals(user.getBio())) {
+            user.setBio(updateDto.getBio());
+            wasUpdated = true;
+        }
 
-		boolean wasUpdated = false;
+        if (wasUpdated) {
+            user.preUpdate();
+            userRepository.save(user);
+        }
 
-		// Email update
-		if (updateDto.getEmail() != null && !updateDto.getEmail().equals(user.getEmail())) {
-			user.setEmail(updateDto.getEmail());
-			wasUpdated = true;
-		}
+        return userMapper.toResponseDTO(user);
+    }
+    
+    // Separate method for email update
+    public UserResponseDTO updateUserEmail(Long id, String newEmail) {
+        User user = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException(id));
+        
+        if (userRepository.findByEmail(newEmail).isPresent()) {
+            throw new EmailExistsException("Email already in use: " + newEmail);
+        }
+        
+        user.setEmail(newEmail);
+        user.preUpdate();
+        userRepository.save(user);
+        
+        return userMapper.toResponseDTO(user);
+    }
+    
+    // Separate method for role update (admin only)
+    public UserResponseDTO updateUserRole(Long id, UserRole newRole) {
+        User user = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException(id));
+        
+        List<String> newRoles = List.of("ROLE_" + newRole.name());
+        user.setRoles(resolveRoles(newRoles));
+        user.preUpdate();
+        userRepository.save(user);
+        
+        return userMapper.toResponseDTO(user);
+    }
+	
+	// Update user profile specifically
+    public UserResponseDTO updateUserProfile(Long id, UserUpdateDTO updateDto) {
+        User user = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException(id));
+        
+        userMapper.updateEntityFromUpdateDTO(updateDto, user);
+        userRepository.save(user);
+        
+        return userMapper.toResponseDTO(user);
+    }
+    
+    // Update role-specific profiles
+    public UserResponseDTO updateInvestorProfile(Long userId, InvestorProfileUpdateDTO updateDto) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+        
+        if (!user.isInvestor()) {
+            throw new IllegalOperationException("User is not an investor");
+        }
+        
+        InvestorProfile profile = user.getOrCreateInvestorProfile();
+        userMapper.updateInvestorProfileFromUpdateDTO(updateDto, profile);
+        userRepository.save(user);
+        
+        return userMapper.toResponseDTO(user);
+    }
+    
+    public UserResponseDTO updateOwnerProfile(Long userId, OwnerProfileUpdateDTO updateDto) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+        
+        if (!user.isOwner()) {
+            throw new IllegalOperationException("User is not a property owner");
+        }
+        
+        OwnerProfile profile = user.getOrCreateOwnerProfile();
+        userMapper.updateOwnerProfileFromUpdateDTO(updateDto, profile);
+        userRepository.save(user);
+        
+        return userMapper.toResponseDTO(user);
+    }
+    
+    public UserResponseDTO updateContractorProfile(Long userId, ContractorProfileUpdateDTO updateDto) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+        
+        if (!user.isContractor()) {
+            throw new IllegalOperationException("User is not a contractor");
+        }
+        
+        ContractorProfile profile = user.getOrCreateContractorProfile();
+        userMapper.updateContractorProfileFromUpdateDTO(updateDto, profile); // FIXED: Use UpdateDTO method
+        userRepository.save(user);
+        
+        return userMapper.toResponseDTO(user);
+    }
 
-		// Role update (admin only in practice)
-		if (updateDto.getRoles() != null) {
-			List<Role> newRoles = resolveRoles(updateDto.getRoles());
-			if (!newRoles.equals(user.getRoles())) {
-				user.setRoles(newRoles);
-				wasUpdated = true;
-			}
-		}
+	// Get user by ID returning UserResponseDTO
+    public UserResponseDTO getUserById(Long id) {
+        User user = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException(id));
+        return userMapper.toResponseDTO(user);
+    }
 
-		// Profile update
-		if (updateDto.getProfile() != null) {
-			UserProfile profile = user.getOrCreateProfile();
-			updateProfileFromDTO(updateDto.getProfile(), profile);
-			wasUpdated = true;
-		}
-
-		if (wasUpdated) {
-			user.preUpdate();
-			userRepository.save(user);
-		}
-
-		return userMapper.toDTO(user);
-	}
-
-	// Get user by ID returning UserDTO
-	public UserDTO getUserById(Long id) {
-		User user = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException(id));
-		return userMapper.toDTO(user);
-	}
-
-	// Get all users returning UserDTO
-	public List<UserDTO> getAllUsers() {
-		return userRepository.findAll().stream().map(userMapper::toDTO).collect(Collectors.toList());
-	}
+    // Get all users returning UserResponseDTO
+    public List<UserResponseDTO> getAllUsers() {
+        return userRepository.findAll().stream()
+                .map(userMapper::toResponseDTO)
+                .collect(Collectors.toList());
+    }
 
 	// Delete user with cascade deletion - ALLOWS SELF-DELETION FOR EVERYONE
 	@Transactional
@@ -229,26 +354,34 @@ public class UserService {
 	}
 
 	// Delete user with all associated data
-	public void deleteUserWithCascade(Long userId, boolean isSuperAdmin) {
-		User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+    public void deleteUserWithCascade(Long userId, boolean isSuperAdmin) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
 
-		// 1) Delete agencies owned by user (if any)
-		List<Agency> ownedAgencies = agencyRepository.findByAdminId(userId);
-		for (Agency agency : ownedAgencies) {
-			// cascade = CascadeType.ALL on Agency should remove related data (memberships,
-			// listings) if configured
-			agencyRepository.delete(agency);
-		}
+        // 1) Delete agency owned by user (if any)
+        user.getOwnedAgency().ifPresent(agency -> {
+            agencyRepository.delete(agency);
+        });
 
-		// 2) Delete user's real estate properties
-		List<RealEstate> userProperties = realEstateRepository.findByUserId(userId);
-		for (RealEstate property : userProperties) {
-			realEstateRepository.delete(property);
-		}
+        // 2) Delete user's real estate properties
+        List<RealEstate> userProperties = realEstateRepository.findByUserId(userId);
+        for (RealEstate property : userProperties) {
+            realEstateRepository.delete(property);
+        }
 
-		// 3) Finally delete the user
-		userRepository.delete(user);
-	}
+        // 3) Delete role-specific profiles (cascade should handle this, but explicit for clarity)
+        if (user.getInvestorProfile() != null) {
+            // Cascade should delete this
+        }
+        if (user.getOwnerProfile() != null) {
+            // Cascade should delete this
+        }
+        if (user.getContractorProfile() != null) {
+            // Cascade should delete this
+        }
+
+        // 4) Finally delete the user
+        userRepository.delete(user);
+    }
 
 	public long getUserCount() {
 		return userRepository.count();
@@ -274,6 +407,27 @@ public class UserService {
 		return userRepository.findByEmail(email)
 				.orElseThrow(() -> new UsernameNotFoundException("User '" + email + "' not found")).getId();
 	}
+	
+	// Get current user (return ResponseDTO)
+    public UserResponseDTO getCurrentUser() {
+        User user = getAuthenticatedUser();
+        return userMapper.toResponseDTO(user);
+    }
+    
+    // NEW: Get users by role
+    public List<UserResponseDTO> getUsersByRole(UserRole role) {
+        String roleName = "ROLE_" + role.name();
+        List<User> users = userRepository.findByRole(roleName);
+        return users.stream()
+                .map(userMapper::toResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    // NEW: Count users by role
+    public long countUsersByRole(UserRole role) {
+        String roleName = "ROLE_" + role.name();
+        return userRepository.countByRole(roleName);
+    }
 
 	public User getUserEntityById(Long id) {
 		return userRepository.findById(id).orElseThrow(() -> new UserNotFoundException(id));
@@ -296,14 +450,19 @@ public class UserService {
 
 	// Helper methods
 	private List<Role> resolveRoles(List<String> roleNames) {
-		List<String> rolesToAssign = (roleNames == null || roleNames.isEmpty()) ? List.of("ROLE_USER") : roleNames;
+        if (roleNames == null || roleNames.isEmpty()) {
+            roleNames = List.of("ROLE_USER");
+        }
 
-		return rolesToAssign.stream().map(roleName -> roleRepository.findByName(roleName).orElseGet(() -> {
-			Role newRole = new Role();
-			newRole.setName(roleName);
-			return roleRepository.save(newRole);
-		})).collect(Collectors.toList());
-	}
+        return roleNames.stream()
+                .map(roleName -> roleRepository.findByName(roleName)
+                        .orElseGet(() -> {
+                            Role newRole = new Role();
+                            newRole.setName(roleName);
+                            return roleRepository.save(newRole);
+                        }))
+                .collect(Collectors.toList());
+    }
 
 	private void validatePassword(String password) {
 		if (password == null || password.isEmpty()) {
@@ -311,21 +470,6 @@ public class UserService {
 		}
 		if (password.length() < 6) {
 			throw new IllegalArgumentException("Password must be at least 6 characters long");
-		}
-	}
-
-	private void updateProfileFromDTO(UserProfileDTO profileDto, UserProfile profile) {
-		if (profileDto.getFirstName() != null) {
-			profile.setFirstName(profileDto.getFirstName());
-		}
-		if (profileDto.getLastName() != null) {
-			profile.setLastName(profileDto.getLastName());
-		}
-		if (profileDto.getPhone() != null) {
-			profile.setPhone(profileDto.getPhone());
-		}
-		if (profileDto.getBio() != null) {
-			profile.setBio(profileDto.getBio());
 		}
 	}
 
@@ -354,23 +498,19 @@ public class UserService {
 	}
 
 	// Helper method to get user's agency (if any)
-	public Optional<AgencyDTO> getUserAgency(Long userId) {
+	public Optional<AgencyResponseDTO> getUserAgency(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
         
-        if (user.isAgencyAdmin() && !user.getOwnedAgencies().isEmpty()) {
-            Agency agency = user.getOwnedAgencies().get(0);
-            return Optional.of(agencyService.toDTO(agency));
-        }
-        
-        return Optional.empty();
+        return user.getOwnedAgency()
+                .map(agency -> agency.toResponseDTO());
     }
 
 	// Check if user has an agency
 	public boolean userHasAgency(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
-        return user.isAgencyAdmin() && !user.getOwnedAgencies().isEmpty();
+        return user.isAgencyAdmin() && user.getOwnedAgency().isPresent();
     }
 	
 	

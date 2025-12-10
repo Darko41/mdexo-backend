@@ -1,12 +1,20 @@
 package com.doublez.backend.enums;
 
 public enum InvestorType {
-	
-	DEVELOPER,      // Real estate developer
-    WHOLESALER,     // Buys and sells properties in bulk
-    FLIPPER,        // Buys, renovates, and sells quickly
-    INSTITUTIONAL,  // Large investment firms
-    PRIVATE,        // Individual investor
-    INTERNATIONAL   // Foreign investor
+    
+	DEVELOPER("Investitor građevinar"), 
+    WHOLESALER("Veletrgovac nekretninama"),
+    FLIPPER("Spekulant"),
+    PRIVATE("Privatni investitor"),
+    INTERNATIONAL("Inostrani investitor");
 
+    private final String displayName;
+
+    InvestorType(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
 }

@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 
 import com.doublez.backend.config.EmailProperties;
 import com.doublez.backend.dto.email.EmailDTO;
-import com.doublez.backend.enums.UserTier;
+import com.doublez.backend.entity.user.UserTier;
 
 @Component
 public class EmailTemplateService {
