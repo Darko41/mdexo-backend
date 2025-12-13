@@ -13,9 +13,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.doublez.backend.entity.RealEstate;
 import com.doublez.backend.entity.agency.Agency;
 import com.doublez.backend.entity.agency.Agent;
+import com.doublez.backend.entity.realestate.RealEstate;
 import com.doublez.backend.entity.user.User;
 import com.doublez.backend.enums.ListingType;
 import com.doublez.backend.enums.property.EnergyEfficiency;

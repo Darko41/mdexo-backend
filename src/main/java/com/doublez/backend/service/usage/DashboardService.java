@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 
 import com.doublez.backend.dto.analytics.MarketInsightsDTO;
 import com.doublez.backend.dto.analytics.TeamProductivityDTO;
-import com.doublez.backend.dto.warnings.SystemWarningDTO;
+import com.doublez.backend.dto.warning.SystemWarningDTO;
 import com.doublez.backend.entity.user.User;
 import com.doublez.backend.service.agency.TeamAnalyticsService;
 import com.doublez.backend.service.agency.WarningService;

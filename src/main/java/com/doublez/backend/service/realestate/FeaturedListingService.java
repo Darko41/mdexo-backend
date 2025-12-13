@@ -8,7 +8,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import com.doublez.backend.entity.RealEstate;
+import com.doublez.backend.entity.realestate.RealEstate;
 import com.doublez.backend.exception.IllegalOperationException;
 import com.doublez.backend.exception.LimitationExceededException;
 import com.doublez.backend.exception.ResourceNotFoundException;

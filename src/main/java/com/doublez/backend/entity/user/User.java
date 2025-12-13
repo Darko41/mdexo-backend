@@ -8,14 +8,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import com.doublez.backend.entity.ContractorProfile;
-import com.doublez.backend.entity.InvestorProfile;
-import com.doublez.backend.entity.OwnerProfile;
 import com.doublez.backend.entity.Role;
 import com.doublez.backend.entity.agency.Agency;
 import com.doublez.backend.entity.agency.Agent;
 import com.doublez.backend.entity.agency.Invitation;
 import com.doublez.backend.entity.credit.UserCredit;
+import com.doublez.backend.entity.profile.ContractorProfile;
+import com.doublez.backend.entity.profile.InvestorProfile;
+import com.doublez.backend.entity.profile.OwnerProfile;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;

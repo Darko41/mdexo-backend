@@ -14,10 +14,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import com.doublez.backend.entity.RealEstate;
+import com.doublez.backend.dto.warning.SystemWarningDTO;
 import com.doublez.backend.entity.agency.Agency;
 import com.doublez.backend.entity.agency.Agent;
+import com.doublez.backend.entity.realestate.RealEstate;
 import com.doublez.backend.entity.user.User;
+import com.doublez.backend.repository.AgencyRepository;
 import com.doublez.backend.repository.AgentRepository;
 import com.doublez.backend.repository.InvitationRepository;
 import com.doublez.backend.repository.RealEstateRepository;
@@ -30,6 +32,9 @@ public class WarningService {
     
     @Autowired
     private AgentRepository agentRepository;
+    
+    @Autowired
+    private AgencyRepository agencyRepository;
     
     @Autowired
     private RealEstateRepository realEstateRepository;
@@ -54,7 +59,7 @@ public class WarningService {
     public void generateWarnings() {
         if (!warningsEnabled) return;
         
-        log.info("Generating system warnings...");
+        logger.info("Generating system warnings...");
         
         // Check for various warning conditions
         checkInactiveAgents();
@@ -87,24 +92,25 @@ public class WarningService {
     private void checkInactiveAgents() {
         LocalDateTime threshold = LocalDateTime.now().minusDays(30);
         
-        List<Agent> inactiveAgents = agentRepository.findAll().stream()
-                .filter(agent -> agent.getIsActive() && 
-                        agent.getLastActiveDate() != null && 
-                        agent.getLastActiveDate().isBefore(threshold))
+        // Get all active agents from all agencies
+        List<Agent> allAgents = agentRepository.findAll().stream()
+                .filter(Agent::getIsActive)
                 .collect(Collectors.toList());
         
-        for (Agent agent : inactiveAgents) {
-            createWarning(
-                agent.getAgency().getId(),
-                "INACTIVE_AGENT",
-                "Agent " + agent.getUser().getEmail() + " je neaktivan više od 30 dana",
-                "Razmotrite deaktivaciju agenta ili kontakt",
-                "MEDIUM",
-                agent.getId()
-            );
-            
-            // Send email to agency owner
-            sendInactiveAgentWarning(agent);
+        for (Agent agent : allAgents) {
+            if (agent.getLastActiveDate() != null && 
+                    agent.getLastActiveDate().isBefore(threshold)) {
+                createWarning(
+                    agent.getAgency().getId(),
+                    "INACTIVE_AGENT",
+                    "Agent " + agent.getUser().getEmail() + " je neaktivan više od 30 dana",
+                    "Razmotrite deaktivaciju agenta ili kontakt",
+                    "MEDIUM",
+                    agent.getId()
+                );
+                
+                sendInactiveAgentWarning(agent);
+            }
         }
     }
     
@@ -214,17 +220,23 @@ public class WarningService {
     private List<SystemWarningDTO> getInactiveAgentWarnings(Long agencyId) {
         LocalDateTime threshold = LocalDateTime.now().minusDays(30);
         
-        return agentRepository.findByAgencyAndIsActive(new Agency(agencyId), true).stream()
+        Agency agency = new Agency();
+        agency.setId(agencyId);
+        
+        return agentRepository.findByAgencyAndIsActive(agency, true).stream()
                 .filter(agent -> agent.getLastActiveDate() != null && 
                         agent.getLastActiveDate().isBefore(threshold))
-                .map(agent -> new SystemWarningDTO(
-                    "INACTIVE_AGENT",
-                    "Neaktivan agent: " + agent.getUser().getEmail(),
-                    "Poslednja aktivnost: " + agent.getLastActiveDate().format(DateTimeFormatter.ofPattern("dd.MM.yyyy.")),
-                    "MEDIUM",
-                    LocalDateTime.now(),
-                    agent.getId()
-                ))
+                .map(agent -> {
+                    SystemWarningDTO warning = new SystemWarningDTO();
+                    warning.setCode("INACTIVE_AGENT");
+                    warning.setTitle("Neaktivan agent: " + agent.getUser().getEmail());
+                    warning.setDescription("Poslednja aktivnost: " + 
+                            agent.getLastActiveDate().format(DateTimeFormatter.ofPattern("dd.MM.yyyy.")));
+                    warning.setSeverity("MEDIUM");
+                    warning.setGeneratedAt(LocalDateTime.now());
+                    warning.setRelatedId(agent.getId());
+                    return warning;
+                })
                 .collect(Collectors.toList());
     }
     
@@ -299,7 +311,11 @@ public class WarningService {
         List<SystemWarningDTO> warnings = new ArrayList<>();
         LocalDateTime monthAgo = LocalDateTime.now().minusMonths(1);
         
-        List<Agent> agents = agentRepository.findByAgencyAndIsActive(new Agency(agencyId), true);
+        // FIXED: Create Agency object properly
+        Agency agency = new Agency();
+        agency.setId(agencyId);
+        
+        List<Agent> agents = agentRepository.findByAgencyAndIsActive(agency, true);
         
         for (Agent agent : agents) {
             int dealsLastMonth = getDealsForAgent(agent.getId(), monthAgo, LocalDateTime.now());
@@ -307,14 +323,14 @@ public class WarningService {
                 agent.getAgency(), agent);
             
             if (dealsLastMonth == 0 && !agentListings.isEmpty()) {
-                warnings.add(new SystemWarningDTO(
-                    "LOW_PERFORMANCE",
-                    "Agent " + agent.getUser().getEmail() + " bez poslova 30+ dana",
-                    "Imate " + agentListings.size() + " aktivnih oglasa",
-                    "LOW",
-                    LocalDateTime.now(),
-                    agent.getId()
-                ));
+                SystemWarningDTO warning = new SystemWarningDTO();
+                warning.setCode("LOW_PERFORMANCE");
+                warning.setTitle("Agent " + agent.getUser().getEmail() + " bez poslova 30+ dana");
+                warning.setDescription("Imate " + agentListings.size() + " aktivnih oglasa");
+                warning.setSeverity("LOW");
+                warning.setGeneratedAt(LocalDateTime.now());
+                warning.setRelatedId(agent.getId());
+                warnings.add(warning);
             }
         }
         

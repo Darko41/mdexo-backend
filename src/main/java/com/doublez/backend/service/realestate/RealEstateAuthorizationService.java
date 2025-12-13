@@ -5,8 +5,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.doublez.backend.dto.user.UsageStatsDTO;
-import com.doublez.backend.entity.RealEstate;
 import com.doublez.backend.entity.agency.Agency;
+import com.doublez.backend.entity.realestate.RealEstate;
 import com.doublez.backend.entity.user.User;
 import com.doublez.backend.entity.user.UserLimitation;
 import com.doublez.backend.entity.user.UserTier;

@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.doublez.backend.entity.agency.Agency;
 import com.doublez.backend.entity.credit.CreditTransaction;
 import com.doublez.backend.enums.CreditTransactionType;
 import com.doublez.backend.enums.PaymentStatus;
@@ -37,4 +38,21 @@ public interface CreditTransactionRepository extends JpaRepository<CreditTransac
     
     @Query("SELECT ct FROM CreditTransaction ct WHERE ct.user.id = :userId ORDER BY ct.createdAt DESC")
     Page<CreditTransaction> findByUserIdOrderByCreatedAtDesc(@Param("userId") Long userId, Pageable pageable);
+    
+    // Find transactions by agency
+    List<CreditTransaction> findByAgencyIdOrderByCreatedAtDesc(Long agencyId, Pageable pageable);
+
+    // Find pending transactions for agency
+    List<CreditTransaction> findByAgencyIdAndPaymentStatus(Long agencyId, PaymentStatus status);
+
+    // Find transactions for agency user
+    @Query("SELECT ct FROM CreditTransaction ct WHERE " +
+           "(ct.user.id = :userId OR ct.agency.id = :agencyId) " +
+           "ORDER BY ct.createdAt DESC")
+    List<CreditTransaction> findUserOrAgencyTransactions(
+            @Param("userId") Long userId, 
+            @Param("agencyId") Long agencyId, 
+            Pageable pageable);
+    
+    Page<CreditTransaction> findByAgencyOrderByCreatedAtDesc(Agency agency, Pageable pageable);
 }

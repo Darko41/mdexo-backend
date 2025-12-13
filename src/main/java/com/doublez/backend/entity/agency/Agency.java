@@ -1,20 +1,28 @@
 package com.doublez.backend.entity.agency;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.doublez.backend.dto.agency.AgencyCreateDTO;
 import com.doublez.backend.dto.agency.AgencyResponseDTO;
 import com.doublez.backend.dto.trial.TrialInfoDTO;
+import com.doublez.backend.entity.Lead;
 import com.doublez.backend.entity.user.User;
 import com.doublez.backend.entity.user.UserTier;
+import com.doublez.backend.entity.warning.ActiveWarning;
+import com.doublez.backend.entity.warning.WarningConfiguration;
 import com.doublez.backend.enums.VerificationStatus;
 import com.doublez.backend.enums.agency.AgentRole;
 import com.doublez.backend.enums.agency.InvitationStatus;
+import com.doublez.backend.utils.JsonUtils;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -30,6 +38,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import jakarta.validation.constraints.NotBlank;
 
 @Entity
@@ -148,6 +157,34 @@ public class Agency {
 
     @OneToMany(mappedBy = "agency", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<Invitation> invitations = new ArrayList<>();
+    
+    // WARNING/NOTIFICATION SYSTEM =====
+    
+    @Column(name = "plan_limits_json", columnDefinition = "JSON")
+    private String planLimitsJson; // Tier limits and features
+    
+    @Column(name = "current_usage_json", columnDefinition = "JSON")
+    private String currentUsageJson; // Current usage counters
+    
+    @Column(name = "notification_settings_json", columnDefinition = "JSON")
+    private String notificationSettingsJson; // Agency-wide notification preferences
+    
+    @Column(name = "warning_config_json", columnDefinition = "JSON")
+    private String warningConfigJson; // Agency warning configuration
+    
+    @Column(name = "last_warning_check")
+    private LocalDateTime lastWarningCheck; // When warnings were last checked
+    
+    // ===== NEW RELATIONSHIPS =====
+    
+    @OneToMany(mappedBy = "agency", fetch = FetchType.LAZY)
+    private List<Lead> leads = new ArrayList<>(); // All leads for this agency
+    
+    @OneToMany(mappedBy = "agency", fetch = FetchType.LAZY)
+    private List<ActiveWarning> warnings = new ArrayList<>(); // Agency warnings
+    
+    @OneToMany(mappedBy = "agency", fetch = FetchType.LAZY)
+    private List<WarningConfiguration> warningConfigurations = new ArrayList<>(); // Custom warning settings
 
     // ========================
     // LIFECYCLE METHODS
@@ -308,13 +345,6 @@ public class Agency {
                LocalDateTime.now().isAfter(trialEndDate);
     }
 
-    public long getTrialDaysRemaining() {
-        if (!isInTrialPeriod()) {
-            return 0;
-        }
-        return ChronoUnit.DAYS.between(LocalDateTime.now(), trialEndDate);
-    }
-
     public void startTrial(int trialDays) {
         this.trialUsed = true;
         this.trialEndDate = LocalDateTime.now().plusDays(trialDays);
@@ -401,10 +431,6 @@ public class Agency {
         this.verificationNotes = notes;
     }
 
-    public boolean isVerified() {
-        return verificationStatus == VerificationStatus.VERIFIED;
-    }
-
     public boolean canListProperties() {
         return isVerified() && isActive();
     }
@@ -480,11 +506,6 @@ public class Agency {
         }
         return "Location not specified";
     }
-    
-    public boolean isCurrentlyFeatured() {
-        return Boolean.TRUE.equals(isFeatured) && featuredUntil != null && 
-               LocalDateTime.now().isBefore(featuredUntil);
-    }
 
     public void checkAndResetExpiredFeatures() {
         LocalDateTime now = LocalDateTime.now();
@@ -528,6 +549,297 @@ public class Agency {
         return invitations.stream()
                 .filter(inv -> inv.getStatus() == InvitationStatus.PENDING)
                 .collect(Collectors.toList());
+    }
+    
+    
+    
+    /**
+     * Get plan limits as map
+     */
+    @Transient
+    public Map<String, Object> getPlanLimits() {
+        return JsonUtils.parseStringObjectMap(planLimitsJson);
+    }
+    
+    /**
+     * Set plan limits from map
+     */
+    public void setPlanLimits(Map<String, Object> limits) {
+        this.planLimitsJson = JsonUtils.toJson(limits);
+    }
+    
+    /**
+     * Get current usage as map
+     */
+    @Transient
+    public Map<String, Object> getCurrentUsage() {
+        return JsonUtils.parseStringObjectMap(currentUsageJson);
+    }
+    
+    /**
+     * Set current usage from map
+     */
+    public void setCurrentUsage(Map<String, Object> usage) {
+        this.currentUsageJson = JsonUtils.toJson(usage);
+    }
+    
+    /**
+     * Update usage for a specific resource
+     */
+    public void updateUsage(String resource, Object value) {
+        Map<String, Object> usage = getCurrentUsage();
+        usage.put(resource, value);
+        setCurrentUsage(usage);
+    }
+    
+    /**
+     * Get specific plan limit
+     */
+    @Transient
+    public Object getPlanLimit(String key) {
+        return getPlanLimits().get(key);
+    }
+    
+    /**
+     * Check if agency has exceeded a plan limit
+     */
+    @Transient
+    public boolean hasExceededLimit(String limitKey) {
+        Map<String, Object> limits = getPlanLimits();
+        Map<String, Object> usage = getCurrentUsage();
+        
+        if (!limits.containsKey(limitKey) || !usage.containsKey(limitKey)) {
+            return false;
+        }
+        
+        Object limitValue = limits.get(limitKey);
+        Object usageValue = usage.get(limitKey);
+        
+        if (limitValue instanceof Number && usageValue instanceof Number) {
+            return ((Number) usageValue).doubleValue() > ((Number) limitValue).doubleValue();
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Get notification settings as map
+     */
+    @Transient
+    public Map<String, Object> getNotificationSettings() {
+        return JsonUtils.parseStringObjectMap(notificationSettingsJson);
+    }
+    
+    /**
+     * Set notification settings from map
+     */
+    public void setNotificationSettings(Map<String, Object> settings) {
+        this.notificationSettingsJson = JsonUtils.toJson(settings);
+    }
+    
+    /**
+     * Get warning configuration as map
+     */
+    @Transient
+    public Map<String, Object> getWarningConfig() {
+        return JsonUtils.parseStringObjectMap(warningConfigJson);
+    }
+    
+    /**
+     * Set warning configuration from map
+     */
+    public void setWarningConfig(Map<String, Object> config) {
+        this.warningConfigJson = JsonUtils.toJson(config);
+    }
+    
+    /**
+     * Check if agency is on trial
+     */
+    @Transient
+    public boolean isOnTrial() {
+        return trialEndDate != null && LocalDateTime.now().isBefore(trialEndDate);
+    }
+    
+    /**
+     * Get days remaining in trial
+     */
+    @Transient
+    public Long getTrialDaysRemaining() {
+        if (trialEndDate == null || !isOnTrial()) return 0L;
+        return Duration.between(LocalDateTime.now(), trialEndDate).toDays();
+    }
+    
+    /**
+     * Check if agency is verified
+     */
+    @Transient
+    public boolean isVerified() {
+        return verificationStatus == VerificationStatus.VERIFIED;
+    }
+    
+    /**
+     * Check if agency can add more agents
+     */
+    @Transient
+    public boolean canAddMoreAgents() {
+        if (hasExceededLimit("maxAgents")) return false;
+        
+        // Also check actual agent count
+        if (agents != null) {
+            Map<String, Object> limits = getPlanLimits();
+            Integer maxAgents = limits.containsKey("maxAgents") ? 
+                ((Number) limits.get("maxAgents")).intValue() : null;
+            
+            if (maxAgents != null && agents.size() >= maxAgents) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Check if agency can add more listings
+     */
+    @Transient
+    public boolean canAddMoreListings(Integer currentListingCount) {
+        if (hasExceededLimit("maxListings")) return false;
+        
+        Map<String, Object> limits = getPlanLimits();
+        Integer maxListings = limits.containsKey("maxListings") ? 
+            ((Number) limits.get("maxListings")).intValue() : null;
+        
+        if (maxListings != null && currentListingCount >= maxListings) {
+            return false;
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Get active agent count
+     */
+    @Transient
+    public long getActiveAgentCount() {
+        if (agents == null) return 0;
+        return agents.stream()
+            .filter(agent -> Boolean.TRUE.equals(agent.getIsActive()))
+            .count();
+    }
+    
+    /**
+     * Get super agent (team lead)
+     */
+    @Transient
+    public Optional<Agent> getSuperAgent() {
+        if (agents == null) return Optional.empty();
+        return agents.stream()
+            .filter(agent -> AgentRole.SUPER_AGENT.equals(agent.getRole()))
+            .filter(agent -> Boolean.TRUE.equals(agent.getIsActive()))
+            .findFirst();
+    }
+    
+    /**
+     * Check if agency is currently featured
+     */
+    @Transient
+    public boolean isCurrentlyFeatured() {
+        if (!Boolean.TRUE.equals(isFeatured)) return false;
+        if (featuredUntil == null) return true;
+        return LocalDateTime.now().isBefore(featuredUntil);
+    }
+    
+    /**
+     * Check if agency has premium badge
+     */
+    @Transient
+    public boolean hasActivePremiumBadge() {
+        if (!Boolean.TRUE.equals(hasPremiumBadge)) return false;
+        if (premiumBadgeUntil == null) return true;
+        return LocalDateTime.now().isBefore(premiumBadgeUntil);
+    }
+    
+    /**
+     * Initialize default plan limits based on tier
+     */
+    public void initializePlanLimits() {
+        Map<String, Object> limits = new HashMap<>();
+        
+        switch (tier) {
+            case AGENCY_FREE:
+                limits.put("maxAgents", 1);
+                limits.put("maxListings", 10);
+                limits.put("maxStorageMB", 100);
+                limits.put("features", Arrays.asList("basic_listing", "website_embed"));
+                break;
+            case AGENCY_BASIC:
+                limits.put("maxAgents", 3);
+                limits.put("maxListings", 50);
+                limits.put("maxStorageMB", 1000);
+                limits.put("features", Arrays.asList("advanced_analytics", "team_management", "basic_support"));
+                break;
+            case AGENCY_PRO:
+                limits.put("maxAgents", 10);
+                limits.put("maxListings", 200);
+                limits.put("maxStorageMB", 5000);
+                limits.put("features", Arrays.asList("white_label", "api_access", "priority_support", "custom_domain"));
+                break;
+            case AGENCY_PREMIUM:
+                limits.put("maxAgents", -1); // Unlimited
+                limits.put("maxListings", -1); // Unlimited
+                limits.put("maxStorageMB", -1); // Unlimited
+                limits.put("features", Arrays.asList("all_features", "dedicated_support", "ai_analytics", "custom_development"));
+                break;
+        }
+        
+        setPlanLimits(limits);
+        
+        // Initialize usage to zero
+        Map<String, Object> usage = new HashMap<>();
+        usage.put("agentCount", 0);
+        usage.put("listingCount", 0);
+        usage.put("storageUsedMB", 0);
+        usage.put("leadCount", 0);
+        setCurrentUsage(usage);
+    }
+    
+    /**
+     * Initialize default notification settings
+     */
+    public void initializeNotificationSettings() {
+        Map<String, Object> settings = new HashMap<>();
+        settings.put("emailAlerts", true);
+        settings.put("smsAlerts", false);
+        settings.put("pushAlerts", false);
+        settings.put("warningFrequency", "DAILY");
+        settings.put("reportSchedule", "WEEKLY");
+        setNotificationSettings(settings);
+    }
+    
+    // ===== LIFECYCLE METHODS =====
+    
+    @PrePersist
+    protected void onCreate() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+        
+        // Initialize JSON fields if null
+        if (planLimitsJson == null) {
+            initializePlanLimits();
+        }
+        if (notificationSettingsJson == null) {
+            initializeNotificationSettings();
+        }
+        if (warningConfigJson == null) {
+            setWarningConfig(new HashMap<>());
+        }
+        if (currentUsageJson == null) {
+            Map<String, Object> usage = new HashMap<>();
+            usage.put("agentCount", 0);
+            usage.put("listingCount", 0);
+            setCurrentUsage(usage);
+        }
     }
 
     // ========================
@@ -707,6 +1019,70 @@ public class Agency {
 
 	public void setInvitations(List<Invitation> invitations) {
 		this.invitations = invitations;
+	}
+
+	public String getPlanLimitsJson() {
+		return planLimitsJson;
+	}
+
+	public void setPlanLimitsJson(String planLimitsJson) {
+		this.planLimitsJson = planLimitsJson;
+	}
+
+	public String getCurrentUsageJson() {
+		return currentUsageJson;
+	}
+
+	public void setCurrentUsageJson(String currentUsageJson) {
+		this.currentUsageJson = currentUsageJson;
+	}
+
+	public String getNotificationSettingsJson() {
+		return notificationSettingsJson;
+	}
+
+	public void setNotificationSettingsJson(String notificationSettingsJson) {
+		this.notificationSettingsJson = notificationSettingsJson;
+	}
+
+	public String getWarningConfigJson() {
+		return warningConfigJson;
+	}
+
+	public void setWarningConfigJson(String warningConfigJson) {
+		this.warningConfigJson = warningConfigJson;
+	}
+
+	public LocalDateTime getLastWarningCheck() {
+		return lastWarningCheck;
+	}
+
+	public void setLastWarningCheck(LocalDateTime lastWarningCheck) {
+		this.lastWarningCheck = lastWarningCheck;
+	}
+
+	public List<Lead> getLeads() {
+		return leads;
+	}
+
+	public void setLeads(List<Lead> leads) {
+		this.leads = leads;
+	}
+
+	public List<ActiveWarning> getWarnings() {
+		return warnings;
+	}
+
+	public void setWarnings(List<ActiveWarning> warnings) {
+		this.warnings = warnings;
+	}
+
+	public List<WarningConfiguration> getWarningConfigurations() {
+		return warningConfigurations;
+	}
+
+	public void setWarningConfigurations(List<WarningConfiguration> warningConfigurations) {
+		this.warningConfigurations = warningConfigurations;
 	}
 
 	@Override

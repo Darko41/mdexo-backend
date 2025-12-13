@@ -1,9 +1,20 @@
 package com.doublez.backend.enums;
 
 public enum PaymentStatus {
-    PENDING,    // Bank transfer initiated, waiting confirmation
-    COMPLETED,  // Payment confirmed by admin
-    FAILED,     // Payment rejected or failed
-    REFUNDED,   // Credits refunded
-    CANCELLED   // Payment cancelled by user
+    PENDING("Pending"),
+    COMPLETED("Completed"),
+    FAILED("Failed"),
+    REFUNDED("Refunded"),
+    CANCELLED("Cancelled"),
+    PROCESSING("Processing");
+
+    private final String displayName;
+
+    PaymentStatus(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
 }

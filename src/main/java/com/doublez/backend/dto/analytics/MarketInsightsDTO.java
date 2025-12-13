@@ -12,7 +12,7 @@ public class MarketInsightsDTO {
     private Double averageDaysOnMarket;
     private Map<String, Long> listingsByType;
     
-    
+ // Getters and setters
 	public Long getAgencyId() {
 		return agencyId;
 	}

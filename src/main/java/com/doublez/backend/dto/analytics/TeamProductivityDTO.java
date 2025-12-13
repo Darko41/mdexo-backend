@@ -16,6 +16,7 @@ public class TeamProductivityDTO {
     private Double teamConversionRate;
     private List<AgentProductivityDTO> topPerformers;
     
+ // Getters and setters
 	public Long getAgencyId() {
 		return agencyId;
 	}

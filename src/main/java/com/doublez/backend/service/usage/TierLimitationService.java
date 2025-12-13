@@ -6,10 +6,10 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.doublez.backend.dto.analytics.AgencyUsageStats;
-import com.doublez.backend.entity.ContractorProfile;
-import com.doublez.backend.entity.OwnerProfile;
 import com.doublez.backend.entity.agency.Agency;
 import com.doublez.backend.entity.agency.Agent;
+import com.doublez.backend.entity.profile.ContractorProfile;
+import com.doublez.backend.entity.profile.OwnerProfile;
 import com.doublez.backend.entity.user.User;
 import com.doublez.backend.entity.user.UserTier;
 import com.doublez.backend.enums.agency.AgentRole;

@@ -24,4 +24,21 @@ public interface CreditPackageRepository extends JpaRepository<CreditPackage, Lo
     
     @Query("SELECT cp FROM CreditPackage cp WHERE cp.isActive = true AND cp.price <= :maxPrice")
     List<CreditPackage> findActivePackagesUnderPrice(@Param("maxPrice") BigDecimal maxPrice);
+    
+    List<CreditPackage> findByIsAgencyPackageTrueAndIsActiveTrue();
+
+	 // Find packages by type for agencies
+	 List<CreditPackage> findByTypeAndIsAgencyPackageTrueAndIsActiveTrue(CreditPackageType type);
+	
+	 // Find packages suitable for team size
+	 @Query("SELECT cp FROM CreditPackage cp WHERE " +
+	        "cp.isAgencyPackage = true AND cp.isActive = true AND " +
+	        "(cp.maxAgents IS NULL OR cp.maxAgents >= :agentCount) AND " +
+	        "(cp.maxSuperAgents IS NULL OR cp.maxSuperAgents >= :superAgentCount)")
+	 List<CreditPackage> findAgencyPackagesForTeamSize(
+	         @Param("agentCount") int agentCount, 
+	         @Param("superAgentCount") int superAgentCount);
+	
+	 // Find packages with bulk discounts
+	 List<CreditPackage> findByBulkPurchaseDiscountNotNullAndIsActiveTrueOrderByBulkPurchaseDiscountDesc();
 }

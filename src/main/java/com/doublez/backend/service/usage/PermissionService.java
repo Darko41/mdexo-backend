@@ -6,9 +6,9 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.doublez.backend.entity.RealEstate;
 import com.doublez.backend.entity.agency.Agency;
 import com.doublez.backend.entity.agency.Agent;
+import com.doublez.backend.entity.realestate.RealEstate;
 import com.doublez.backend.entity.user.User;
 import com.doublez.backend.enums.agency.AgentRole;
 import com.doublez.backend.repository.AgentRepository;

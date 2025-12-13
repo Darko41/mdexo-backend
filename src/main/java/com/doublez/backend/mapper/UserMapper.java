@@ -21,11 +21,11 @@ import com.doublez.backend.dto.user.UserCreateDTO;
 import com.doublez.backend.dto.user.UserProfileDTO;
 import com.doublez.backend.dto.user.UserResponseDTO;
 import com.doublez.backend.dto.user.UserUpdateDTO;
-import com.doublez.backend.entity.ContractorProfile;
-import com.doublez.backend.entity.InvestorProfile;
-import com.doublez.backend.entity.OwnerProfile;
 import com.doublez.backend.entity.Role;
 import com.doublez.backend.entity.agency.Agency;
+import com.doublez.backend.entity.profile.ContractorProfile;
+import com.doublez.backend.entity.profile.InvestorProfile;
+import com.doublez.backend.entity.profile.OwnerProfile;
 import com.doublez.backend.entity.user.User;
 
 @Component

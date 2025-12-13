@@ -16,8 +16,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.doublez.backend.entity.InvestorProfile;
 import com.doublez.backend.entity.agency.Agency;
+import com.doublez.backend.entity.profile.InvestorProfile;
 import com.doublez.backend.entity.user.User;
 import com.doublez.backend.entity.user.UserTier;
 import com.doublez.backend.service.usage.TierBenefitsService;

@@ -1,4 +1,4 @@
-package com.doublez.backend.entity;
+package com.doublez.backend.entity.profile;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;

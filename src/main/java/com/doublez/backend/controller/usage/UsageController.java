@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.doublez.backend.dto.user.UsageStatsDTO;
-import com.doublez.backend.entity.RealEstate;
 import com.doublez.backend.entity.agency.Agency;
+import com.doublez.backend.entity.realestate.RealEstate;
 import com.doublez.backend.entity.user.User;
 import com.doublez.backend.repository.RealEstateRepository;
 import com.doublez.backend.service.realestate.RealEstateAuthorizationService;

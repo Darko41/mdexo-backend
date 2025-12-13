@@ -1,4 +1,4 @@
-package com.doublez.backend.dto.warnings;
+package com.doublez.backend.dto.warning;
 
 import java.time.LocalDateTime;
 

@@ -20,7 +20,7 @@ import com.doublez.backend.dto.auth.CustomUserDetails;
 import com.doublez.backend.dto.realestate.RealEstateResponseDTO;
 import com.doublez.backend.dto.realestate.RealEstateCreateDTO;
 import com.doublez.backend.dto.user.UserDTO;
-import com.doublez.backend.entity.RealEstate;
+import com.doublez.backend.entity.realestate.RealEstate;
 import com.doublez.backend.entity.user.User;
 import com.doublez.backend.entity.user.UserLimitation;
 import com.doublez.backend.entity.user.UserTier;

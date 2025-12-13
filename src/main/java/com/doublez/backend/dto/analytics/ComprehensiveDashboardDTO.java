@@ -2,7 +2,7 @@ package com.doublez.backend.dto.analytics;
 
 import java.util.List;
 
-import com.doublez.backend.dto.warnings.SystemWarningDTO;
+import com.doublez.backend.dto.warning.SystemWarningDTO;
 
 public class ComprehensiveDashboardDTO {
 	
@@ -12,6 +12,7 @@ public class ComprehensiveDashboardDTO {
     private MarketInsightsDTO marketInsights;
     private List<SystemWarningDTO> activeWarnings;
     
+    // Getters and setters
 	public UserUsageDashboard getUserUsageDashboard() {
 		return userUsageDashboard;
 	}

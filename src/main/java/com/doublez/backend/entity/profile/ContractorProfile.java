@@ -1,4 +1,4 @@
-package com.doublez.backend.entity;
+package com.doublez.backend.entity.profile;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;

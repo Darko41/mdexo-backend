@@ -2,7 +2,7 @@ package com.doublez.backend.dto.analytics;
 
 import java.util.List;
 
-import com.doublez.backend.dto.warnings.SystemWarningDTO;
+import com.doublez.backend.dto.warning.SystemWarningDTO;
 
 public class AnalyticsDashboardDTO {
     private TierAnalyticsDTO tierAnalytics;
@@ -10,6 +10,7 @@ public class AnalyticsDashboardDTO {
     private TeamProductivityDTO teamProductivity;
     private List<SystemWarningDTO> activeWarnings;
     
+    // Getters and setters
 	public TierAnalyticsDTO getTierAnalytics() {
 		return tierAnalytics;
 	}

@@ -20,7 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.doublez.backend.dto.realestate.RealEstateResponseDTO;
 import com.doublez.backend.dto.realestate.RealEstateUpdateDTO;
-import com.doublez.backend.entity.RealEstate;
+import com.doublez.backend.entity.realestate.RealEstate;
 import com.doublez.backend.entity.user.User;
 import com.doublez.backend.enums.ListingType;
 import com.doublez.backend.enums.property.FurnitureStatus;

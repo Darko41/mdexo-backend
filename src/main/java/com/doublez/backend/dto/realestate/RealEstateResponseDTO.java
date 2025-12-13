@@ -5,7 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import com.doublez.backend.entity.RealEstate;
+import com.doublez.backend.entity.realestate.RealEstate;
 import com.doublez.backend.enums.ListingType;
 import com.doublez.backend.enums.property.EnergyEfficiency;
 import com.doublez.backend.enums.property.FurnitureStatus;

@@ -15,6 +15,8 @@ public class AgentProductivityDTO {
     private String performanceRating;
     private LocalDateTime periodStart;
     private LocalDateTime periodEnd;
+    
+    // Getters and setters
 	public Long getAgentId() {
 		return agentId;
 	}

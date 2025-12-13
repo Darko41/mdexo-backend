@@ -15,6 +15,7 @@ public class AgencyUsageStatsBuilder {
     private boolean isInTrial;
     private long trialDaysRemaining;
     
+    // Getters and setters
     public AgencyUsageStatsBuilder agencyId(Long agencyId) {
         this.agencyId = agencyId;
         return this;
