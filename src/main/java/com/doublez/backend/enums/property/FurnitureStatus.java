@@ -1,19 +1,20 @@
 package com.doublez.backend.enums.property;
 
 public enum FurnitureStatus {
-    FURNISHED("Potpuno namešteno"),
-    SEMI_FURNISHED("Polunamešteno"), 
-    UNFURNISHED("Prazno"),
-    PARTIALLY_FURNISHED("Delimično namješteno");
-    
+    FULLY_FURNISHED("Potpuno namešteno"),
+    SEMI_FURNISHED("Polunamešteno"),
+    PARTIALLY_FURNISHED("Delimično namešteno"),
+    UNFURNISHED("Prazno");
+
     private final String displayName;
-    private FurnitureStatus furnitureStatus; // User selects from dropdown
-    
+
     FurnitureStatus(String displayName) {
         this.displayName = displayName;
     }
-    
+
     public String getDisplayName() {
         return displayName;
     }
 }
+
+

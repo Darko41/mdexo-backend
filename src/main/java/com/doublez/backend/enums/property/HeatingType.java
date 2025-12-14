@@ -1,20 +1,16 @@
 package com.doublez.backend.enums.property;
 
 public enum HeatingType {
-    
-	CENTRAL("Centralno grejanje"),
+    CENTRAL("Centralno grejanje"),
     ELECTRIC("Električno grejanje"),
     GAS("Grejanje na gas"),
     HEAT_PUMP("Toplotna pumpa"),
-    SOLAR("Grejanje na solarnu energiju"),
-    WOOD_PELLET("Grejanje na pelet"),
-    OIL("Grejanje naftom"),
-    COAL("Grejanje na ugalj"),
+    SOLAR("Solarno grejanje"),
+    WOOD_PELLET("Pelet"),
+    OIL("Lož ulje"),
+    COAL("Ugalj"),
     NONE("Bez grejanja"),
-    OTHER("Ostalo - molimo opišite");
-	
-	// In HeatingType entity:  
-	// private String otherHeatingTypeDescription;
+    OTHER("Ostalo");
 
     private final String displayName;
 
@@ -25,4 +21,6 @@ public enum HeatingType {
     public String getDisplayName() {
         return displayName;
     }
+}
+ }
 }

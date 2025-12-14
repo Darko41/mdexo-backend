@@ -3,7 +3,9 @@ package com.doublez.backend.dto.realestate;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.doublez.backend.enums.ListingType;
 import com.doublez.backend.enums.property.EnergyEfficiency;
@@ -13,6 +15,7 @@ import com.doublez.backend.enums.property.OwnershipType;
 import com.doublez.backend.enums.property.PropertyCondition;
 import com.doublez.backend.enums.property.PropertySubtype;
 import com.doublez.backend.enums.property.PropertyType;
+import com.doublez.backend.enums.property.WaterSourceType;
 
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.AssertTrue;
@@ -30,7 +33,7 @@ import jakarta.validation.constraints.Size;
 
 public class RealEstateCreateDTO {
     
-    // ===== BASIC INFORMATION =====
+	// ===== BASIC INFORMATION =====
     @NotBlank(message = "Title is required")
     @Size(max = 255, message = "Title cannot exceed 255 characters")
     private String title;
@@ -79,7 +82,6 @@ public class RealEstateCreateDTO {
     private String address;
 
     private String streetNumber; 
-
     private String neighborhood; 
 
     @NotBlank(message = "City is required")
@@ -90,8 +92,7 @@ public class RealEstateCreateDTO {
     @NotBlank(message = "State is required")
     private String state = "Srbija";
 
-    private String zipCode; // Made optional
-
+    private String zipCode; 
     @Size(max = 500, message = "Location description cannot exceed 500 characters")
     private String locationDescription; 
 
@@ -136,7 +137,6 @@ public class RealEstateCreateDTO {
     private Integer constructionYear;
 
     private PropertyCondition propertyCondition;
-
     private HeatingType heatingType;
 
     @Size(max = 100, message = "Other heating type description cannot exceed 100 characters")
@@ -163,10 +163,10 @@ public class RealEstateCreateDTO {
 
     // ===== ENERGY & UTILITIES =====
     private EnergyEfficiency energyEfficiency; 
-    private Boolean hasWater; 
     private Boolean hasSewage; 
     private Boolean hasElectricity; 
     private Boolean hasGas; 
+    private Set<WaterSourceType> waterSources = new HashSet<>();
 
     // ===== LEGAL & DOCUMENTATION =====
     private Boolean hasConstructionPermit; 
@@ -183,7 +183,6 @@ public class RealEstateCreateDTO {
     private String businessType; 
     private Boolean hasShowcaseWindow; 
     private Boolean hasStorageRoom; 
-    
     @Min(value = 0, message = "Employee capacity cannot be negative")
     @Max(value = 1000, message = "Employee capacity cannot exceed 1000")
     private Integer employeeCapacity; 
@@ -191,7 +190,6 @@ public class RealEstateCreateDTO {
     // ===== LAND-SPECIFIC =====
     @Size(max = 50, message = "Land type cannot exceed 50 characters")
     private String landType; 
-    private Boolean hasWaterSource; 
     private Boolean hasElectricityAccess; 
     private Boolean hasRoadAccess; 
 
@@ -235,10 +233,6 @@ public class RealEstateCreateDTO {
     private Boolean isFeatured = false;
 
     // ===== VALIDATION METHODS =====
-    
-    /**
-     * Custom validation for OTHER enum fields
-     */
     public boolean hasValidOtherDescriptions() {
         if (heatingType == HeatingType.OTHER && 
             (otherHeatingTypeDescription == null || otherHeatingTypeDescription.trim().isEmpty())) {
@@ -250,38 +244,26 @@ public class RealEstateCreateDTO {
         }
         return true;
     }
-    
-    /**
-     * Validate that property subtype matches property type
-     */
+
     public boolean isSubtypeValid() {
         if (propertySubtype == null) return true;
         return propertySubtype.getParentType() == propertyType;
     }
-    
-    /**
-     * Validate commercial fields are only used with commercial properties
-     */
+
     public boolean areCommercialFieldsValid() {
         if (businessType != null || hasShowcaseWindow != null || hasStorageRoom != null || employeeCapacity != null) {
             return propertyType == PropertyType.COMMERCIAL || propertyType == PropertyType.OFFICE_SPACE;
         }
         return true;
     }
-    
-    /**
-     * Validate land fields are only used with land properties
-     */
+
     public boolean areLandFieldsValid() {
-        if (landType != null || hasWaterSource != null || hasElectricityAccess != null || hasRoadAccess != null) {
+        if (landType != null || hasElectricityAccess != null || hasRoadAccess != null || (waterSources != null && !waterSources.isEmpty())) {
             return propertyType == PropertyType.LAND;
         }
         return true;
     }
-    
-    /**
-     * Validate discount logic
-     */
+
     @AssertTrue(message = "Cannot set both discount amount and have original price different from current price")
     public boolean isDiscountValid() {
         return !(discountAmount != null && originalPrice != null && originalPrice.compareTo(price) > 0);
@@ -421,9 +403,6 @@ public class RealEstateCreateDTO {
     public EnergyEfficiency getEnergyEfficiency() { return energyEfficiency; }
     public void setEnergyEfficiency(EnergyEfficiency energyEfficiency) { this.energyEfficiency = energyEfficiency; }
 
-    public Boolean getHasWater() { return hasWater; }
-    public void setHasWater(Boolean hasWater) { this.hasWater = hasWater; }
-
     public Boolean getHasSewage() { return hasSewage; }
     public void setHasSewage(Boolean hasSewage) { this.hasSewage = hasSewage; }
 
@@ -462,9 +441,6 @@ public class RealEstateCreateDTO {
 
     public String getLandType() { return landType; }
     public void setLandType(String landType) { this.landType = landType; }
-
-    public Boolean getHasWaterSource() { return hasWaterSource; }
-    public void setHasWaterSource(Boolean hasWaterSource) { this.hasWaterSource = hasWaterSource; }
 
     public Boolean getHasElectricityAccess() { return hasElectricityAccess; }
     public void setHasElectricityAccess(Boolean hasElectricityAccess) { this.hasElectricityAccess = hasElectricityAccess; }
@@ -516,4 +492,7 @@ public class RealEstateCreateDTO {
 
 	public LocalDate getDiscountEndDate() { return discountEndDate; }
 	public void setDiscountEndDate(LocalDate discountEndDate) { this.discountEndDate = discountEndDate; }
+
+	public Set<WaterSourceType> getWaterSources() { return waterSources; }
+	public void setWaterSources(Set<WaterSourceType> waterSources) { this.waterSources = waterSources; }
 }

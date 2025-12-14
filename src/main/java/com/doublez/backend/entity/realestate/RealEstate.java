@@ -5,12 +5,16 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Year;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.data.geo.Point;
 
@@ -21,11 +25,13 @@ import com.doublez.backend.entity.user.User;
 import com.doublez.backend.entity.warning.ActiveWarning;
 import com.doublez.backend.enums.ListingType;
 import com.doublez.backend.enums.property.EnergyEfficiency;
+import com.doublez.backend.enums.property.FurnitureStatus;
 import com.doublez.backend.enums.property.HeatingType;
 import com.doublez.backend.enums.property.OwnershipType;
 import com.doublez.backend.enums.property.PropertyCondition;
 import com.doublez.backend.enums.property.PropertySubtype;
 import com.doublez.backend.enums.property.PropertyType;
+import com.doublez.backend.enums.property.WaterSourceType;
 import com.doublez.backend.utils.JsonUtils;
 
 import jakarta.persistence.CascadeType;
@@ -191,11 +197,22 @@ public class RealEstate {
     @Column(name = "other_heating_type_description", length = 100)
     private String otherHeatingTypeDescription;	// Required when heatingType is OTHER
     
-    @Column(name = "is_furnished")
-    private Boolean isFurnished;
+    // Water sources
+    @ElementCollection(targetClass = WaterSourceType.class, fetch = FetchType.EAGER)
+    @CollectionTable(
+        name = "real_estate_water_sources",
+        joinColumns = @JoinColumn(name = "property_id")
+    )
+    @Column(name = "water_source")
+    @Enumerated(EnumType.STRING)
+    private Set<WaterSourceType> waterSources = new HashSet<>();
+
+    @Column(name = "other_water_source_description", length = 100)
+    private String otherWaterSourceDescription;
     
-    @Column(name = "is_semi_furnished")
-    private Boolean isSemiFurnished;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "furniture_status")
+    private FurnitureStatus furnitureStatus;
 
     // ===== AMENITIES & COMFORT =====
     @Column(name = "has_elevator")
@@ -257,9 +274,6 @@ public class RealEstate {
     @Column(name = "energy_efficiency")
     private EnergyEfficiency energyEfficiency;	// Energy efficiency rating
     
-    @Column(name = "has_water")
-    private Boolean hasWater;	// Water connection available
-    
     @Column(name = "has_sewage")
     private Boolean hasSewage;	// Sewage system available
     
@@ -287,9 +301,6 @@ public class RealEstate {
     private Boolean isRegistered;	// Property is registered in cadastre (uknjiženo)
 
     // ===== COMMERCIAL-SPECIFIC FIELDS =====
-    @Column(name = "business_type", length = 100)
-    private String businessType;	// Type of business (restaurant, store, etc.)
-    
     @Column(name = "has_showcase_window")
     private Boolean hasShowcaseWindow;	// Has storefront/showcase window
     
@@ -300,11 +311,6 @@ public class RealEstate {
     private Integer employeeCapacity;	// Maximum employee capacity
 
     // ===== LAND-SPECIFIC FIELDS =====
-    @Column(name = "land_type", length = 50)
-    private String landType;	// Type of land (agricultural, construction, etc.)
-    
-    @Column(name = "has_water_source")
-    private Boolean hasWaterSource;	// Has natural water source
     
     @Column(name = "has_electricity_access")
     private Boolean hasElectricityAccess;	// Electricity access available
@@ -453,7 +459,18 @@ public class RealEstate {
     private String warningFlagsJson; // {"no_photos": true, "incomplete_address": false}
     
     @Column(name = "last_data_quality_check")
-    private LocalDateTime lastDataQualityCheck;  
+    private LocalDateTime lastDataQualityCheck;
+    
+    // ===== Admin Check Fields =====
+    /**
+     * Timestamp of last admin review/check
+     */
+    private LocalDateTime lastAdminCheck;
+
+    /**
+     * ID of admin who performed the last check
+     */
+    private Long lastAdminCheckedBy;
 
     // CONSTRUCTORS
     public RealEstate() {
@@ -521,6 +538,147 @@ public class RealEstate {
 
     // ===== HELPER METHODS =====
     
+    // Property type helpers
+    @Transient
+    public boolean isLand() {
+        return propertyType == PropertyType.LAND;
+    }
+
+    @Transient
+    public boolean isResidential() {
+        return propertyType == PropertyType.APARTMENT
+            || propertyType == PropertyType.HOUSE;
+    }
+
+    @Transient
+    public boolean isCommercial() {
+        return propertyType == PropertyType.COMMERCIAL;
+    }
+    
+    // FURNITURE STATUS
+    @Transient
+    public boolean isFurnished() {
+        return furnitureStatus == FurnitureStatus.FULLY_FURNISHED;
+    }
+
+    @Transient
+    public boolean isSemiFurnished() {
+        return furnitureStatus == FurnitureStatus.SEMI_FURNISHED;
+    }
+
+    @Transient
+    public boolean isUnfurnished() {
+        return furnitureStatus == FurnitureStatus.UNFURNISHED;
+    }
+
+    @Transient
+    public String getFurnitureDisplay() {
+        return furnitureStatus != null
+            ? furnitureStatus.getDisplayName()
+            : "Nepoznato";
+    }
+    
+    // ===== WATER SOURCES HELPERS =====
+
+    @Transient
+    public String getWaterSourcesDisplay() {
+        if (waterSources == null || waterSources.isEmpty()) {
+            return "Bez vode";
+        }
+        return waterSources.stream()
+                .map(WaterSourceType::getDisplayName)
+                .collect(Collectors.joining(", "));
+    }
+
+    @Transient
+    public boolean hasAnyWaterSource() {
+        return waterSources != null && !waterSources.isEmpty();
+    }
+
+    @Transient
+    public boolean hasCityNetworkWater() {
+        return waterSources != null && waterSources.contains(WaterSourceType.CITY_NETWORK);
+    }
+
+    @Transient
+    public boolean hasWellWater() {
+        return waterSources != null && waterSources.contains(WaterSourceType.WELL);
+    }
+
+    @Transient
+    public boolean hasSpringWater() {
+        return waterSources != null && waterSources.contains(WaterSourceType.SPRING);
+    }
+
+    @Transient
+    public boolean hasNaturalWaterSource() {
+        return waterSources != null &&
+               (waterSources.contains(WaterSourceType.SPRING) || 
+                waterSources.contains(WaterSourceType.WELL));
+    }
+
+    @Transient
+    public boolean hasAlternativeWaterSource() {
+        return waterSources != null &&
+               (waterSources.contains(WaterSourceType.RAINWATER) ||
+                waterSources.contains(WaterSourceType.TANK));
+    }
+
+    @Transient
+    public boolean hasOtherWaterSource() {
+        return waterSources != null && waterSources.contains(WaterSourceType.OTHER);
+    }
+
+    // ===== Admin Check Helper Methods =====
+
+    /**
+     * Mark this listing as checked by an admin
+     * @param adminId ID of the admin performing the check
+     */
+    public void markAdminChecked(Long adminId) {
+        this.lastAdminCheck = LocalDateTime.now();
+        this.lastAdminCheckedBy = adminId;
+    }
+
+    /**
+     * Check if the listing was checked within the given number of days
+     * @param days number of days to consider as "recently checked"
+     * @return true if listing was checked in the last `days` days
+     */
+    @Transient
+    public boolean isRecentlyChecked(int days) {
+        if (lastAdminCheck == null) return false;
+        return lastAdminCheck.isAfter(LocalDateTime.now().minusDays(days));
+    }
+
+    /**
+     * Get display-friendly string for last admin check
+     */
+    @Transient
+    public String getLastAdminCheckDisplay() {
+        if (lastAdminCheck == null) return "Not checked";
+        return lastAdminCheck.format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"));
+    }
+
+    /**
+     * Check if listing is overdue for admin review
+     * @param maxDays max allowed days since last check
+     * @return true if the listing was last checked more than maxDays ago or never checked
+     */
+    @Transient
+    public boolean isAdminCheckOverdue(int maxDays) {
+        if (lastAdminCheck == null) return true;
+        return lastAdminCheck.isBefore(LocalDateTime.now().minusDays(maxDays));
+    }
+
+    /**
+     * Get admin ID who last checked this listing
+     */
+    @Transient
+    public Long getLastAdminCheckedBy() {
+        return lastAdminCheckedBy;
+    }
+
     /**
      * Update image count from images list
      */
@@ -539,41 +697,73 @@ public class RealEstate {
         int score = 0;
         int maxScore = 0;
         Map<String, Integer> completeness = new HashMap<>();
-        
-        // Basic info (20 points)
-        if (title != null && !title.trim().isEmpty()) { score += 10; completeness.put("title", 10); }
-        if (description != null && !description.trim().isEmpty()) { score += 10; completeness.put("description", 10); }
+
+        // ===== BASIC INFO (20 pts) =====
+        if (title != null && !title.trim().isEmpty()) {
+            score += 10;
+            completeness.put("title", 10);
+        }
+        if (description != null && !description.trim().isEmpty()) {
+            score += 10;
+            completeness.put("description", 10);
+        }
         maxScore += 20;
-        
-        // Photos (20 points)
+
+        // ===== IMAGES (20 pts) =====
         if (imageCount != null && imageCount > 0) {
-            int photoScore = Math.min(imageCount * 5, 20);
+            int photoScore = Math.min(imageCount * 5, 20); // max 20 points
             score += photoScore;
             completeness.put("photos", photoScore);
         }
         maxScore += 20;
-        
-        // Location (20 points)
+
+        // ===== LOCATION (20 pts) =====
         if (latitude != null && longitude != null) { score += 10; completeness.put("coordinates", 10); }
-        if (address != null && !address.trim().isEmpty()) { score += 10; completeness.put("address", 10); }
+        if (address != null && !address.trim().isEmpty()) { score += 5; completeness.put("address", 5); }
+        if (city != null && !city.trim().isEmpty()) { score += 5; completeness.put("city", 5); }
         maxScore += 20;
-        
-        // Property details (30 points)
-        if (sizeInSqMt != null) { score += 10; completeness.put("size", 10); }
+
+        // ===== PROPERTY DETAILS (30 pts) =====
+        if (sizeInSqMt != null) { score += 5; completeness.put("size", 5); }
         if (roomCount != null) { score += 5; completeness.put("rooms", 5); }
         if (propertyCondition != null) { score += 5; completeness.put("condition", 5); }
         if (constructionYear != null) { score += 5; completeness.put("year", 5); }
         if (floor != null && totalFloors != null) { score += 5; completeness.put("floor_info", 5); }
+        if (heatingType != null) { score += 2; completeness.put("heating_type", 2); }
+        if (heatingType == HeatingType.OTHER && otherHeatingTypeDescription != null && !otherHeatingTypeDescription.trim().isEmpty()) {
+            score += 1; // extra point for OTHER description
+            completeness.put("other_heating_description", 1);
+        }
         maxScore += 30;
-        
-        // Price (10 points)
+
+        // ===== PRICE (10 pts) =====
         if (price != null) { score += 10; completeness.put("price", 10); }
         maxScore += 10;
-        
+
+        // ===== UTILITIES / WATER SOURCES (10 pts) =====
+        if (waterSources != null && !waterSources.isEmpty()) {
+            score += 5;
+            completeness.put("water_sources", 5);
+        }
+        if (hasElectricity != null && hasElectricity) { score += 1; completeness.put("electricity", 1); }
+        if (hasSewage != null && hasSewage) { score += 1; completeness.put("sewage", 1); }
+        if (hasGas != null && hasGas) { score += 1; completeness.put("gas", 1); }
+        maxScore += 10;
+
+        // ===== ENERGY / COMFORT (10 pts) =====
+        if (energyEfficiency != null) { score += 5; completeness.put("energy_efficiency", 5); }
+        if (hasElevator != null && hasElevator) { score += 1; completeness.put("elevator", 1); }
+        if (hasAirConditioning != null && hasAirConditioning) { score += 1; completeness.put("air_conditioning", 1); }
+        if (hasInternet != null && hasInternet) { score += 1; completeness.put("internet", 1); }
+        if (hasParking != null && hasParking) { score += 2; completeness.put("parking", 2); }
+        maxScore += 10;
+
+        // ===== FINALIZE =====
         this.dataQualityScore = maxScore > 0 ? (score * 100) / maxScore : 0;
         this.completenessJson = JsonUtils.toJson(completeness);
         this.lastDataQualityCheck = LocalDateTime.now();
     }
+
     
     /**
      * Get completeness as map
@@ -1135,6 +1325,22 @@ public class RealEstate {
         return heatingType.getDisplayName();
     }
     
+    @Transient
+    public boolean hasHeating() {
+        return heatingType != null && heatingType != HeatingType.NONE;
+    }
+
+    @Transient
+    public boolean isHeatingOther() {
+        return heatingType == HeatingType.OTHER;
+    }
+
+    @Transient
+    public boolean requiresHeatingDescription() {
+        return heatingType == HeatingType.OTHER;
+    }
+
+    
     /**
      * Get property type display name
      */
@@ -1343,12 +1549,6 @@ public class RealEstate {
     public String getOtherHeatingTypeDescription() { return otherHeatingTypeDescription; }
     public void setOtherHeatingTypeDescription(String otherHeatingTypeDescription) { this.otherHeatingTypeDescription = otherHeatingTypeDescription; }
 
-    public Boolean getIsFurnished() { return isFurnished; }
-    public void setIsFurnished(Boolean isFurnished) { this.isFurnished = isFurnished; }
-
-    public Boolean getIsSemiFurnished() { return isSemiFurnished; }
-    public void setIsSemiFurnished(Boolean isSemiFurnished) { this.isSemiFurnished = isSemiFurnished; }
-
     public Boolean getHasElevator() { return hasElevator; }
     public void setHasElevator(Boolean hasElevator) { this.hasElevator = hasElevator; }
 
@@ -1385,9 +1585,6 @@ public class RealEstate {
     public EnergyEfficiency getEnergyEfficiency() { return energyEfficiency; }
     public void setEnergyEfficiency(EnergyEfficiency energyEfficiency) { this.energyEfficiency = energyEfficiency; }
 
-    public Boolean getHasWater() { return hasWater; }
-    public void setHasWater(Boolean hasWater) { this.hasWater = hasWater; }
-
     public Boolean getHasSewage() { return hasSewage; }
     public void setHasSewage(Boolean hasSewage) { this.hasSewage = hasSewage; }
 
@@ -1412,9 +1609,6 @@ public class RealEstate {
     public Boolean getIsRegistered() { return isRegistered; }
     public void setIsRegistered(Boolean isRegistered) { this.isRegistered = isRegistered; }
 
-    public String getBusinessType() { return businessType; }
-    public void setBusinessType(String businessType) { this.businessType = businessType; }
-
     public Boolean getHasShowcaseWindow() { return hasShowcaseWindow; }
     public void setHasShowcaseWindow(Boolean hasShowcaseWindow) { this.hasShowcaseWindow = hasShowcaseWindow; }
 
@@ -1423,12 +1617,6 @@ public class RealEstate {
 
     public Integer getEmployeeCapacity() { return employeeCapacity; }
     public void setEmployeeCapacity(Integer employeeCapacity) { this.employeeCapacity = employeeCapacity; }
-
-    public String getLandType() { return landType; }
-    public void setLandType(String landType) { this.landType = landType; }
-
-    public Boolean getHasWaterSource() { return hasWaterSource; }
-    public void setHasWaterSource(Boolean hasWaterSource) { this.hasWaterSource = hasWaterSource; }
 
     public Boolean getHasElectricityAccess() { return hasElectricityAccess; }
     public void setHasElectricityAccess(Boolean hasElectricityAccess) { this.hasElectricityAccess = hasElectricityAccess; }
@@ -1710,5 +1898,41 @@ public class RealEstate {
 
 	public void setPlotSizeSqMt(BigDecimal plotSizeSqMt) {
 		this.plotSizeSqMt = plotSizeSqMt;
+	}
+
+	public FurnitureStatus getFurnitureStatus() {
+		return furnitureStatus;
+	}
+
+	public void setFurnitureStatus(FurnitureStatus furnitureStatus) {
+		this.furnitureStatus = furnitureStatus;
+	}
+
+	public Set<WaterSourceType> getWaterSources() {
+		return waterSources;
+	}
+
+	public void setWaterSources(Set<WaterSourceType> waterSources) {
+		this.waterSources = waterSources;
+	}
+
+	public String getOtherWaterSourceDescription() {
+		return otherWaterSourceDescription;
+	}
+
+	public void setOtherWaterSourceDescription(String otherWaterSourceDescription) {
+		this.otherWaterSourceDescription = otherWaterSourceDescription;
+	}
+
+	public LocalDateTime getLastAdminCheck() {
+		return lastAdminCheck;
+	}
+
+	public void setLastAdminCheck(LocalDateTime lastAdminCheck) {
+		this.lastAdminCheck = lastAdminCheck;
+	}
+
+	public void setLastAdminCheckedBy(Long lastAdminCheckedBy) {
+		this.lastAdminCheckedBy = lastAdminCheckedBy;
 	}
 }

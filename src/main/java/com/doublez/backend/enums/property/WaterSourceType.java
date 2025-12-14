@@ -1,15 +1,16 @@
 package com.doublez.backend.enums.property;
 
-public enum OwnershipType {
-    FREEHOLD("Svojina"),
-    LEASEHOLD("Zakup"),
-    STATE_OWNED("Državno"),
-    COOPERATIVE("Zadružno"),
+public enum WaterSourceType {
+    CITY_NETWORK("Gradski vodovod"),
+    WELL("Bunar"),
+    SPRING("Izvor"),
+    RAINWATER("Kišnica"),
+    TANK("Rezervoar"),
     OTHER("Ostalo");
 
     private final String displayName;
 
-    OwnershipType(String displayName) {
+    WaterSourceType(String displayName) {
         this.displayName = displayName;
     }
 

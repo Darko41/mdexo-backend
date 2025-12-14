@@ -1,24 +1,25 @@
 package com.doublez.backend.enums.property;
 
 public enum EnergyEfficiency {
-    A_PLUS("A+", "Najviši standard"),
-    A("A", "Veoma efikasno"),
-    B("B", "Efikasno"),
-    C("C", "Dobro"),
-    D("D", "Zadovoljavajuće"),
-    E("E", "Loše"),
-    F("F", "Veoma loše"),
-    G("G", "Izuzetno loše"),
-    NOT_RATED("Nije ocenjeno", "Nema energetski sertifikat");
-    
+    A_PLUS("A+"),
+    A("A"),
+    B("B"),
+    C("C"),
+    D("D"),
+    E("E"),
+    F("F"),
+    G("G"),
+    NOT_RATED("Nije ocenjeno");
+
     private final String displayName;
-    private final String description;
-    
-    EnergyEfficiency(String displayName, String description) {
+
+    EnergyEfficiency(String displayName) {
         this.displayName = displayName;
-        this.description = description;
     }
-    
-    public String getDisplayName() { return displayName; }
-    public String getDescription() { return description; }
+
+    public String getDisplayName() {
+        return displayName;
+    }
 }
+
+

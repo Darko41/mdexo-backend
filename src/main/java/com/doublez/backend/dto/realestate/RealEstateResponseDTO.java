@@ -4,7 +4,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
+import com.doublez.backend.entity.realestate.LocationMetadata;
+import com.doublez.backend.entity.realestate.PropertyMetrics;
 import com.doublez.backend.entity.realestate.RealEstate;
 import com.doublez.backend.enums.ListingType;
 import com.doublez.backend.enums.property.EnergyEfficiency;
@@ -14,9 +17,11 @@ import com.doublez.backend.enums.property.OwnershipType;
 import com.doublez.backend.enums.property.PropertyCondition;
 import com.doublez.backend.enums.property.PropertySubtype;
 import com.doublez.backend.enums.property.PropertyType;
+import com.doublez.backend.enums.property.WaterSourceType;
 
 public class RealEstateResponseDTO {
-    // ===== IDENTIFICATION =====
+
+	// ===== IDENTIFICATION =====
     private Long propertyId;
 
     // ===== BASIC INFORMATION =====
@@ -37,11 +42,10 @@ public class RealEstateResponseDTO {
     private BigDecimal depositAmount; 
     private BigDecimal pricePerSqMt;  // calculated
     private BigDecimal discountPercentage;  // calculated
-    
     private BigDecimal discountAmount;
     private LocalDate discountEndDate;
     private Boolean isDiscountActive;
-    private BigDecimal currentPrice; // The getCurrentPrice() calculated field
+    private BigDecimal currentPrice; // calculated
 
     // ===== LOCATION INFORMATION =====
     private String address;
@@ -55,7 +59,7 @@ public class RealEstateResponseDTO {
     private BigDecimal latitude;
     private BigDecimal longitude;
 
-    // ===== PROPERTY CHARACTERISTICS - CORE =====
+    // ===== PROPERTY CHARACTERISTICS =====
     private BigDecimal sizeInSqMt;
     private BigDecimal roomCount;
     private BigDecimal bathroomCount; 
@@ -66,8 +70,6 @@ public class RealEstateResponseDTO {
     private PropertyCondition propertyCondition;
     private HeatingType heatingType;
     private String otherHeatingTypeDescription; 
-    private Boolean isFurnished; 
-    private Boolean isSemiFurnished;
     private FurnitureStatus furnitureStatus;
 
     // ===== AMENITIES & COMFORT =====
@@ -105,7 +107,11 @@ public class RealEstateResponseDTO {
 
     // ===== LAND-SPECIFIC =====
     private String landType; 
-    private Boolean hasWaterSource; 
+    private Boolean hasCityNetworkWater;
+    private Boolean hasWellWater;
+    private Boolean hasNaturalWaterSource;
+    private Boolean hasAlternativeWaterSource;
+    private Boolean hasOtherWaterSource;
     private Boolean hasElectricityAccess; 
     private Boolean hasRoadAccess; 
 
@@ -124,8 +130,8 @@ public class RealEstateResponseDTO {
     // ===== AVAILABILITY =====
     private LocalDate availableFrom; 
     private Integer minimumRentPeriod; 
-    private Boolean availableNow;	// calculated
-    private Long daysUntilAvailable;	// calculated
+    private Boolean availableNow; // calculated
+    private Long daysUntilAvailable; // calculated
 
     // ===== MEDIA & FEATURES =====
     private List<String> features;
@@ -157,65 +163,49 @@ public class RealEstateResponseDTO {
     private String totalSizeDisplay; 
     private Boolean hasRequiredPermits; 
 
-    // ===== CONSTRUCTORS =====
-    public RealEstateResponseDTO() {
-    }
-
+    // ===== CONSTRUCTOR =====
     public RealEstateResponseDTO(RealEstate realEstate) {
         if (realEstate == null) {
             throw new IllegalArgumentException("RealEstate cannot be null");
         }
 
-        // ===== BASIC MAPPING =====
+        // ===== BASIC INFORMATION =====
         this.propertyId = realEstate.getPropertyId();
         this.title = realEstate.getTitle();
         this.description = realEstate.getDescription();
+
+        // ===== PROPERTY CLASSIFICATION =====
         this.propertyType = realEstate.getPropertyType();
         this.propertySubtype = realEstate.getPropertySubtype();
         this.listingType = realEstate.getListingType();
-        
+
+        // ===== PRICE & FINANCIAL =====
         this.price = realEstate.getPrice();
         this.currency = realEstate.getCurrency();
         this.originalPrice = realEstate.getOriginalPrice();
+        this.discountAmount = realEstate.getDiscountAmount();
+        this.discountPercentage = realEstate.getDiscountPercentage();
+        this.discountEndDate = realEstate.getDiscountEndDate();
         this.priceNegotiable = realEstate.getPriceNegotiable();
         this.includesUtilities = realEstate.getIncludesUtilities();
         this.depositAmount = realEstate.getDepositAmount();
         this.pricePerSqMt = realEstate.getPricePerSqMt();
-        this.discountPercentage = realEstate.getDiscountPercentage();
-        
-        this.discountAmount = realEstate.getDiscountAmount();
-        this.discountEndDate = realEstate.getDiscountEndDate();
-        this.isDiscountActive = realEstate.isDiscountActive();
-        this.currentPrice = realEstate.getCurrentPrice();
-
-        // ===== LOCATION =====
-        this.address = realEstate.getAddress();
-        this.streetNumber = realEstate.getStreetNumber();
-        this.neighborhood = realEstate.getNeighborhood();
-        this.city = realEstate.getCity();
-        this.municipality = realEstate.getMunicipality();
-        this.state = realEstate.getState();
-        this.zipCode = realEstate.getZipCode();
-        this.locationDescription = realEstate.getLocationDescription();
-        this.latitude = realEstate.getLatitude();
-        this.longitude = realEstate.getLongitude();
+        this.currentPrice = realEstate.getPrice(); // Could add discount logic if needed
 
         // ===== PROPERTY CHARACTERISTICS =====
         this.sizeInSqMt = realEstate.getSizeInSqMt();
         this.roomCount = realEstate.getRoomCount();
         this.bathroomCount = realEstate.getBathroomCount();
-        this.balconyCount = realEstate.getBalconyCount();
         this.floor = realEstate.getFloor();
         this.totalFloors = realEstate.getTotalFloors();
         this.constructionYear = realEstate.getConstructionYear();
         this.propertyCondition = realEstate.getPropertyCondition();
         this.heatingType = realEstate.getHeatingType();
         this.otherHeatingTypeDescription = realEstate.getOtherHeatingTypeDescription();
-        this.isFurnished = realEstate.getIsFurnished();
-        this.isSemiFurnished = realEstate.getIsSemiFurnished();
-        this.furnitureStatus = mapEntityToFurnitureStatus(realEstate);
+        this.furnitureStatus = realEstate.getFurnitureStatus();
+        this.furnitureStatus = realEstate.getFurnitureStatus();
 
-        // ===== AMENITIES =====
+        // ===== AMENITIES & COMFORT =====
         this.hasElevator = realEstate.getHasElevator();
         this.hasAirConditioning = realEstate.getHasAirConditioning();
         this.hasInternet = realEstate.getHasInternet();
@@ -227,78 +217,22 @@ public class RealEstateResponseDTO {
         this.gardenSizeSqMt = realEstate.getGardenSizeSqMt();
         this.hasTerrace = realEstate.getHasTerrace();
         this.hasBalcony = realEstate.getHasBalcony();
+        this.balconyCount = realEstate.getBalconyCount();
 
-        // ===== ENERGY & LEGAL =====
-        this.energyEfficiency = realEstate.getEnergyEfficiency();
-        this.hasWater = realEstate.getHasWater();
-        this.hasSewage = realEstate.getHasSewage();
-        this.hasElectricity = realEstate.getHasElectricity();
-        this.hasGas = realEstate.getHasGas();
-        this.hasConstructionPermit = realEstate.getHasConstructionPermit();
-        this.hasUsePermit = realEstate.getHasUsePermit();
-        this.ownershipType = realEstate.getOwnershipType();
-        this.otherOwnershipTypeDescription = realEstate.getOtherOwnershipTypeDescription();
-        this.isRegistered = realEstate.getIsRegistered();
-
-        // ===== TYPE-SPECIFIC FIELDS =====
-        this.businessType = realEstate.getBusinessType();
-        this.hasShowcaseWindow = realEstate.getHasShowcaseWindow();
-        this.hasStorageRoom = realEstate.getHasStorageRoom();
-        this.employeeCapacity = realEstate.getEmployeeCapacity();
-        this.landType = realEstate.getLandType();
-        this.hasWaterSource = realEstate.getHasWaterSource();
-        this.hasElectricityAccess = realEstate.getHasElectricityAccess();
-        this.hasRoadAccess = realEstate.getHasRoadAccess();
-
-        // ===== OWNERSHIP & CONTACT =====
-        if (realEstate.getOwner() != null) {
-            this.ownerId = realEstate.getOwner().getId();
-            this.ownerEmail = realEstate.getOwner().getEmail();
-            this.ownerName = realEstate.getEffectiveContactName();
-        }
-        
-        if (realEstate.getAgency() != null) {
-            this.agencyId = realEstate.getAgency().getId();
-            this.agencyName = realEstate.getAgency().getName();
-        }
-        
-        this.agentName = realEstate.getAgentName();
-        this.agentPhone = realEstate.getAgentPhone();
-        this.agentLicense = realEstate.getAgentLicense();
-        this.contactEmail = realEstate.getEffectiveContactEmail();
-        this.preferredContactMethod = realEstate.getPreferredContactMethod();
+        // ===== WATER SOURCES =====
+        this.includesUtilities = realEstate.hasCityNetworkWater();
+        this.otherOwnershipTypeDescription = realEstate.getOtherWaterSourceDescription();
 
         // ===== AVAILABILITY =====
-        this.availableFrom = realEstate.getAvailableFrom();
-        this.minimumRentPeriod = realEstate.getMinimumRentPeriod();
         this.availableNow = realEstate.isAvailableNow();
         this.daysUntilAvailable = realEstate.getDaysUntilAvailable();
 
-        // ===== MEDIA & STATUS =====
-        this.features = realEstate.getFeatures();
-        this.images = realEstate.getImages();
-        this.isActive = realEstate.getIsActive();
-        this.isFeatured = realEstate.getIsFeatured();
-        this.featuredAt = realEstate.getFeaturedAt();
-        this.featuredUntil = realEstate.getFeaturedUntil();
-        this.isCurrentlyFeatured = realEstate.isCurrentlyFeatured();
-
-        // ===== TIMESTAMPS & AUDIT =====
-        this.createdAt = realEstate.getCreatedAt();
-        this.updatedAt = realEstate.getUpdatedAt();
-        this.viewCount = realEstate.getViewCount();
-        this.contactCount = realEstate.getContactCount();
-        this.favoriteCount = realEstate.getFavoriteCount();
-
         // ===== CALCULATED DISPLAY FIELDS =====
-        this.floorDisplay = realEstate.getFloorDisplay();
-        this.roomCountDisplay = realEstate.getRoomCountDisplay();
-        this.bathroomCountDisplay = realEstate.getBathroomCountDisplay();
-        this.propertyAge = realEstate.getPropertyAge();
-        this.amenitiesSummary = realEstate.getAmenitiesSummary();
         this.ownershipTypeDisplay = realEstate.getOwnershipTypeDisplay();
-        this.totalSizeDisplay = realEstate.getTotalSizeInSqMt() + " m²";
-        this.hasRequiredPermits = realEstate.hasRequiredPermits();
+        this.floorDisplay = realEstate.getFloor() != null ? realEstate.getFloor() + " / " + realEstate.getTotalFloors() : null;
+        this.roomCountDisplay = realEstate.getRoomCount() != null ? realEstate.getRoomCount().toPlainString() : null;
+        this.bathroomCountDisplay = realEstate.getBathroomCount() != null ? realEstate.getBathroomCount().toPlainString() : null;
+        this.totalSizeDisplay = realEstate.getSizeInSqMt() != null ? realEstate.getSizeInSqMt() + " m²" : null;
     }
 
     // ===== GETTERS AND SETTERS =====
@@ -405,12 +339,6 @@ public class RealEstateResponseDTO {
     public String getOtherHeatingTypeDescription() { return otherHeatingTypeDescription; }
     public void setOtherHeatingTypeDescription(String otherHeatingTypeDescription) { this.otherHeatingTypeDescription = otherHeatingTypeDescription; }
 
-    public Boolean getIsFurnished() { return isFurnished; }
-    public void setIsFurnished(Boolean isFurnished) { this.isFurnished = isFurnished; }
-
-    public Boolean getIsSemiFurnished() { return isSemiFurnished; }
-    public void setIsSemiFurnished(Boolean isSemiFurnished) { this.isSemiFurnished = isSemiFurnished; }
-
     public Boolean getHasElevator() { return hasElevator; }
     public void setHasElevator(Boolean hasElevator) { this.hasElevator = hasElevator; }
 
@@ -488,9 +416,6 @@ public class RealEstateResponseDTO {
 
     public String getLandType() { return landType; }
     public void setLandType(String landType) { this.landType = landType; }
-
-    public Boolean getHasWaterSource() { return hasWaterSource; }
-    public void setHasWaterSource(Boolean hasWaterSource) { this.hasWaterSource = hasWaterSource; }
 
     public Boolean getHasElectricityAccess() { return hasElectricityAccess; }
     public void setHasElectricityAccess(Boolean hasElectricityAccess) { this.hasElectricityAccess = hasElectricityAccess; }
@@ -614,19 +539,45 @@ public class RealEstateResponseDTO {
 	
 	public FurnitureStatus getFurnitureStatus() { return furnitureStatus; }
     public void setFurnitureStatus(FurnitureStatus furnitureStatus) {  this.furnitureStatus = furnitureStatus; }
-	
-	private FurnitureStatus mapEntityToFurnitureStatus(RealEstate realEstate) {
-        Boolean isFurnished = realEstate.getIsFurnished();
-        Boolean isSemiFurnished = realEstate.getIsSemiFurnished();
-        
-        if (Boolean.TRUE.equals(isFurnished) && Boolean.TRUE.equals(isSemiFurnished)) {
-            return FurnitureStatus.PARTIALLY_FURNISHED;
-        } else if (Boolean.TRUE.equals(isFurnished)) {
-            return FurnitureStatus.FURNISHED;
-        } else if (Boolean.TRUE.equals(isSemiFurnished)) {
-            return FurnitureStatus.SEMI_FURNISHED;
-        } else {
-            return FurnitureStatus.UNFURNISHED;
-        }
-    }
+
+	public Boolean getHasCityNetworkWater() {
+		return hasCityNetworkWater;
+	}
+
+	public void setHasCityNetworkWater(Boolean hasCityNetworkWater) {
+		this.hasCityNetworkWater = hasCityNetworkWater;
+	}
+
+	public Boolean getHasWellWater() {
+		return hasWellWater;
+	}
+
+	public void setHasWellWater(Boolean hasWellWater) {
+		this.hasWellWater = hasWellWater;
+	}
+
+	public Boolean getHasNaturalWaterSource() {
+		return hasNaturalWaterSource;
+	}
+
+	public void setHasNaturalWaterSource(Boolean hasNaturalWaterSource) {
+		this.hasNaturalWaterSource = hasNaturalWaterSource;
+	}
+
+	public Boolean getHasAlternativeWaterSource() {
+		return hasAlternativeWaterSource;
+	}
+
+	public void setHasAlternativeWaterSource(Boolean hasAlternativeWaterSource) {
+		this.hasAlternativeWaterSource = hasAlternativeWaterSource;
+	}
+
+	public Boolean getHasOtherWaterSource() {
+		return hasOtherWaterSource;
+	}
+
+	public void setHasOtherWaterSource(Boolean hasOtherWaterSource) {
+		this.hasOtherWaterSource = hasOtherWaterSource;
+	}
+
 }

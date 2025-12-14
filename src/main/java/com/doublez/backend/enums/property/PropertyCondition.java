@@ -1,15 +1,14 @@
 package com.doublez.backend.enums.property;
 
 public enum PropertyCondition {
-    
-	NEW_CONSTRUCTION("Novogradnja"),
+    NEW_CONSTRUCTION("Novogradnja"),
     RENOVATED("Renovirano"),
     MODERNIZED("Modernizovano"),
-    GOOD("Dobro stanje, bez ulaganja"),
+    GOOD("Dobro stanje"),
     NEEDS_RENOVATION("Potrebno renoviranje"),
     ORIGINAL("Izvorno stanje"),
-    LUXURY("Luksuzna izrada"),
-    SHELL("Siva faza, konstrukcija");
+    LUXURY("Luksuz"),
+    SHELL("Siva faza");
 
     private final String displayName;
 
@@ -21,3 +20,5 @@ public enum PropertyCondition {
         return displayName;
     }
 }
+
+
