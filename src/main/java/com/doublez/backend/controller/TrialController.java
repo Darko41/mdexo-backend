@@ -40,43 +40,43 @@ public class TrialController {
     /**
      * Get current user's trial status
      */
-    @GetMapping("/my-status")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<?> getMyTrialStatus() {
-        try {
-            Long userId = userService.getCurrentUserId();
-            User user = userService.getUserEntityById(userId);
-            
-            Map<String, Object> status = new HashMap<>();
-            status.put("inTrial", trialService.isInTrial(user));
-            status.put("trialExpired", trialService.isTrialExpired(user));
-            status.put("daysRemaining", trialService.getTrialDaysRemaining(user));
-            status.put("progressPercentage", trialService.getTrialProgressPercentage(user));
-            status.put("tier", user.getTier());
-            
-            if (user.getTrialStartDate() != null) {
-                status.put("trialStartDate", user.getTrialStartDate());
-            }
-            if (user.getTrialEndDate() != null) {
-                status.put("trialEndDate", user.getTrialEndDate());
-            }
-            
-            // Add agency info if applicable
-            if (user.isAgencyAdmin() && !user.getOwnedAgencies().isEmpty()) {
-                Agency agency = user.getOwnedAgencies().get(0);
-                status.put("agencyInTrial", trialService.isAgencyInTrial(agency));
-                status.put("agencyName", agency.getName());
-            }
-            
-            logger.info("✅ Retrieved trial status for user: {}", userId);
-            return ResponseEntity.ok(status);
-            
-        } catch (Exception e) {
-            logger.error("❌ Failed to fetch trial status", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to fetch trial status"));
-        }
-    }
+//    @GetMapping("/my-status")
+//    @PreAuthorize("hasRole('USER')")
+//    public ResponseEntity<?> getMyTrialStatus() {
+//        try {
+//            Long userId = userService.getCurrentUserId();
+//            User user = userService.getUserEntityById(userId);
+//            
+//            Map<String, Object> status = new HashMap<>();
+//            status.put("inTrial", trialService.isInTrial(user));
+//            status.put("trialExpired", trialService.isTrialExpired(user));
+//            status.put("daysRemaining", trialService.getTrialDaysRemaining(user));
+//            status.put("progressPercentage", trialService.getTrialProgressPercentage(user));
+//            status.put("tier", user.getTier());
+//            
+//            if (user.getTrialStartDate() != null) {
+//                status.put("trialStartDate", user.getTrialStartDate());
+//            }
+//            if (user.getTrialEndDate() != null) {
+//                status.put("trialEndDate", user.getTrialEndDate());
+//            }
+//            
+//            // Add agency info if applicable
+//            if (user.isAgencyAdmin() && !user.getOwnedAgencies().isEmpty()) {
+//                Agency agency = user.getOwnedAgencies().get(0);
+//                status.put("agencyInTrial", trialService.isAgencyInTrial(agency));
+//                status.put("agencyName", agency.getName());
+//            }
+//            
+//            logger.info("✅ Retrieved trial status for user: {}", userId);
+//            return ResponseEntity.ok(status);
+//            
+//        } catch (Exception e) {
+//            logger.error("❌ Failed to fetch trial status", e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("error", "Failed to fetch trial status"));
+//        }
+//    }
     
     /**
      * Start trial for current user (self-service)
@@ -139,25 +139,25 @@ public class TrialController {
     /**
      * Expire trial immediately (admin only)
      */
-    @PostMapping("/{userId}/expire")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> expireTrial(@PathVariable Long userId) {
-        try {
-            trialService.expireTrial(userId);
-            
-            logger.info("✅ Manually expired trial for user: {}", userId);
-            return ResponseEntity.ok(Map.of("message", "Trial expired successfully"));
-            
-        } catch (UserNotFoundException e) {
-            logger.warn("❌ User not found for trial expiration: {}", userId);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", "User not found"));
-        } catch (Exception e) {
-            logger.error("❌ Failed to expire trial for user: {}", userId, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to expire trial"));
-        }
-    }
+//    @PostMapping("/{userId}/expire")
+//    @PreAuthorize("hasRole('ADMIN')")
+//    public ResponseEntity<?> expireTrial(@PathVariable Long userId) {
+//        try {
+//            trialService.expireTrial(userId);
+//            
+//            logger.info("✅ Manually expired trial for user: {}", userId);
+//            return ResponseEntity.ok(Map.of("message", "Trial expired successfully"));
+//            
+//        } catch (UserNotFoundException e) {
+//            logger.warn("❌ User not found for trial expiration: {}", userId);
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+//                    .body(Map.of("error", "User not found"));
+//        } catch (Exception e) {
+//            logger.error("❌ Failed to expire trial for user: {}", userId, e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("error", "Failed to expire trial"));
+//        }
+//    }
     
     /**
      * Get trial statistics (admin only)
@@ -271,32 +271,32 @@ public class TrialController {
     /**
      * Agency trial status check
      */
-    @GetMapping("/agency-status")
-    @PreAuthorize("hasRole('AGENCY_ADMIN')")
-    public ResponseEntity<?> getAgencyTrialStatus() {
-        try {
-            Long userId = userService.getCurrentUserId();
-            User user = userService.getUserEntityById(userId);
-            
-            if (!user.isAgencyAdmin() || user.getOwnedAgencies().isEmpty()) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(Map.of("error", "User is not an agency admin"));
-            }
-            
-            Agency agency = user.getOwnedAgencies().get(0);
-            Map<String, Object> status = new HashMap<>();
-            status.put("agencyInTrial", trialService.isAgencyInTrial(agency));
-            status.put("agencyName", agency.getName());
-            status.put("userInTrial", trialService.isInTrial(user));
-            status.put("userTrialDaysRemaining", trialService.getTrialDaysRemaining(user));
-            
-            logger.info("✅ Retrieved agency trial status for agency: {}", agency.getName());
-            return ResponseEntity.ok(status);
-            
-        } catch (Exception e) {
-            logger.error("❌ Failed to fetch agency trial status", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to fetch agency trial status"));
-        }
-    }
+//    @GetMapping("/agency-status")
+//    @PreAuthorize("hasRole('AGENCY_ADMIN')")
+//    public ResponseEntity<?> getAgencyTrialStatus() {
+//        try {
+//            Long userId = userService.getCurrentUserId();
+//            User user = userService.getUserEntityById(userId);
+//            
+//            if (!user.isAgencyAdmin() || user.getOwnedAgencies().isEmpty()) {
+//                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+//                        .body(Map.of("error", "User is not an agency admin"));
+//            }
+//            
+//            Agency agency = user.getOwnedAgencies().get(0);
+//            Map<String, Object> status = new HashMap<>();
+//            status.put("agencyInTrial", trialService.isAgencyInTrial(agency));
+//            status.put("agencyName", agency.getName());
+//            status.put("userInTrial", trialService.isInTrial(user));
+//            status.put("userTrialDaysRemaining", trialService.getTrialDaysRemaining(user));
+//            
+//            logger.info("✅ Retrieved agency trial status for agency: {}", agency.getName());
+//            return ResponseEntity.ok(status);
+//            
+//        } catch (Exception e) {
+//            logger.error("❌ Failed to fetch agency trial status", e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("error", "Failed to fetch agency trial status"));
+//        }
+//    }
 }

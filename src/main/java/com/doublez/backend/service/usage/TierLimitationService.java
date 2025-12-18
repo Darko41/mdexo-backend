@@ -16,8 +16,8 @@ import com.doublez.backend.enums.agency.AgentRole;
 import com.doublez.backend.exception.BusinessRuleException;
 import com.doublez.backend.exception.LimitExceededException;
 import com.doublez.backend.repository.AgencyRepository;
-import com.doublez.backend.repository.RealEstateRepository;
 import com.doublez.backend.repository.UserRepository;
+import com.doublez.backend.repository.realestate.RealEstateRepository;
 import com.doublez.backend.service.credit.CreditService;
 import com.doublez.backend.upgrade.UpgradeSuggestion;
 

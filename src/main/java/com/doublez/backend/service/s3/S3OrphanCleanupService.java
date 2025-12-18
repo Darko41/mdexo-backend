@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
 
 import com.doublez.backend.dto.s3.CleanupStats;
 import com.doublez.backend.dto.s3.OrphanCleanupResult;
-import com.doublez.backend.repository.RealEstateRepository;
+import com.doublez.backend.repository.realestate.RealEstateRepository;
 import com.doublez.backend.service.cloudfront.CloudFrontService;
 
 import jakarta.transaction.Transactional;

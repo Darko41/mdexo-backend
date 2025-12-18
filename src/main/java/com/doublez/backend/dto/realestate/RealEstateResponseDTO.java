@@ -3,21 +3,25 @@ package com.doublez.backend.dto.realestate;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
+import java.util.stream.Collectors;
 
-import com.doublez.backend.entity.realestate.LocationMetadata;
-import com.doublez.backend.entity.realestate.PropertyMetrics;
+import com.doublez.backend.dto.feature.PropertyFeatureResponseDTO;
+import com.doublez.backend.entity.realestate.PropertyFeature;
 import com.doublez.backend.entity.realestate.RealEstate;
-import com.doublez.backend.enums.ListingType;
 import com.doublez.backend.enums.property.EnergyEfficiency;
 import com.doublez.backend.enums.property.FurnitureStatus;
 import com.doublez.backend.enums.property.HeatingType;
+import com.doublez.backend.enums.property.ListingType;
 import com.doublez.backend.enums.property.OwnershipType;
 import com.doublez.backend.enums.property.PropertyCondition;
 import com.doublez.backend.enums.property.PropertySubtype;
 import com.doublez.backend.enums.property.PropertyType;
-import com.doublez.backend.enums.property.WaterSourceType;
 
 public class RealEstateResponseDTO {
 
@@ -134,7 +138,15 @@ public class RealEstateResponseDTO {
     private Long daysUntilAvailable; // calculated
 
     // ===== MEDIA & FEATURES =====
-    private List<String> features;
+    // Features sorted by category and display order
+    private List<PropertyFeatureResponseDTO> features = new ArrayList<>();
+    
+    // For backward compatibility, keep simple feature codes
+    private List<String> featureCodes = new ArrayList<>();
+    
+    // Grouped and sorted features by category
+    private Map<String, List<PropertyFeatureResponseDTO>> featuresByCategory = new HashMap<>();
+    
     private List<String> images;
 
     // ===== STATUS & FEATURING =====
@@ -233,6 +245,47 @@ public class RealEstateResponseDTO {
         this.roomCountDisplay = realEstate.getRoomCount() != null ? realEstate.getRoomCount().toPlainString() : null;
         this.bathroomCountDisplay = realEstate.getBathroomCount() != null ? realEstate.getBathroomCount().toPlainString() : null;
         this.totalSizeDisplay = realEstate.getSizeInSqMt() != null ? realEstate.getSizeInSqMt() + " m²" : null;
+        
+        // ===== FEATURES =====
+        if (realEstate.getFeatures() != null && !realEstate.getFeatures().isEmpty()) {
+            // Sort features by category and display order
+            List<PropertyFeature> sortedFeatures = realEstate.getFeatures().stream()
+                .sorted(Comparator
+                    .<PropertyFeature, Integer>comparing(f -> f.getCategory().ordinal())
+                    .thenComparing(PropertyFeature::getDisplayOrder)
+                    .thenComparing(PropertyFeature::getName))
+                .collect(Collectors.toList());
+            
+            // Populate sorted feature objects
+            this.features = sortedFeatures.stream()
+                .map(PropertyFeatureResponseDTO::new)
+                .collect(Collectors.toList());
+            
+            // Populate feature codes (in same order)
+            this.featureCodes = sortedFeatures.stream()
+                .map(PropertyFeature::getCode)
+                .collect(Collectors.toList());
+            
+            // Group and sort within each category
+            this.featuresByCategory = sortedFeatures.stream()
+                .collect(Collectors.groupingBy(
+                    f -> f.getCategory().getDisplayName(),
+                    LinkedHashMap::new, // Preserve insertion order of categories
+                    Collectors.collectingAndThen(
+                        Collectors.toList(),
+                        list -> list.stream()
+                            .sorted(Comparator
+                                .comparing(PropertyFeature::getDisplayOrder)
+                                .thenComparing(PropertyFeature::getName))
+                            .map(PropertyFeatureResponseDTO::new)
+                            .collect(Collectors.toList())
+                    )
+                ));
+        } else {
+            this.features = new ArrayList<>();
+            this.featureCodes = new ArrayList<>();
+            this.featuresByCategory = new LinkedHashMap<>();
+        }
     }
 
     // ===== GETTERS AND SETTERS =====
@@ -465,8 +518,16 @@ public class RealEstateResponseDTO {
     public Long getDaysUntilAvailable() { return daysUntilAvailable; }
     public void setDaysUntilAvailable(Long daysUntilAvailable) { this.daysUntilAvailable = daysUntilAvailable; }
 
-    public List<String> getFeatures() { return features; }
-    public void setFeatures(List<String> features) { this.features = features; }
+    public List<PropertyFeatureResponseDTO> getFeatures() { return features; }
+    public void setFeatures(List<PropertyFeatureResponseDTO> features) { this.features = features; }
+    
+    public List<String> getFeatureCodes() { return featureCodes; }
+    public void setFeatureCodes(List<String> featureCodes) { this.featureCodes = featureCodes; }
+    
+    public Map<String, List<PropertyFeatureResponseDTO>> getFeaturesByCategory() { return featuresByCategory; }
+    public void setFeaturesByCategory(Map<String, List<PropertyFeatureResponseDTO>> featuresByCategory) { 
+        this.featuresByCategory = featuresByCategory; 
+    }
 
     public List<String> getImages() { return images; }
     public void setImages(List<String> images) { this.images = images; }

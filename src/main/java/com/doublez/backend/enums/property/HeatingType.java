@@ -22,5 +22,3 @@ public enum HeatingType {
         return displayName;
     }
 }
- }
-}

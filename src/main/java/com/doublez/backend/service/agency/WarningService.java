@@ -22,7 +22,7 @@ import com.doublez.backend.entity.user.User;
 import com.doublez.backend.repository.AgencyRepository;
 import com.doublez.backend.repository.AgentRepository;
 import com.doublez.backend.repository.InvitationRepository;
-import com.doublez.backend.repository.RealEstateRepository;
+import com.doublez.backend.repository.realestate.RealEstateRepository;
 import com.doublez.backend.service.email.ResendEmailService;
 
 @Service

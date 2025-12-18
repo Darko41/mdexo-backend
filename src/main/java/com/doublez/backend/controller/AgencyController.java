@@ -23,9 +23,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.doublez.backend.dto.agency.AgencyDTO;
 import com.doublez.backend.dto.realestate.RealEstateResponseDTO;
-import com.doublez.backend.enums.ListingType;
+import com.doublez.backend.enums.property.ListingType;
 import com.doublez.backend.enums.property.PropertyType;
 import com.doublez.backend.response.ApiResponse;
 import com.doublez.backend.service.agency.AgencyService;
@@ -60,80 +59,80 @@ public class AgencyController {
      * Admins can create agencies for any user
      * Agency admins can create their own agency
      */
-    @PostMapping
-    @PreAuthorize("hasRole('ADMIN') or hasRole('AGENCY_ADMIN')")
-    public ResponseEntity<AgencyDTO> createAgency(@Valid @RequestBody AgencyDTO.Create createDto) {
-        Long currentUserId = userService.getCurrentUserId();
-        logger.info("🏢 Creating agency '{}' for user ID: {}", createDto.getName(), currentUserId);
-        
-        AgencyDTO agency = agencyService.createAgency(createDto, currentUserId);
-        
-        logger.info("✅ Agency created successfully - ID: {}, Name: {}", agency.getId(), agency.getName());
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .header("Location", "/api/agencies/" + agency.getId())
-                .body(agency);
-    }
+//    @PostMapping
+//    @PreAuthorize("hasRole('ADMIN') or hasRole('AGENCY_ADMIN')")
+//    public ResponseEntity<AgencyDTO> createAgency(@Valid @RequestBody AgencyDTO.Create createDto) {
+//        Long currentUserId = userService.getCurrentUserId();
+//        logger.info("🏢 Creating agency '{}' for user ID: {}", createDto.getName(), currentUserId);
+//        
+//        AgencyDTO agency = agencyService.createAgency(createDto, currentUserId);
+//        
+//        logger.info("✅ Agency created successfully - ID: {}, Name: {}", agency.getId(), agency.getName());
+//        return ResponseEntity.status(HttpStatus.CREATED)
+//                .header("Location", "/api/agencies/" + agency.getId())
+//                .body(agency);
+//    }
 
     /**
      * GET ALL AGENCIES
      * Public endpoint - anyone can view agencies
      */
-    @GetMapping
-    public ResponseEntity<List<AgencyDTO>> getAllAgencies() {
-        logger.info("📋 Fetching all agencies");
-        List<AgencyDTO> agencies = agencyService.getAllAgencies();
-        logger.info("✅ Found {} agencies", agencies.size());
-        return ResponseEntity.ok(agencies);
-    }
+//    @GetMapping
+//    public ResponseEntity<List<AgencyDTO>> getAllAgencies() {
+//        logger.info("📋 Fetching all agencies");
+//        List<AgencyDTO> agencies = agencyService.getAllAgencies();
+//        logger.info("✅ Found {} agencies", agencies.size());
+//        return ResponseEntity.ok(agencies);
+//    }
 
     /**
      * GET AGENCY BY ID
      * Public endpoint - anyone can view agency details
      */
-    @GetMapping("/{agencyId}")
-    public ResponseEntity<AgencyDTO> getAgency(@PathVariable Long agencyId) {
-        logger.info("🔍 Fetching agency by ID: {}", agencyId);
-        AgencyDTO agency = agencyService.getAgencyById(agencyId);
-        logger.info("✅ Agency found - ID: {}, Name: {}", agency.getId(), agency.getName());
-        return ResponseEntity.ok(agency);
-    }
+//    @GetMapping("/{agencyId}")
+//    public ResponseEntity<AgencyDTO> getAgency(@PathVariable Long agencyId) {
+//        logger.info("🔍 Fetching agency by ID: {}", agencyId);
+//        AgencyDTO agency = agencyService.getAgencyById(agencyId);
+//        logger.info("✅ Agency found - ID: {}, Name: {}", agency.getId(), agency.getName());
+//        return ResponseEntity.ok(agency);
+//    }
 
     /**
      * GET CURRENT USER'S AGENCY
      * Only for agency admins
      */
-    @GetMapping("/my-agency")
-    @PreAuthorize("hasRole('AGENCY_ADMIN')")
-    public ResponseEntity<AgencyDTO> getMyAgency() {
-        Long currentUserId = userService.getCurrentUserId();
-        logger.info("👤 Agency admin fetching their agency - User ID: {}", currentUserId);
-        
-        AgencyDTO agency = agencyService.getAgencyByAdminId(currentUserId);
-        
-        if (agency != null) {
-            logger.info("✅ Agency found for user - ID: {}, Name: {}", agency.getId(), agency.getName());
-        } else {
-            logger.warn("⚠️ No agency found for user ID: {}", currentUserId);
-        }
-        
-        return ResponseEntity.ok(agency);
-    }
+//    @GetMapping("/my-agency")
+//    @PreAuthorize("hasRole('AGENCY_ADMIN')")
+//    public ResponseEntity<AgencyDTO> getMyAgency() {
+//        Long currentUserId = userService.getCurrentUserId();
+//        logger.info("👤 Agency admin fetching their agency - User ID: {}", currentUserId);
+//        
+//        AgencyDTO agency = agencyService.getAgencyByAdminId(currentUserId);
+//        
+//        if (agency != null) {
+//            logger.info("✅ Agency found for user - ID: {}, Name: {}", agency.getId(), agency.getName());
+//        } else {
+//            logger.warn("⚠️ No agency found for user ID: {}", currentUserId);
+//        }
+//        
+//        return ResponseEntity.ok(agency);
+//    }
 
     /**
      * UPDATE AGENCY
      * Only agency admin or system admin can update
      */
-    @PutMapping("/{agencyId}")
-    @PreAuthorize("hasRole('AGENCY_ADMIN') and @agencyService.isAgencyAdmin(#agencyId, authentication.principal.id) or hasRole('ADMIN')")
-    public ResponseEntity<AgencyDTO> updateAgency(@PathVariable Long agencyId, 
-                                                 @Valid @RequestBody AgencyDTO.Update updateDto) {
-        logger.info("✏️ Updating agency ID: {}", agencyId);
-        
-        AgencyDTO updatedAgency = agencyService.updateAgency(agencyId, updateDto);
-        
-        logger.info("✅ Agency updated successfully - ID: {}, Name: {}", updatedAgency.getId(), updatedAgency.getName());
-        return ResponseEntity.ok(updatedAgency);
-    }
+//    @PutMapping("/{agencyId}")
+//    @PreAuthorize("hasRole('AGENCY_ADMIN') and @agencyService.isAgencyAdmin(#agencyId, authentication.principal.id) or hasRole('ADMIN')")
+//    public ResponseEntity<AgencyDTO> updateAgency(@PathVariable Long agencyId, 
+//                                                 @Valid @RequestBody AgencyDTO.Update updateDto) {
+//        logger.info("✏️ Updating agency ID: {}", agencyId);
+//        
+//        AgencyDTO updatedAgency = agencyService.updateAgency(agencyId, updateDto);
+//        
+//        logger.info("✅ Agency updated successfully - ID: {}, Name: {}", updatedAgency.getId(), updatedAgency.getName());
+//        return ResponseEntity.ok(updatedAgency);
+//    }
 
     // ========================
     // AGENCY PROPERTIES
@@ -286,21 +285,21 @@ public class AgencyController {
     /**
      * SEARCH AGENCIES BY NAME OR LOCATION
      */
-    @GetMapping("/search")
-    public ResponseEntity<List<AgencyDTO>> searchAgencies(
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) String city) {
-        
-        logger.info("🔍 Searching agencies - name: {}, city: {}", name, city);
-        
-        List<AgencyDTO> allAgencies = agencyService.getAllAgencies();
-        List<AgencyDTO> filteredAgencies = allAgencies.stream()
-            .filter(agency -> name == null || agency.getName().toLowerCase().contains(name.toLowerCase()))
-            .filter(agency -> city == null || (agency.getCity() != null && 
-                agency.getCity().toLowerCase().contains(city.toLowerCase())))
-            .collect(Collectors.toList());
-        
-        logger.info("✅ Found {} agencies matching search criteria", filteredAgencies.size());
-        return ResponseEntity.ok(filteredAgencies);
-    }
+//    @GetMapping("/search")
+//    public ResponseEntity<List<AgencyDTO>> searchAgencies(
+//            @RequestParam(required = false) String name,
+//            @RequestParam(required = false) String city) {
+//        
+//        logger.info("🔍 Searching agencies - name: {}, city: {}", name, city);
+//        
+//        List<AgencyDTO> allAgencies = agencyService.getAllAgencies();
+//        List<AgencyDTO> filteredAgencies = allAgencies.stream()
+//            .filter(agency -> name == null || agency.getName().toLowerCase().contains(name.toLowerCase()))
+//            .filter(agency -> city == null || (agency.getCity() != null && 
+//                agency.getCity().toLowerCase().contains(city.toLowerCase())))
+//            .collect(Collectors.toList());
+//        
+//        logger.info("✅ Found {} agencies matching search criteria", filteredAgencies.size());
+//        return ResponseEntity.ok(filteredAgencies);
+//    }
 }

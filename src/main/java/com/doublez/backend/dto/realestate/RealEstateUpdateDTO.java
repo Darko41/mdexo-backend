@@ -8,10 +8,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.doublez.backend.enums.ListingType;
 import com.doublez.backend.enums.property.EnergyEfficiency;
 import com.doublez.backend.enums.property.FurnitureStatus;
 import com.doublez.backend.enums.property.HeatingType;
+import com.doublez.backend.enums.property.ListingType;
 import com.doublez.backend.enums.property.OwnershipType;
 import com.doublez.backend.enums.property.PropertyCondition;
 import com.doublez.backend.enums.property.PropertySubtype;
@@ -77,11 +77,14 @@ public class RealEstateUpdateDTO {
     private String municipality;
     private String state;
     private String zipCode;
+    
     @Size(max = 500, message = "Location description cannot exceed 500 characters")
     private String locationDescription;
+    
     @DecimalMin(value = "-90.0", message = "Latitude must be between -90 and 90")
     @DecimalMax(value = "90.0", message = "Latitude must be between -90 and 90")
     private BigDecimal latitude;
+    
     @DecimalMin(value = "-180.0", message = "Longitude must be between -180 and 180")
     @DecimalMax(value = "180.0", message = "Longitude must be between -180 and 180")
     private BigDecimal longitude;
@@ -90,32 +93,46 @@ public class RealEstateUpdateDTO {
     @DecimalMin(value = "1.0", message = "Size must be at least 1 square meter")
     @Digits(integer = 6, fraction = 2, message = "Size must have up to 6 integer and 2 decimal digits")
     private BigDecimal sizeInSqMt;
+    
     @DecimalMin(value = "0.5", message = "Room count must be at least 0.5 (studio)")
     @DecimalMax(value = "20.0", message = "Room count cannot exceed 20")
     @Digits(integer = 2, fraction = 1, message = "Room count must have up to 2 integer and 1 decimal digit")
     private BigDecimal roomCount;
+    
     @DecimalMin(value = "0.5", message = "Bathroom count must be at least 0.5")
     @DecimalMax(value = "10.0", message = "Bathroom count cannot exceed 10")
     @Digits(integer = 2, fraction = 1, message = "Bathroom count must have up to 2 integer and 1 decimal digit")
     private BigDecimal bathroomCount;
+    
     @Min(value = 0, message = "Balcony count cannot be negative")
     @Max(value = 10, message = "Balcony count cannot exceed 10")
     private Integer balconyCount;
+    
     @Min(value = -5, message = "Floor cannot be less than -5 (basement)")
     @Max(value = 200, message = "Floor cannot exceed 200")
     private Integer floor;
+    
     @Min(value = 1, message = "Total floors must be at least 1")
     @Max(value = 200, message = "Total floors cannot exceed 200")
     private Integer totalFloors;
+    
     @Min(value = 1500, message = "Construction year must be after 1500")
     @Max(value = 2030, message = "Construction year cannot be in the future beyond 2030")
     private Integer constructionYear;
 
     private PropertyCondition propertyCondition;
     private HeatingType heatingType;
+    
     @Size(max = 100, message = "Other heating type description cannot exceed 100 characters")
     private String otherHeatingTypeDescription;
+    
     private FurnitureStatus furnitureStatus;
+
+    // ===== WATER SOURCES =====
+    private Set<WaterSourceType> waterSources;
+    
+    @Size(max = 100, message = "Other water source description cannot exceed 100 characters")
+    private String otherWaterSourceDescription;
 
     // ===== AMENITIES & COMFORT =====
     private Boolean hasElevator;
@@ -126,32 +143,62 @@ public class RealEstateUpdateDTO {
     private Boolean hasParking;
     private Integer parkingSpaces;
     private Boolean hasGarden;
+    
     @DecimalMin(value = "0.0", message = "Garden size cannot be negative")
     @Digits(integer = 5, fraction = 2, message = "Garden size must have up to 5 integer and 2 decimal digits")
     private BigDecimal gardenSizeSqMt;
+    
     private Boolean hasTerrace;
     private Boolean hasBalcony;
+    
+    // Additional size fields
+    @DecimalMin(value = "0.0", message = "Terrace size cannot be negative")
+    @Digits(integer = 5, fraction = 2, message = "Terrace size must have up to 5 integer and 2 decimal digits")
+    private BigDecimal terraceSizeSqMt;
+    
+    @DecimalMin(value = "0.0", message = "Balcony size cannot be negative")
+    @Digits(integer = 5, fraction = 2, message = "Balcony size must have up to 5 integer and 2 decimal digits")
+    private BigDecimal balconySizeSqMt;
+    
+    @DecimalMin(value = "0.0", message = "Loggia size cannot be negative")
+    @Digits(integer = 5, fraction = 2, message = "Loggia size must have up to 5 integer and 2 decimal digits")
+    private BigDecimal loggiaSizeSqMt;
+    
+    @DecimalMin(value = "0.0", message = "Basement size cannot be negative")
+    @Digits(integer = 5, fraction = 2, message = "Basement size must have up to 5 integer and 2 decimal digits")
+    private BigDecimal basementSizeSqMt;
+    
+    @DecimalMin(value = "0.0", message = "Attic size cannot be negative")
+    @Digits(integer = 5, fraction = 2, message = "Attic size must have up to 5 integer and 2 decimal digits")
+    private BigDecimal atticSizeSqMt;
+    
+    @DecimalMin(value = "0.0", message = "Plot size cannot be negative")
+    @Digits(integer = 12, fraction = 2, message = "Plot size must have up to 12 integer and 2 decimal digits")
+    private BigDecimal plotSizeSqMt;
 
     // ===== ENERGY & UTILITIES =====
     private EnergyEfficiency energyEfficiency;
     private Boolean hasSewage;
     private Boolean hasElectricity;
     private Boolean hasGas;
-    private Set<WaterSourceType> waterSources = new HashSet<>();
 
     // ===== LEGAL & DOCUMENTATION =====
     private Boolean hasConstructionPermit;
     private Boolean hasUsePermit;
     private OwnershipType ownershipType;
+    
     @Size(max = 100, message = "Other ownership type description cannot exceed 100 characters")
     private String otherOwnershipTypeDescription;
+    
     private Boolean isRegistered;
 
     // ===== COMMERCIAL-SPECIFIC =====
     @Size(max = 100, message = "Business type cannot exceed 100 characters")
     private String businessType;
+    
     private Boolean hasShowcaseWindow;
     private Boolean hasStorageRoom;
+    
     @Min(value = 0, message = "Employee capacity cannot be negative")
     @Max(value = 1000, message = "Employee capacity cannot exceed 1000")
     private Integer employeeCapacity;
@@ -159,6 +206,7 @@ public class RealEstateUpdateDTO {
     // ===== LAND-SPECIFIC =====
     @Size(max = 50, message = "Land type cannot exceed 50 characters")
     private String landType;
+    
     private Boolean hasElectricityAccess;
     private Boolean hasRoadAccess;
 
@@ -170,21 +218,27 @@ public class RealEstateUpdateDTO {
     private String agentName;
     private String agentPhone;
     private String agentLicense;
+    
     @Email(message = "Contact email must be valid")
     @Size(max = 255, message = "Contact email cannot exceed 255 characters")
     private String contactEmail;
+    
     private String preferredContactMethod;
 
     // ===== AVAILABILITY =====
     @FutureOrPresent(message = "Available from date must be today or in the future")
     private LocalDate availableFrom;
+    
     @Min(value = 1, message = "Minimum rent period must be at least 1 month")
     @Max(value = 60, message = "Minimum rent period cannot exceed 60 months")
     private Integer minimumRentPeriod;
 
     // ===== MEDIA & FEATURES =====
     @Size(max = 15, message = "Cannot have more than 15 features")
-    private List<String> features = new ArrayList<>();
+    private List<String> featureCodes;
+    
+    private Boolean replaceFeatures = false;
+    
     private List<String> images = new ArrayList<>();
     private Boolean replaceImages;
 
@@ -195,31 +249,39 @@ public class RealEstateUpdateDTO {
     private LocalDateTime featuredUntil;
 
     // ===== VALIDATION METHODS =====
-    public boolean hasValidOtherDescriptions() {
-        if (heatingType == HeatingType.OTHER &&
-            (otherHeatingTypeDescription == null || otherHeatingTypeDescription.trim().isEmpty())) {
-            return false;
-        }
-        if (ownershipType == OwnershipType.OTHER &&
-            (otherOwnershipTypeDescription == null || otherOwnershipTypeDescription.trim().isEmpty())) {
-            return false;
-        }
-        return true;
+    // Same validation methods as CreateDTO, but with @AssertTrue annotations
+    
+    @AssertTrue(message = "When heating type is OTHER, other heating description is required")
+    public boolean isOtherHeatingDescriptionValid() {
+        if (heatingType == null) return true;
+        return heatingType != HeatingType.OTHER || 
+               (otherHeatingTypeDescription != null && !otherHeatingTypeDescription.trim().isEmpty());
     }
 
+    @AssertTrue(message = "When ownership type is OTHER, other ownership description is required")
+    public boolean isOtherOwnershipDescriptionValid() {
+        if (ownershipType == null) return true;
+        return ownershipType != OwnershipType.OTHER || 
+               (otherOwnershipTypeDescription != null && !otherOwnershipTypeDescription.trim().isEmpty());
+    }
+
+    @AssertTrue(message = "When water source is OTHER, other water source description is required")
+    public boolean isOtherWaterSourceDescriptionValid() {
+        if (waterSources == null) return true;
+        return !waterSources.contains(WaterSourceType.OTHER) || 
+               (otherWaterSourceDescription != null && !otherWaterSourceDescription.trim().isEmpty());
+    }
+
+    @AssertTrue(message = "Property subtype must match property type")
     public boolean isSubtypeValid() {
-        if (propertySubtype == null) return true;
+        if (propertySubtype == null || propertyType == null) return true;
         return propertySubtype.getParentType() == propertyType;
     }
 
     @AssertTrue(message = "Cannot set both discount amount and have original price different from current price")
     public boolean isDiscountValid() {
-        return !(discountAmount != null && originalPrice != null && originalPrice.compareTo(price) > 0);
-    }
-
-    @AssertTrue(message = "Discount end date must be in the future")
-    public boolean isDiscountEndDateValid() {
-        return discountEndDate == null || discountEndDate.isAfter(LocalDate.now());
+        if (discountAmount == null || originalPrice == null || price == null) return true;
+        return originalPrice.compareTo(price) <= 0;
     }
     
     // ===== OPTIONAL: Add land/commercial validations like CreateDTO if needed =====
@@ -436,8 +498,8 @@ public class RealEstateUpdateDTO {
     public Integer getMinimumRentPeriod() { return minimumRentPeriod; }
     public void setMinimumRentPeriod(Integer minimumRentPeriod) { this.minimumRentPeriod = minimumRentPeriod; }
 
-    public List<String> getFeatures() { return features; }
-    public void setFeatures(List<String> features) { this.features = features; }
+    public List<String> getFeatureCodes() { return featureCodes; }
+    public void setFeatureCodes(List<String> featureCodes) { this.featureCodes = featureCodes; }
 
     public List<String> getImages() { return images; }
     public void setImages(List<String> images) { this.images = images; }
@@ -459,4 +521,63 @@ public class RealEstateUpdateDTO {
 
 	public Set<WaterSourceType> getWaterSources() { return waterSources; }
 	public void setWaterSources(Set<WaterSourceType> waterSources) { this.waterSources = waterSources; }
+
+	public Boolean getReplaceFeatures() { return replaceFeatures; }
+	public void setReplaceFeatures(Boolean replaceFeatures) { this.replaceFeatures = replaceFeatures; }
+
+	public String getOtherWaterSourceDescription() {
+		return otherWaterSourceDescription;
+	}
+
+	public void setOtherWaterSourceDescription(String otherWaterSourceDescription) {
+		this.otherWaterSourceDescription = otherWaterSourceDescription;
+	}
+
+	public BigDecimal getTerraceSizeSqMt() {
+		return terraceSizeSqMt;
+	}
+
+	public void setTerraceSizeSqMt(BigDecimal terraceSizeSqMt) {
+		this.terraceSizeSqMt = terraceSizeSqMt;
+	}
+
+	public BigDecimal getBalconySizeSqMt() {
+		return balconySizeSqMt;
+	}
+
+	public void setBalconySizeSqMt(BigDecimal balconySizeSqMt) {
+		this.balconySizeSqMt = balconySizeSqMt;
+	}
+
+	public BigDecimal getLoggiaSizeSqMt() {
+		return loggiaSizeSqMt;
+	}
+
+	public void setLoggiaSizeSqMt(BigDecimal loggiaSizeSqMt) {
+		this.loggiaSizeSqMt = loggiaSizeSqMt;
+	}
+
+	public BigDecimal getBasementSizeSqMt() {
+		return basementSizeSqMt;
+	}
+
+	public void setBasementSizeSqMt(BigDecimal basementSizeSqMt) {
+		this.basementSizeSqMt = basementSizeSqMt;
+	}
+
+	public BigDecimal getAtticSizeSqMt() {
+		return atticSizeSqMt;
+	}
+
+	public void setAtticSizeSqMt(BigDecimal atticSizeSqMt) {
+		this.atticSizeSqMt = atticSizeSqMt;
+	}
+
+	public BigDecimal getPlotSizeSqMt() {
+		return plotSizeSqMt;
+	}
+
+	public void setPlotSizeSqMt(BigDecimal plotSizeSqMt) {
+		this.plotSizeSqMt = plotSizeSqMt;
+	}
 }

@@ -20,5 +20,3 @@ public enum PropertyCondition {
         return displayName;
     }
 }
-
-

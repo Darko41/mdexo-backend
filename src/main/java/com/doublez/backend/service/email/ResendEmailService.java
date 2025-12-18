@@ -142,36 +142,36 @@ public class ResendEmailService {
         sendEmail(userEmail, subject, htmlContent, textContent);
     }
 
-    public void sendTrialExpiredEmail(String userEmail, String userName, UserTier newTier) {
-        try {
-            logger.info("🔄 Starting trial expired email for: {}, Tier: {}", userEmail, newTier);
-            
-            // Check if tier is null
-            if (newTier == null) {
-                logger.warn("⚠️ UserTier is null for trial expired email, using BASIC_USER as default");
-                newTier = UserTier.BASIC_USER; // Default fallback
-            }
-            
-            String subject = "ℹ️ Vaš probni period je istekao";
-            logger.info("🔄 Subject: {}", subject);
-            
-            // Generate HTML content
-            String htmlContent = createTrialExpiredHtml(userName, newTier);
-            logger.info("🔄 HTML content generated, length: {}", htmlContent.length());
-            
-            // Generate text content
-            String textContent = createTrialExpiredText(userName, newTier);
-            logger.info("🔄 Text content generated, length: {}", textContent.length());
-            
-            // Send the email
-            sendEmail(userEmail, subject, htmlContent, textContent);
-            logger.info("✅ Trial expired email sent successfully to: {}", userEmail);
-            
-        } catch (Exception e) {
-            logger.error("❌ Failed to send trial expired email to {}: {}", userEmail, e.getMessage(), e);
-            throw new RuntimeException("Email sending failed", e);
-        }
-    }
+//    public void sendTrialExpiredEmail(String userEmail, String userName, UserTier newTier) {
+//        try {
+//            logger.info("🔄 Starting trial expired email for: {}, Tier: {}", userEmail, newTier);
+//            
+//            // Check if tier is null
+//            if (newTier == null) {
+//                logger.warn("⚠️ UserTier is null for trial expired email, using BASIC_USER as default");
+//                newTier = UserTier.BASIC_USER; // Default fallback
+//            }
+//            
+//            String subject = "ℹ️ Vaš probni period je istekao";
+//            logger.info("🔄 Subject: {}", subject);
+//            
+//            // Generate HTML content
+//            String htmlContent = createTrialExpiredHtml(userName, newTier);
+//            logger.info("🔄 HTML content generated, length: {}", htmlContent.length());
+//            
+//            // Generate text content
+//            String textContent = createTrialExpiredText(userName, newTier);
+//            logger.info("🔄 Text content generated, length: {}", textContent.length());
+//            
+//            // Send the email
+//            sendEmail(userEmail, subject, htmlContent, textContent);
+//            logger.info("✅ Trial expired email sent successfully to: {}", userEmail);
+//            
+//        } catch (Exception e) {
+//            logger.error("❌ Failed to send trial expired email to {}: {}", userEmail, e.getMessage(), e);
+//            throw new RuntimeException("Email sending failed", e);
+//        }
+//    }
 
     public void sendTrialExtendedEmail(String userEmail, String userName, int additionalMonths) {
         String subject = "🎁 Vaš probni period je produžen!";
@@ -456,35 +456,35 @@ public class ResendEmailService {
             "</html>";
     }
 
-    private String createTrialExpiredHtml(String userName, UserTier newTier) {
-        String tierName = getTierDisplayName(newTier);
-        return "<!DOCTYPE html>" +
-            "<html>" +
-            "<head>" +
-            "    <style>" +
-            "        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }" +
-            "        .container { max-width: 600px; margin: 0 auto; padding: 20px; }" +
-            "        .header { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }" +
-            "        .content { padding: 30px; background: #f8f9fa; border-radius: 0 0 10px 10px; }" +
-            "        .button { background: #4facfe; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0; }" +
-            "    </style>" +
-            "</head>" +
-            "<body>" +
-            "    <div class=\"container\">" +
-            "        <div class=\"header\">" +
-            "            <h1>📊 Trial Completed</h1>" +
-            "            <p>Welcome to " + tierName + " Plan</p>" +
-            "        </div>" +
-            "        <div class=\"content\">" +
-            "            <h2>Hello " + userName + ",</h2>" +
-            "            <p>Your trial period has ended. You now have access to the <strong>" + tierName + "</strong> plan.</p>" +
-            "            <p>Basic features remain available. Upgrade to continue enjoying premium benefits.</p>" +
-            "            <a href=\"https://dwellia.rs/pricing\" class=\"button\">Upgrade Your Plan</a>" +
-            "        </div>" +
-            "    </div>" +
-            "</body>" +
-            "</html>";
-    }
+//    private String createTrialExpiredHtml(String userName, UserTier newTier) {
+//        String tierName = getTierDisplayName(newTier);
+//        return "<!DOCTYPE html>" +
+//            "<html>" +
+//            "<head>" +
+//            "    <style>" +
+//            "        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }" +
+//            "        .container { max-width: 600px; margin: 0 auto; padding: 20px; }" +
+//            "        .header { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }" +
+//            "        .content { padding: 30px; background: #f8f9fa; border-radius: 0 0 10px 10px; }" +
+//            "        .button { background: #4facfe; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0; }" +
+//            "    </style>" +
+//            "</head>" +
+//            "<body>" +
+//            "    <div class=\"container\">" +
+//            "        <div class=\"header\">" +
+//            "            <h1>📊 Trial Completed</h1>" +
+//            "            <p>Welcome to " + tierName + " Plan</p>" +
+//            "        </div>" +
+//            "        <div class=\"content\">" +
+//            "            <h2>Hello " + userName + ",</h2>" +
+//            "            <p>Your trial period has ended. You now have access to the <strong>" + tierName + "</strong> plan.</p>" +
+//            "            <p>Basic features remain available. Upgrade to continue enjoying premium benefits.</p>" +
+//            "            <a href=\"https://dwellia.rs/pricing\" class=\"button\">Upgrade Your Plan</a>" +
+//            "        </div>" +
+//            "    </div>" +
+//            "</body>" +
+//            "</html>";
+//    }
 
     private String createTrialExtendedHtml(String userName, int additionalMonths) {
         String endDate = LocalDate.now().plusMonths(additionalMonths)
@@ -671,37 +671,37 @@ public class ResendEmailService {
         return "Poštovani/poštovana " + userName + ",\n\nŽelimo da Vas podsetimo da Vaš probni period ističe za " + daysRemaining + " dan(a).\n\nNakon isteka probnog perioda, i dalje ćete imati pristup osnovnim funkcijama platforme.\n\nAko želite da nastavite sa premium funkcijama, kontaktirajte nas.\n\nS poštovanjem,\nReal Estate Platform Team\n" + supportEmail;
     }
 
-    private String createTrialExpiredText(String userName, UserTier newTier) {
-        String tierName = getTierDisplayName(newTier);
-        return "Poštovani/poštovana " + userName + ",\n\n" +
-               "Vaš probni period je istekao. Sada imate pristup " + tierName + " paketu.\n\n" +
-               "Osnovne funkcije su i dalje dostupne. Za povratak premium funkcija, kontaktirajte nas.\n\n" +
-               "S poštovanjem,\nReal Estate Platform Team\n" + supportEmail;
-    }
+//    private String createTrialExpiredText(String userName, UserTier newTier) {
+//        String tierName = getTierDisplayName(newTier);
+//        return "Poštovani/poštovana " + userName + ",\n\n" +
+//               "Vaš probni period je istekao. Sada imate pristup " + tierName + " paketu.\n\n" +
+//               "Osnovne funkcije su i dalje dostupne. Za povratak premium funkcija, kontaktirajte nas.\n\n" +
+//               "S poštovanjem,\nReal Estate Platform Team\n" + supportEmail;
+//    }
 
     private String createTrialExtendedText(String userName, int additionalMonths) {
         String endDate = LocalDate.now().plusMonths(additionalMonths).format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
         return "Poštovani/poštovana " + userName + ",\n\nVaš probni period je produžen za " + additionalMonths + " meseci.\n\nSada možete nastaviti da uživate u svim premium funkcijama do " + endDate + ".\n\nHvala Vam što koristite našu platformu!\n\nS poštovanjem,\nReal Estate Platform Team\n" + supportEmail;
     }
 
-    private String getTierDisplayName(UserTier tier) {
-        if (tier == null) {
-            return "Osnovni"; // Default fallback
-        }
-        
-        switch (tier) {
-            case FREE_USER: return "Besplatni";
-            case BASIC_USER: return "Osnovni";
-            case PREMIUM_USER: return "Premium";
-            case AGENCY_BASIC: return "Osnovna Agencija";
-            case AGENCY_PREMIUM: return "Premium Agencija";
-            case FREE_INVESTOR: return "Besplatni Investitor";
-            case BASIC_INVESTOR: return "Osnovni Investitor";
-            case PREMIUM_INVESTOR: return "Premium Investitor";
-            case ADMIN: return "Administrator";
-            default: return "Osnovni";
-        }
-    }
+//    private String getTierDisplayName(UserTier tier) {
+//        if (tier == null) {
+//            return "Osnovni"; // Default fallback
+//        }
+//        
+//        switch (tier) {
+//            case FREE_USER: return "Besplatni";
+//            case BASIC_USER: return "Osnovni";
+//            case PREMIUM_USER: return "Premium";
+//            case AGENCY_BASIC: return "Osnovna Agencija";
+//            case AGENCY_PREMIUM: return "Premium Agencija";
+//            case FREE_INVESTOR: return "Besplatni Investitor";
+//            case BASIC_INVESTOR: return "Osnovni Investitor";
+//            case PREMIUM_INVESTOR: return "Premium Investitor";
+//            case ADMIN: return "Administrator";
+//            default: return "Osnovni";
+//        }
+//    }
     
     
     

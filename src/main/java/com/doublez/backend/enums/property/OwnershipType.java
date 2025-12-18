@@ -17,5 +17,3 @@ public enum OwnershipType {
         return displayName;
     }
 }
-
-

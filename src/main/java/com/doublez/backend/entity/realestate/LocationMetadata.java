@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.doublez.backend.enums.LocationDataSource;
+import com.doublez.backend.enums.property.LocationDataSource;
 import com.doublez.backend.utils.JsonUtils;
 
 import jakarta.persistence.Column;

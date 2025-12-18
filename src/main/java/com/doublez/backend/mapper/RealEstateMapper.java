@@ -1,18 +1,32 @@
 package com.doublez.backend.mapper;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.springframework.stereotype.Component;
 
 import com.doublez.backend.dto.realestate.RealEstateCreateDTO;
 import com.doublez.backend.dto.realestate.RealEstateResponseDTO;
 import com.doublez.backend.dto.realestate.RealEstateUpdateDTO;
+import com.doublez.backend.entity.realestate.PropertyFeature;
 import com.doublez.backend.entity.realestate.RealEstate;
 import com.doublez.backend.entity.user.User;
 import com.doublez.backend.enums.property.FurnitureStatus;
+import com.doublez.backend.repository.realestate.PropertyFeatureRepository;
 
 @Component
 public class RealEstateMapper {
+
+    private final PropertyFeatureRepository featureRepository;
+    
+    public RealEstateMapper(PropertyFeatureRepository featureRepository) {
+        this.featureRepository = featureRepository;
+    }
 
     public RealEstate toEntity(RealEstateCreateDTO createDto, User owner, List<String> imageUrls) {
         RealEstate entity = new RealEstate();
@@ -43,8 +57,14 @@ public class RealEstateMapper {
         entity.setState(createDto.getState() != null ? createDto.getState() : "Srbija");
         entity.setZipCode(createDto.getZipCode());
         entity.setLocationDescription(createDto.getLocationDescription());
-        entity.setLatitude(createDto.getLatitude());
-        entity.setLongitude(createDto.getLongitude());
+        
+        // Set location coordinates
+        if (createDto.getLatitude() != null && createDto.getLongitude() != null) {
+            entity.setLocation(createDto.getLatitude(), createDto.getLongitude());
+        } else {
+            entity.setLatitude(createDto.getLatitude());
+            entity.setLongitude(createDto.getLongitude());
+        }
         
         // ===== PROPERTY CHARACTERISTICS - CORE =====
         entity.setSizeInSqMt(createDto.getSizeInSqMt());
@@ -57,9 +77,13 @@ public class RealEstateMapper {
         entity.setPropertyCondition(createDto.getPropertyCondition());
         entity.setHeatingType(createDto.getHeatingType());
         entity.setOtherHeatingTypeDescription(createDto.getOtherHeatingTypeDescription());
+        entity.setFurnitureStatus(createDto.getFurnitureStatus());
         
-        // FIXED: Convert FurnitureStatus to boolean fields
-        mapFurnitureStatusToEntity(createDto.getFurnitureStatus(), entity);
+        // ===== WATER SOURCES =====
+        if (createDto.getWaterSources() != null) {
+            entity.setWaterSources(new HashSet<>(createDto.getWaterSources()));
+        }
+        entity.setOtherWaterSourceDescription(createDto.getOtherWaterSourceDescription());
         
         // ===== AMENITIES & COMFORT =====
         entity.setHasElevator(createDto.getHasElevator());
@@ -74,9 +98,16 @@ public class RealEstateMapper {
         entity.setHasTerrace(createDto.getHasTerrace());
         entity.setHasBalcony(createDto.getHasBalcony());
         
+        // Additional size fields
+        entity.setTerraceSizeSqMt(createDto.getTerraceSizeSqMt());
+        entity.setBalconySizeSqMt(createDto.getBalconySizeSqMt());
+        entity.setLoggiaSizeSqMt(createDto.getLoggiaSizeSqMt());
+        entity.setBasementSizeSqMt(createDto.getBasementSizeSqMt());
+        entity.setAtticSizeSqMt(createDto.getAtticSizeSqMt());
+        entity.setPlotSizeSqMt(createDto.getPlotSizeSqMt());
+        
         // ===== ENERGY & UTILITIES =====
         entity.setEnergyEfficiency(createDto.getEnergyEfficiency());
-        entity.setHasWater(createDto.getHasWater());
         entity.setHasSewage(createDto.getHasSewage());
         entity.setHasElectricity(createDto.getHasElectricity());
         entity.setHasGas(createDto.getHasGas());
@@ -96,13 +127,11 @@ public class RealEstateMapper {
         
         // ===== LAND-SPECIFIC =====
         entity.setLandType(createDto.getLandType());
-        entity.setHasWaterSource(createDto.getHasWaterSource());
         entity.setHasElectricityAccess(createDto.getHasElectricityAccess());
         entity.setHasRoadAccess(createDto.getHasRoadAccess());
         
         // ===== OWNERSHIP & AGENCY =====
         entity.setOwner(owner);
-        // agencyId is set separately via setAgency() method
         
         // ===== AGENT OVERRIDES =====
         entity.setAgentName(createDto.getAgentName());
@@ -116,9 +145,11 @@ public class RealEstateMapper {
         entity.setMinimumRentPeriod(createDto.getMinimumRentPeriod());
         
         // ===== MEDIA & FEATURES =====
-        if (createDto.getFeatures() != null) {
-            entity.setFeatures(new ArrayList<>(createDto.getFeatures()));
+        if (createDto.getFeatureCodes() != null && !createDto.getFeatureCodes().isEmpty()) {
+            Set<PropertyFeature> features = convertFeatureCodesToFeatures(createDto.getFeatureCodes());
+            entity.setFeatures(features);
         }
+        
         if (imageUrls != null && !imageUrls.isEmpty()) {
             entity.setImages(new ArrayList<>(imageUrls));
         }
@@ -130,69 +161,31 @@ public class RealEstateMapper {
         return entity;
     }
 
-    // NEW: Helper method to map FurnitureStatus to entity boolean fields
-    private void mapFurnitureStatusToEntity(FurnitureStatus furnitureStatus, RealEstate entity) {
-        if (furnitureStatus != null) {
-            switch (furnitureStatus) {
-                case FURNISHED:
-                    entity.setIsFurnished(true);
-                    entity.setIsSemiFurnished(false);
-                    break;
-                case SEMI_FURNISHED:
-                    entity.setIsFurnished(false);
-                    entity.setIsSemiFurnished(true);
-                    break;
-                case PARTIALLY_FURNISHED:
-                    entity.setIsFurnished(true);
-                    entity.setIsSemiFurnished(true);
-                    break;
-                case UNFURNISHED:
-                    entity.setIsFurnished(false);
-                    entity.setIsSemiFurnished(false);
-                    break;
-                default:
-                    entity.setIsFurnished(false);
-                    entity.setIsSemiFurnished(false);
-                    break;
-            }
-        } else {
-            // Default to unfurnished if not specified
-            entity.setIsFurnished(false);
-            entity.setIsSemiFurnished(false);
+    private Set<PropertyFeature> convertFeatureCodesToFeatures(List<String> featureCodes) {
+        if (featureCodes == null || featureCodes.isEmpty()) {
+            return new HashSet<>();
         }
-    }
-
-    // NEW: Helper method to map entity boolean fields to FurnitureStatus
-    private FurnitureStatus mapEntityToFurnitureStatus(RealEstate entity) {
-        Boolean isFurnished = entity.getIsFurnished();
-        Boolean isSemiFurnished = entity.getIsSemiFurnished();
         
-        if (Boolean.TRUE.equals(isFurnished) && Boolean.TRUE.equals(isSemiFurnished)) {
-            return FurnitureStatus.PARTIALLY_FURNISHED;
-        } else if (Boolean.TRUE.equals(isFurnished)) {
-            return FurnitureStatus.FURNISHED;
-        } else if (Boolean.TRUE.equals(isSemiFurnished)) {
-            return FurnitureStatus.SEMI_FURNISHED;
-        } else {
-            return FurnitureStatus.UNFURNISHED;
+        List<PropertyFeature> features = featureRepository.findByCodeIn(featureCodes);
+        
+        // Check if all requested features were found
+        Set<String> foundCodes = features.stream()
+            .map(PropertyFeature::getCode)
+            .collect(Collectors.toSet());
+        
+        List<String> missingCodes = featureCodes.stream()
+            .filter(code -> !foundCodes.contains(code))
+            .collect(Collectors.toList());
+        
+        if (!missingCodes.isEmpty()) {
+            System.out.println("Warning: The following feature codes were not found: " + missingCodes);
         }
+        
+        return new HashSet<>(features);
     }
 
     public RealEstateResponseDTO toResponseDto(RealEstate entity) {
-        // Use the constructor we already have in RealEstateResponseDTO
         return new RealEstateResponseDTO(entity);
-    }
-
-    // NEW: Enhanced response DTO method with furniture status mapping
-    public RealEstateResponseDTO toDetailedResponseDto(RealEstate entity) {
-        RealEstateResponseDTO dto = new RealEstateResponseDTO(entity);
-        
-        // Map furniture status from entity boolean fields to enum
-        FurnitureStatus furnitureStatus = mapEntityToFurnitureStatus(entity);
-        // Note: You'll need to add a setFurnitureStatus method in RealEstateResponseDTO
-        // dto.setFurnitureStatus(furnitureStatus);
-        
-        return dto;
     }
 
     public void updateEntity(RealEstateUpdateDTO updateDto, RealEstate entity) {
@@ -222,8 +215,18 @@ public class RealEstateMapper {
         if (updateDto.getState() != null) entity.setState(updateDto.getState());
         if (updateDto.getZipCode() != null) entity.setZipCode(updateDto.getZipCode());
         if (updateDto.getLocationDescription() != null) entity.setLocationDescription(updateDto.getLocationDescription());
-        if (updateDto.getLatitude() != null) entity.setLatitude(updateDto.getLatitude());
-        if (updateDto.getLongitude() != null) entity.setLongitude(updateDto.getLongitude());
+        
+        // Update location coordinates
+        if (updateDto.getLatitude() != null || updateDto.getLongitude() != null) {
+            BigDecimal lat = updateDto.getLatitude() != null ? updateDto.getLatitude() : entity.getLatitude();
+            BigDecimal lng = updateDto.getLongitude() != null ? updateDto.getLongitude() : entity.getLongitude();
+            if (lat != null && lng != null) {
+                entity.setLocation(lat, lng);
+            } else {
+                entity.setLatitude(lat);
+                entity.setLongitude(lng);
+            }
+        }
         
         // ===== PROPERTY CHARACTERISTICS - CORE =====
         if (updateDto.getSizeInSqMt() != null) entity.setSizeInSqMt(updateDto.getSizeInSqMt());
@@ -236,10 +239,14 @@ public class RealEstateMapper {
         if (updateDto.getPropertyCondition() != null) entity.setPropertyCondition(updateDto.getPropertyCondition());
         if (updateDto.getHeatingType() != null) entity.setHeatingType(updateDto.getHeatingType());
         if (updateDto.getOtherHeatingTypeDescription() != null) entity.setOtherHeatingTypeDescription(updateDto.getOtherHeatingTypeDescription());
+        if (updateDto.getFurnitureStatus() != null) entity.setFurnitureStatus(updateDto.getFurnitureStatus());
         
-        // FIXED: Convert FurnitureStatus to boolean fields
-        if (updateDto.getFurnitureStatus() != null) {
-            mapFurnitureStatusToEntity(updateDto.getFurnitureStatus(), entity);
+        // ===== WATER SOURCES =====
+        if (updateDto.getWaterSources() != null) {
+            entity.setWaterSources(new HashSet<>(updateDto.getWaterSources()));
+        }
+        if (updateDto.getOtherWaterSourceDescription() != null) {
+            entity.setOtherWaterSourceDescription(updateDto.getOtherWaterSourceDescription());
         }
         
         // ===== AMENITIES & COMFORT =====
@@ -255,9 +262,16 @@ public class RealEstateMapper {
         if (updateDto.getHasTerrace() != null) entity.setHasTerrace(updateDto.getHasTerrace());
         if (updateDto.getHasBalcony() != null) entity.setHasBalcony(updateDto.getHasBalcony());
         
+        // Additional size fields
+        if (updateDto.getTerraceSizeSqMt() != null) entity.setTerraceSizeSqMt(updateDto.getTerraceSizeSqMt());
+        if (updateDto.getBalconySizeSqMt() != null) entity.setBalconySizeSqMt(updateDto.getBalconySizeSqMt());
+        if (updateDto.getLoggiaSizeSqMt() != null) entity.setLoggiaSizeSqMt(updateDto.getLoggiaSizeSqMt());
+        if (updateDto.getBasementSizeSqMt() != null) entity.setBasementSizeSqMt(updateDto.getBasementSizeSqMt());
+        if (updateDto.getAtticSizeSqMt() != null) entity.setAtticSizeSqMt(updateDto.getAtticSizeSqMt());
+        if (updateDto.getPlotSizeSqMt() != null) entity.setPlotSizeSqMt(updateDto.getPlotSizeSqMt());
+        
         // ===== ENERGY & UTILITIES =====
         if (updateDto.getEnergyEfficiency() != null) entity.setEnergyEfficiency(updateDto.getEnergyEfficiency());
-        if (updateDto.getHasWater() != null) entity.setHasWater(updateDto.getHasWater());
         if (updateDto.getHasSewage() != null) entity.setHasSewage(updateDto.getHasSewage());
         if (updateDto.getHasElectricity() != null) entity.setHasElectricity(updateDto.getHasElectricity());
         if (updateDto.getHasGas() != null) entity.setHasGas(updateDto.getHasGas());
@@ -277,7 +291,6 @@ public class RealEstateMapper {
         
         // ===== LAND-SPECIFIC =====
         if (updateDto.getLandType() != null) entity.setLandType(updateDto.getLandType());
-        if (updateDto.getHasWaterSource() != null) entity.setHasWaterSource(updateDto.getHasWaterSource());
         if (updateDto.getHasElectricityAccess() != null) entity.setHasElectricityAccess(updateDto.getHasElectricityAccess());
         if (updateDto.getHasRoadAccess() != null) entity.setHasRoadAccess(updateDto.getHasRoadAccess());
         
@@ -293,17 +306,31 @@ public class RealEstateMapper {
         if (updateDto.getMinimumRentPeriod() != null) entity.setMinimumRentPeriod(updateDto.getMinimumRentPeriod());
         
         // ===== MEDIA & FEATURES =====
-        if (updateDto.getFeatures() != null) entity.setFeatures(updateDto.getFeatures());
+        if (updateDto.getFeatureCodes() != null) {
+            if (Boolean.TRUE.equals(updateDto.getReplaceFeatures())) {
+                // Replace all features with new ones
+                Set<PropertyFeature> newFeatures = convertFeatureCodesToFeatures(updateDto.getFeatureCodes());
+                entity.setFeatures(newFeatures);
+            } else {
+                // Merge features: add new ones, keep existing
+                Set<PropertyFeature> currentFeatures = entity.getFeatures();
+                if (currentFeatures == null) {
+                    currentFeatures = new HashSet<>();
+                }
+                
+                Set<PropertyFeature> newFeatures = convertFeatureCodesToFeatures(updateDto.getFeatureCodes());
+                currentFeatures.addAll(newFeatures);
+                entity.setFeatures(currentFeatures);
+            }
+        }
         
         // ===== STATUS =====
         if (updateDto.getIsActive() != null) entity.setIsActive(updateDto.getIsActive());
         if (updateDto.getIsFeatured() != null) entity.setIsFeatured(updateDto.getIsFeatured());
         if (updateDto.getFeaturedAt() != null) entity.setFeaturedAt(updateDto.getFeaturedAt());
         if (updateDto.getFeaturedUntil() != null) entity.setFeaturedUntil(updateDto.getFeaturedUntil());
-    }
-
-    // NEW: Method to convert entity boolean fields to FurnitureStatus enum
-    public FurnitureStatus getFurnitureStatusFromEntity(RealEstate entity) {
-        return mapEntityToFurnitureStatus(entity);
+        
+        // Update timestamp
+        entity.setUpdatedAt(LocalDateTime.now());
     }
 }

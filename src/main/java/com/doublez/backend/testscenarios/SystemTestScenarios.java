@@ -1,43 +1,43 @@
 package com.doublez.backend.testscenarios;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.Pageable;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
-
-import com.doublez.backend.dto.agency.AgencyDTO;
-import com.doublez.backend.dto.auth.CustomUserDetails;
-import com.doublez.backend.dto.realestate.RealEstateResponseDTO;
-import com.doublez.backend.dto.realestate.RealEstateCreateDTO;
-import com.doublez.backend.dto.user.UserDTO;
-import com.doublez.backend.entity.realestate.RealEstate;
-import com.doublez.backend.entity.user.User;
-import com.doublez.backend.entity.user.UserLimitation;
-import com.doublez.backend.entity.user.UserTier;
-import com.doublez.backend.enums.ListingType;
-import com.doublez.backend.enums.property.HeatingType;
-import com.doublez.backend.enums.property.PropertyCondition;
-import com.doublez.backend.enums.property.PropertyType;
-import com.doublez.backend.exception.LimitationExceededException;
-import com.doublez.backend.exception.UserNotFoundException;
-import com.doublez.backend.repository.RealEstateRepository;
-import com.doublez.backend.repository.RoleRepository;
-import com.doublez.backend.repository.UserRepository;
-import com.doublez.backend.service.agency.AgencyService;
-import com.doublez.backend.service.realestate.RealEstateAuthorizationService;
-import com.doublez.backend.service.realestate.RealEstateService;
-import com.doublez.backend.service.usage.TrialService;
-import com.doublez.backend.service.user.UserService;
+//
+//import java.math.BigDecimal;
+//import java.time.LocalDateTime;
+//import java.util.List;
+//import java.util.Map;
+//
+//import org.slf4j.Logger;
+//import org.slf4j.LoggerFactory;
+//import org.springframework.data.domain.Pageable;
+//import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+//import org.springframework.security.core.Authentication;
+//import org.springframework.security.core.context.SecurityContextHolder;
+//import org.springframework.stereotype.Component;
+//import org.springframework.transaction.annotation.Propagation;
+//import org.springframework.transaction.annotation.Transactional;
+//
+//import com.doublez.backend.dto.agency.AgencyDTO;
+//import com.doublez.backend.dto.auth.CustomUserDetails;
+//import com.doublez.backend.dto.realestate.RealEstateResponseDTO;
+//import com.doublez.backend.dto.realestate.RealEstateCreateDTO;
+//import com.doublez.backend.dto.user.UserDTO;
+//import com.doublez.backend.entity.realestate.RealEstate;
+//import com.doublez.backend.entity.user.User;
+//import com.doublez.backend.entity.user.UserLimitation;
+//import com.doublez.backend.entity.user.UserTier;
+//import com.doublez.backend.enums.ListingType;
+//import com.doublez.backend.enums.property.HeatingType;
+//import com.doublez.backend.enums.property.PropertyCondition;
+//import com.doublez.backend.enums.property.PropertyType;
+//import com.doublez.backend.exception.LimitationExceededException;
+//import com.doublez.backend.exception.UserNotFoundException;
+//import com.doublez.backend.repository.RoleRepository;
+//import com.doublez.backend.repository.UserRepository;
+//import com.doublez.backend.repository.realestate.RealEstateRepository;
+//import com.doublez.backend.service.agency.AgencyService;
+//import com.doublez.backend.service.realestate.RealEstateAuthorizationService;
+//import com.doublez.backend.service.realestate.RealEstateService;
+//import com.doublez.backend.service.usage.TrialService;
+//import com.doublez.backend.service.user.UserService;
 
 //@Component
 //@Transactional

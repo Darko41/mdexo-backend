@@ -22,13 +22,13 @@ import com.doublez.backend.dto.realestate.RealEstateResponseDTO;
 import com.doublez.backend.dto.realestate.RealEstateUpdateDTO;
 import com.doublez.backend.entity.realestate.RealEstate;
 import com.doublez.backend.entity.user.User;
-import com.doublez.backend.enums.ListingType;
 import com.doublez.backend.enums.property.FurnitureStatus;
+import com.doublez.backend.enums.property.ListingType;
 import com.doublez.backend.enums.property.PropertyType;
 import com.doublez.backend.exception.ResourceNotFoundException;
 import com.doublez.backend.mapper.RealEstateMapper;
-import com.doublez.backend.repository.RealEstateRepository;
 import com.doublez.backend.repository.UserRepository;
+import com.doublez.backend.repository.realestate.RealEstateRepository;
 
 import jakarta.transaction.Transactional;
 import jakarta.validation.ValidationException;
@@ -55,89 +55,89 @@ public class AdminRealEstateService {
     }
 
     // ENHANCED: Update with proper validation and furniture status support
-    @Transactional
-    public RealEstateResponseDTO updateRealEstate(Long propertyId, RealEstateUpdateDTO updateDto, 
-                                                 MultipartFile[] newImages, List<String> imagesToRemove) {
-        RealEstate realEstate = realEstateRepository.findById(propertyId)
-                .orElseThrow(() -> new ResourceNotFoundException("Real estate not found with id: " + propertyId));
-        
-        // Validate update DTO
-        validateRealEstateUpdateDTO(updateDto);
-        
-        // Handle image removal
-        if (imagesToRemove != null && !imagesToRemove.isEmpty()) {
-            removeImagesFromProperty(realEstate, imagesToRemove);
-        }
-        
-        // Handle new image uploads
-        if (newImages != null && newImages.length > 0) {
-            addImagesToProperty(realEstate, newImages, updateDto.getReplaceImages());
-        }
-        
-        // Handle owner update
-        if (updateDto.getOwnerId() != null) {
-            User owner = userRepository.findById(updateDto.getOwnerId())
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + updateDto.getOwnerId()));
-            realEstate.setOwner(owner);
-        }
-        
-        // Update other fields
-        realEstateMapper.updateEntity(updateDto, realEstate);
-        
-        // Handle furniture status update
-        if (updateDto.getFurnitureStatus() != null) {
-            mapFurnitureStatus(updateDto.getFurnitureStatus(), realEstate);
-        }
-        
-        realEstate.setUpdatedAt(LocalDateTime.now());
-        
-        RealEstate updated = realEstateRepository.save(realEstate);
-        logger.info("✅ Admin updated real estate ID: {}", propertyId);
-        return realEstateMapper.toResponseDto(updated);
-    }
+//    @Transactional
+//    public RealEstateResponseDTO updateRealEstate(Long propertyId, RealEstateUpdateDTO updateDto, 
+//                                                 MultipartFile[] newImages, List<String> imagesToRemove) {
+//        RealEstate realEstate = realEstateRepository.findById(propertyId)
+//                .orElseThrow(() -> new ResourceNotFoundException("Real estate not found with id: " + propertyId));
+//        
+//        // Validate update DTO
+//        validateRealEstateUpdateDTO(updateDto);
+//        
+//        // Handle image removal
+//        if (imagesToRemove != null && !imagesToRemove.isEmpty()) {
+//            removeImagesFromProperty(realEstate, imagesToRemove);
+//        }
+//        
+//        // Handle new image uploads
+//        if (newImages != null && newImages.length > 0) {
+//            addImagesToProperty(realEstate, newImages, updateDto.getReplaceImages());
+//        }
+//        
+//        // Handle owner update
+//        if (updateDto.getOwnerId() != null) {
+//            User owner = userRepository.findById(updateDto.getOwnerId())
+//                    .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + updateDto.getOwnerId()));
+//            realEstate.setOwner(owner);
+//        }
+//        
+//        // Update other fields
+//        realEstateMapper.updateEntity(updateDto, realEstate);
+//        
+//        // Handle furniture status update
+//        if (updateDto.getFurnitureStatus() != null) {
+//            mapFurnitureStatus(updateDto.getFurnitureStatus(), realEstate);
+//        }
+//        
+//        realEstate.setUpdatedAt(LocalDateTime.now());
+//        
+//        RealEstate updated = realEstateRepository.save(realEstate);
+//        logger.info("✅ Admin updated real estate ID: {}", propertyId);
+//        return realEstateMapper.toResponseDto(updated);
+//    }
     
     // NEW: Validation method for update DTO
-    private void validateRealEstateUpdateDTO(RealEstateUpdateDTO updateDto) {
-        if (!updateDto.hasValidOtherDescriptions()) {
-            throw new ValidationException("Other descriptions are required when selecting 'OTHER' for enum fields");
-        }
-        
-        if (!updateDto.isSubtypeValid()) {
-            throw new ValidationException("Property subtype does not match property type");
-        }
-        
-        if (!updateDto.isDiscountValid()) {
-            throw new ValidationException("Invalid discount configuration");
-        }
-        
-        if (!updateDto.isDiscountEndDateValid()) {
-            throw new ValidationException("Discount end date must be in the future");
-        }
-    }
+//    private void validateRealEstateUpdateDTO(RealEstateUpdateDTO updateDto) {
+//        if (!updateDto.hasValidOtherDescriptions()) {
+//            throw new ValidationException("Other descriptions are required when selecting 'OTHER' for enum fields");
+//        }
+//        
+//        if (!updateDto.isSubtypeValid()) {
+//            throw new ValidationException("Property subtype does not match property type");
+//        }
+//        
+//        if (!updateDto.isDiscountValid()) {
+//            throw new ValidationException("Invalid discount configuration");
+//        }
+//        
+//        if (!updateDto.isDiscountEndDateValid()) {
+//            throw new ValidationException("Discount end date must be in the future");
+//        }
+//    }
     
     // NEW: Furniture status mapping
-    private void mapFurnitureStatus(FurnitureStatus furnitureStatus, RealEstate entity) {
-        if (furnitureStatus != null) {
-            switch (furnitureStatus) {
-                case FURNISHED:
-                    entity.setIsFurnished(true);
-                    entity.setIsSemiFurnished(false);
-                    break;
-                case SEMI_FURNISHED:
-                    entity.setIsFurnished(false);
-                    entity.setIsSemiFurnished(true);
-                    break;
-                case PARTIALLY_FURNISHED:
-                    entity.setIsFurnished(true);
-                    entity.setIsSemiFurnished(true);
-                    break;
-                case UNFURNISHED:
-                    entity.setIsFurnished(false);
-                    entity.setIsSemiFurnished(false);
-                    break;
-            }
-        }
-    }
+//    private void mapFurnitureStatus(FurnitureStatus furnitureStatus, RealEstate entity) {
+//        if (furnitureStatus != null) {
+//            switch (furnitureStatus) {
+//                case FURNISHED:
+//                    entity.setIsFurnished(true);
+//                    entity.setIsSemiFurnished(false);
+//                    break;
+//                case SEMI_FURNISHED:
+//                    entity.setIsFurnished(false);
+//                    entity.setIsSemiFurnished(true);
+//                    break;
+//                case PARTIALLY_FURNISHED:
+//                    entity.setIsFurnished(true);
+//                    entity.setIsSemiFurnished(true);
+//                    break;
+//                case UNFURNISHED:
+//                    entity.setIsFurnished(false);
+//                    entity.setIsSemiFurnished(false);
+//                    break;
+//            }
+//        }
+//    }
     
     // NEW: Enhanced image removal
     private void removeImagesFromProperty(RealEstate realEstate, List<String> imagesToRemove) {
@@ -183,10 +183,10 @@ public class AdminRealEstateService {
         }
     }
 
-    @Transactional
-    public RealEstateResponseDTO updateRealEstate(Long propertyId, RealEstateUpdateDTO updateDto, MultipartFile[] images) {
-        return updateRealEstate(propertyId, updateDto, images, null);
-    }
+//    @Transactional
+//    public RealEstateResponseDTO updateRealEstate(Long propertyId, RealEstateUpdateDTO updateDto, MultipartFile[] images) {
+//        return updateRealEstate(propertyId, updateDto, images, null);
+//    }
     
     // NEW: Bulk update methods
     @Transactional
@@ -339,16 +339,16 @@ public class AdminRealEstateService {
     }
     
     // NEW: Get real estate with detailed analytics
-    public RealEstateResponseDTO getRealEstateWithAnalytics(Long propertyId) {
-        RealEstate realEstate = realEstateRepository.findById(propertyId)
-                .orElseThrow(() -> new ResourceNotFoundException("Real estate not found with id: " + propertyId));
-        
-        // Increment view count for admin views too
-        realEstate.incrementViewCount();
-        realEstateRepository.save(realEstate);
-        
-        return realEstateMapper.toResponseDto(realEstate);
-    }
+//    public RealEstateResponseDTO getRealEstateWithAnalytics(Long propertyId) {
+//        RealEstate realEstate = realEstateRepository.findById(propertyId)
+//                .orElseThrow(() -> new ResourceNotFoundException("Real estate not found with id: " + propertyId));
+//        
+//        // Increment view count for admin views too
+//        realEstate.incrementViewCount();
+//        realEstateRepository.save(realEstate);
+//        
+//        return realEstateMapper.toResponseDto(realEstate);
+//    }
     
     // NEW: Admin analytics
     public Map<String, Object> getAdminAnalytics() {

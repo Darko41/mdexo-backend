@@ -23,7 +23,7 @@ import com.doublez.backend.entity.realestate.RealEstate;
 import com.doublez.backend.exception.IllegalOperationException;
 import com.doublez.backend.exception.LimitationExceededException;
 import com.doublez.backend.exception.ResourceNotFoundException;
-import com.doublez.backend.repository.RealEstateRepository;
+import com.doublez.backend.repository.realestate.RealEstateRepository;
 import com.doublez.backend.service.realestate.FeaturedListingService;
 import com.doublez.backend.service.realestate.RealEstateAuthorizationService;
 import com.doublez.backend.service.user.UserService;
@@ -67,42 +67,42 @@ public class FeaturedListingController {
      * FEATURE A LISTING
      * Allows users to feature their property for a specified number of days
      */
-    @PostMapping("/{realEstateId}")
-    @PreAuthorize("@realEstateAuthorizationService.hasRealEstateFeatureAccess(#realEstateId)")
-    public ResponseEntity<?> featureListing(
-            @PathVariable Long realEstateId,
-            @RequestParam(defaultValue = "30") Integer featuredDays) {
-        
-        try {
-            logger.info("⭐ Featuring listing ID: {} for {} days", realEstateId, featuredDays);
-            
-            Long userId = getCurrentUserId();
-            RealEstate featured = featuredListingService.featureRealEstate(userId, realEstateId, featuredDays);
-            
-            logger.info("✅ Listing featured successfully - ID: {}, Days: {}", realEstateId, featuredDays);
-            return ResponseEntity.ok(featured);
-            
-        } catch (LimitationExceededException e) {
-            logger.warn("🚫 Feature limit exceeded for user: {}, listing: {}", getCurrentUserId(), realEstateId);
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("error", e.getMessage()));
-                    
-        } catch (ResourceNotFoundException e) {
-            logger.warn("❌ Listing not found for featuring: {}", realEstateId);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", "Real estate not found"));
-                    
-        } catch (IllegalOperationException e) {
-            logger.warn("🚫 Unauthorized featuring attempt - User: {}, Listing: {}", getCurrentUserId(), realEstateId);
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("error", "You don't have permission to feature this property"));
-                    
-        } catch (Exception e) {
-            logger.error("❌ Failed to feature listing: {}", realEstateId, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to feature listing"));
-        }
-    }
+//    @PostMapping("/{realEstateId}")
+//    @PreAuthorize("@realEstateAuthorizationService.hasRealEstateFeatureAccess(#realEstateId)")
+//    public ResponseEntity<?> featureListing(
+//            @PathVariable Long realEstateId,
+//            @RequestParam(defaultValue = "30") Integer featuredDays) {
+//        
+//        try {
+//            logger.info("⭐ Featuring listing ID: {} for {} days", realEstateId, featuredDays);
+//            
+//            Long userId = getCurrentUserId();
+//            RealEstate featured = featuredListingService.featureRealEstate(userId, realEstateId, featuredDays);
+//            
+//            logger.info("✅ Listing featured successfully - ID: {}, Days: {}", realEstateId, featuredDays);
+//            return ResponseEntity.ok(featured);
+//            
+//        } catch (LimitationExceededException e) {
+//            logger.warn("🚫 Feature limit exceeded for user: {}, listing: {}", getCurrentUserId(), realEstateId);
+//            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+//                    .body(Map.of("error", e.getMessage()));
+//                    
+//        } catch (ResourceNotFoundException e) {
+//            logger.warn("❌ Listing not found for featuring: {}", realEstateId);
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+//                    .body(Map.of("error", "Real estate not found"));
+//                    
+//        } catch (IllegalOperationException e) {
+//            logger.warn("🚫 Unauthorized featuring attempt - User: {}, Listing: {}", getCurrentUserId(), realEstateId);
+//            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+//                    .body(Map.of("error", "You don't have permission to feature this property"));
+//                    
+//        } catch (Exception e) {
+//            logger.error("❌ Failed to feature listing: {}", realEstateId, e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("error", "Failed to feature listing"));
+//        }
+//    }
 
     /**
      * UNFEATURE A LISTING
@@ -141,36 +141,36 @@ public class FeaturedListingController {
      * CHECK IF USER CAN FEATURE A LISTING
      * Returns whether the user has available featured slots and permission
      */
-    @GetMapping("/can-feature/{realEstateId}")
-    @PreAuthorize("@realEstateAuthorizationService.hasRealEstateUpdateAccess(#realEstateId)")
-    public ResponseEntity<Map<String, Object>> canFeatureListing(@PathVariable Long realEstateId) {
-        try {
-            logger.info("🔍 Checking if user can feature listing: {}", realEstateId);
-            
-            Long userId = getCurrentUserId();
-            boolean canFeature = featuredListingService.canFeatureRealEstate(userId, realEstateId);
-            
-            // Get detailed limitation info
-            var usageStats = authService.getUsageStats(userId);
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("canFeature", canFeature);
-            response.put("currentFeatured", usageStats.getCurrentFeatured());
-            response.put("maxFeatured", usageStats.getMaxFeatured());
-            response.put("availableSlots", Math.max(0, usageStats.getMaxFeatured() - usageStats.getCurrentFeatured()));
-            response.put("hasPermission", usageStats.isCanFeatureListing());
-            
-            logger.info("✅ Feature check completed - canFeature: {}, availableSlots: {}", 
-                canFeature, response.get("availableSlots"));
-            
-            return ResponseEntity.ok(response);
-            
-        } catch (Exception e) {
-            logger.error("❌ Failed to check feature eligibility for listing: {}", realEstateId, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to check feature eligibility"));
-        }
-    }
+//    @GetMapping("/can-feature/{realEstateId}")
+//    @PreAuthorize("@realEstateAuthorizationService.hasRealEstateUpdateAccess(#realEstateId)")
+//    public ResponseEntity<Map<String, Object>> canFeatureListing(@PathVariable Long realEstateId) {
+//        try {
+//            logger.info("🔍 Checking if user can feature listing: {}", realEstateId);
+//            
+//            Long userId = getCurrentUserId();
+//            boolean canFeature = featuredListingService.canFeatureRealEstate(userId, realEstateId);
+//            
+//            // Get detailed limitation info
+//            var usageStats = authService.getUsageStats(userId);
+//            
+//            Map<String, Object> response = new HashMap<>();
+//            response.put("canFeature", canFeature);
+//            response.put("currentFeatured", usageStats.getCurrentFeatured());
+//            response.put("maxFeatured", usageStats.getMaxFeatured());
+//            response.put("availableSlots", Math.max(0, usageStats.getMaxFeatured() - usageStats.getCurrentFeatured()));
+//            response.put("hasPermission", usageStats.isCanFeatureListing());
+//            
+//            logger.info("✅ Feature check completed - canFeature: {}, availableSlots: {}", 
+//                canFeature, response.get("availableSlots"));
+//            
+//            return ResponseEntity.ok(response);
+//            
+//        } catch (Exception e) {
+//            logger.error("❌ Failed to check feature eligibility for listing: {}", realEstateId, e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("error", "Failed to check feature eligibility"));
+//        }
+//    }
 
     /**
      * GET ACTIVE FEATURED LISTINGS

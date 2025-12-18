@@ -7,10 +7,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.doublez.backend.enums.ListingType;
 import com.doublez.backend.enums.property.EnergyEfficiency;
 import com.doublez.backend.enums.property.FurnitureStatus;
 import com.doublez.backend.enums.property.HeatingType;
+import com.doublez.backend.enums.property.ListingType;
 import com.doublez.backend.enums.property.OwnershipType;
 import com.doublez.backend.enums.property.PropertyCondition;
 import com.doublez.backend.enums.property.PropertySubtype;
@@ -27,6 +27,7 @@ import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
@@ -45,7 +46,7 @@ public class RealEstateCreateDTO {
     @NotNull(message = "Property type is required")
     private PropertyType propertyType;
 
-    private PropertySubtype propertySubtype; 
+    private PropertySubtype propertySubtype;
 
     @NotNull(message = "Listing type is required")
     private ListingType listingType;
@@ -56,13 +57,13 @@ public class RealEstateCreateDTO {
     @Digits(integer = 12, fraction = 2, message = "Price must have up to 12 integer and 2 decimal digits")
     private BigDecimal price;
 
-    private String currency = "RSD"; 
+    private String currency = "RSD";
 
     @Positive(message = "Original price must be positive")
     @Digits(integer = 12, fraction = 2, message = "Original price must have up to 12 integer and 2 decimal digits")
-    private BigDecimal originalPrice; 
+    private BigDecimal originalPrice;
 
-    private Boolean priceNegotiable = true; 
+    private Boolean priceNegotiable = true;
     
     @Positive(message = "Discount amount must be positive")
     @Digits(integer = 12, fraction = 2, message = "Discount amount must have up to 12 integer and 2 decimal digits")
@@ -71,18 +72,18 @@ public class RealEstateCreateDTO {
     @FutureOrPresent(message = "Discount end date must be today or in the future")
     private LocalDate discountEndDate;
 
-    private Boolean includesUtilities; 
+    private Boolean includesUtilities;
 
     @Positive(message = "Deposit amount must be positive")
     @Digits(integer = 12, fraction = 2, message = "Deposit amount must have up to 12 integer and 2 decimal digits")
-    private BigDecimal depositAmount; 
+    private BigDecimal depositAmount;
 
     // ===== LOCATION INFORMATION =====
     @NotBlank(message = "Address is required")
     private String address;
 
-    private String streetNumber; 
-    private String neighborhood; 
+    private String streetNumber;
+    private String neighborhood;
 
     @NotBlank(message = "City is required")
     private String city;
@@ -92,9 +93,10 @@ public class RealEstateCreateDTO {
     @NotBlank(message = "State is required")
     private String state = "Srbija";
 
-    private String zipCode; 
+    private String zipCode;
+    
     @Size(max = 500, message = "Location description cannot exceed 500 characters")
-    private String locationDescription; 
+    private String locationDescription;
 
     @DecimalMin(value = "-90.0", message = "Latitude must be between -90 and 90")
     @DecimalMax(value = "90.0", message = "Latitude must be between -90 and 90")
@@ -118,11 +120,11 @@ public class RealEstateCreateDTO {
     @DecimalMin(value = "0.5", message = "Bathroom count must be at least 0.5")
     @DecimalMax(value = "10.0", message = "Bathroom count cannot exceed 10")
     @Digits(integer = 2, fraction = 1, message = "Bathroom count must have up to 2 integer and 1 decimal digit")
-    private BigDecimal bathroomCount; 
+    private BigDecimal bathroomCount;
 
     @Min(value = 0, message = "Balcony count cannot be negative")
     @Max(value = 10, message = "Balcony count cannot exceed 10")
-    private Integer balconyCount; 
+    private Integer balconyCount;
 
     @Min(value = -5, message = "Floor cannot be less than -5 (basement)")
     @Max(value = 200, message = "Floor cannot exceed 200")
@@ -140,58 +142,91 @@ public class RealEstateCreateDTO {
     private HeatingType heatingType;
 
     @Size(max = 100, message = "Other heating type description cannot exceed 100 characters")
-    private String otherHeatingTypeDescription; 
+    private String otherHeatingTypeDescription;
 
-    private FurnitureStatus furnitureStatus; 
+    private FurnitureStatus furnitureStatus;
 
-    // ===== AMENITIES & COMFORT =====
-    private Boolean hasElevator; 
-    private Boolean hasAirConditioning; 
-    private Boolean hasInternet; 
-    private Boolean hasCableTV; 
-    private Boolean hasSecurity; 
-    private Boolean hasParking = false; 
-    private Integer parkingSpaces; 
-    private Boolean hasGarden; 
+    // ===== WATER SOURCES =====
+    private Set<WaterSourceType> waterSources = new HashSet<>();
+
+    @Size(max = 100, message = "Other water source description cannot exceed 100 characters")
+    private String otherWaterSourceDescription; 
+
+ // ===== AMENITIES & COMFORT =====
+    private Boolean hasElevator;
+    private Boolean hasAirConditioning;
+    private Boolean hasInternet;
+    private Boolean hasCableTV;
+    private Boolean hasSecurity;
+    private Boolean hasParking = false;
+    private Integer parkingSpaces;
+    private Boolean hasGarden;
     
     @DecimalMin(value = "0.0", message = "Garden size cannot be negative")
     @Digits(integer = 5, fraction = 2, message = "Garden size must have up to 5 integer and 2 decimal digits")
-    private BigDecimal gardenSizeSqMt; 
+    private BigDecimal gardenSizeSqMt;
     
-    private Boolean hasTerrace; 
-    private Boolean hasBalcony; 
+    private Boolean hasTerrace;
+    private Boolean hasBalcony;
+    
+    // Additional size fields
+    @DecimalMin(value = "0.0", message = "Terrace size cannot be negative")
+    @Digits(integer = 5, fraction = 2, message = "Terrace size must have up to 5 integer and 2 decimal digits")
+    private BigDecimal terraceSizeSqMt;
+    
+    @DecimalMin(value = "0.0", message = "Balcony size cannot be negative")
+    @Digits(integer = 5, fraction = 2, message = "Balcony size must have up to 5 integer and 2 decimal digits")
+    private BigDecimal balconySizeSqMt;
+    
+    @DecimalMin(value = "0.0", message = "Loggia size cannot be negative")
+    @Digits(integer = 5, fraction = 2, message = "Loggia size must have up to 5 integer and 2 decimal digits")
+    private BigDecimal loggiaSizeSqMt;
+    
+    @DecimalMin(value = "0.0", message = "Basement size cannot be negative")
+    @Digits(integer = 5, fraction = 2, message = "Basement size must have up to 5 integer and 2 decimal digits")
+    private BigDecimal basementSizeSqMt;
+    
+    @DecimalMin(value = "0.0", message = "Attic size cannot be negative")
+    @Digits(integer = 5, fraction = 2, message = "Attic size must have up to 5 integer and 2 decimal digits")
+    private BigDecimal atticSizeSqMt;
+    
+    @DecimalMin(value = "0.0", message = "Plot size cannot be negative")
+    @Digits(integer = 12, fraction = 2, message = "Plot size must have up to 12 integer and 2 decimal digits")
+    private BigDecimal plotSizeSqMt;
 
     // ===== ENERGY & UTILITIES =====
-    private EnergyEfficiency energyEfficiency; 
-    private Boolean hasSewage; 
-    private Boolean hasElectricity; 
-    private Boolean hasGas; 
-    private Set<WaterSourceType> waterSources = new HashSet<>();
+    private EnergyEfficiency energyEfficiency;
+    private Boolean hasSewage;
+    private Boolean hasElectricity;
+    private Boolean hasGas;
 
     // ===== LEGAL & DOCUMENTATION =====
-    private Boolean hasConstructionPermit; 
-    private Boolean hasUsePermit; 
-    private OwnershipType ownershipType; 
+    private Boolean hasConstructionPermit;
+    private Boolean hasUsePermit;
+    private OwnershipType ownershipType;
     
     @Size(max = 100, message = "Other ownership type description cannot exceed 100 characters")
-    private String otherOwnershipTypeDescription; 
+    private String otherOwnershipTypeDescription;
     
-    private Boolean isRegistered; 
+    private Boolean isRegistered;
 
     // ===== COMMERCIAL-SPECIFIC =====
     @Size(max = 100, message = "Business type cannot exceed 100 characters")
-    private String businessType; 
-    private Boolean hasShowcaseWindow; 
-    private Boolean hasStorageRoom; 
+    private String businessType;
+    
+    private Boolean hasShowcaseWindow;
+    private Boolean hasStorageRoom;
+    
     @Min(value = 0, message = "Employee capacity cannot be negative")
     @Max(value = 1000, message = "Employee capacity cannot exceed 1000")
-    private Integer employeeCapacity; 
+    private Integer employeeCapacity;
 
     // ===== LAND-SPECIFIC =====
     @Size(max = 50, message = "Land type cannot exceed 50 characters")
-    private String landType; 
-    private Boolean hasElectricityAccess; 
-    private Boolean hasRoadAccess; 
+    private String landType;
+    
+    private Boolean hasElectricityAccess;
+    private Boolean hasRoadAccess;
 
     // ===== OWNERSHIP & AGENCY =====
     @Nullable
@@ -207,21 +242,22 @@ public class RealEstateCreateDTO {
     
     @Email(message = "Contact email must be valid")
     @Size(max = 255, message = "Contact email cannot exceed 255 characters")
-    private String contactEmail; 
+    private String contactEmail;
     
-    private String preferredContactMethod; 
+    private String preferredContactMethod;
 
     // ===== AVAILABILITY =====
     @FutureOrPresent(message = "Available from date must be today or in the future")
-    private LocalDate availableFrom; 
+    private LocalDate availableFrom;
     
     @Min(value = 1, message = "Minimum rent period must be at least 1 month")
     @Max(value = 60, message = "Minimum rent period cannot exceed 60 months")
-    private Integer minimumRentPeriod; 
+    private Integer minimumRentPeriod;
 
     // ===== MEDIA & FEATURES =====
+    @NotEmpty(message = "At least one feature code is required")
     @Size(max = 15, message = "Cannot have more than 15 features")
-    private List<String> features = new ArrayList<>();
+    private List<String> featureCodes = new ArrayList<>();
 
     private List<String> images = new ArrayList<>();
 
@@ -233,23 +269,31 @@ public class RealEstateCreateDTO {
     private Boolean isFeatured = false;
 
     // ===== VALIDATION METHODS =====
-    public boolean hasValidOtherDescriptions() {
-        if (heatingType == HeatingType.OTHER && 
-            (otherHeatingTypeDescription == null || otherHeatingTypeDescription.trim().isEmpty())) {
-            return false;
-        }
-        if (ownershipType == OwnershipType.OTHER && 
-            (otherOwnershipTypeDescription == null || otherOwnershipTypeDescription.trim().isEmpty())) {
-            return false;
-        }
-        return true;
+    @AssertTrue(message = "When heating type is OTHER, other heating description is required")
+    public boolean isOtherHeatingDescriptionValid() {
+        return heatingType != HeatingType.OTHER || 
+               (otherHeatingTypeDescription != null && !otherHeatingTypeDescription.trim().isEmpty());
     }
 
+    @AssertTrue(message = "When ownership type is OTHER, other ownership description is required")
+    public boolean isOtherOwnershipDescriptionValid() {
+        return ownershipType != OwnershipType.OTHER || 
+               (otherOwnershipTypeDescription != null && !otherOwnershipTypeDescription.trim().isEmpty());
+    }
+
+    @AssertTrue(message = "When water source is OTHER, other water source description is required")
+    public boolean isOtherWaterSourceDescriptionValid() {
+        return waterSources == null || !waterSources.contains(WaterSourceType.OTHER) || 
+               (otherWaterSourceDescription != null && !otherWaterSourceDescription.trim().isEmpty());
+    }
+
+    @AssertTrue(message = "Property subtype must match property type")
     public boolean isSubtypeValid() {
         if (propertySubtype == null) return true;
         return propertySubtype.getParentType() == propertyType;
     }
 
+    @AssertTrue(message = "Commercial fields should only be set for commercial or office properties")
     public boolean areCommercialFieldsValid() {
         if (businessType != null || hasShowcaseWindow != null || hasStorageRoom != null || employeeCapacity != null) {
             return propertyType == PropertyType.COMMERCIAL || propertyType == PropertyType.OFFICE_SPACE;
@@ -257,16 +301,55 @@ public class RealEstateCreateDTO {
         return true;
     }
 
+    @AssertTrue(message = "Land fields should only be set for land properties")
     public boolean areLandFieldsValid() {
-        if (landType != null || hasElectricityAccess != null || hasRoadAccess != null || (waterSources != null && !waterSources.isEmpty())) {
+        if (landType != null || hasElectricityAccess != null || hasRoadAccess != null) {
             return propertyType == PropertyType.LAND;
         }
+        return true;
+    }
+
+    @AssertTrue(message = "Size fields should only be set for appropriate property types")
+    public boolean areSizeFieldsValid() {
+        // Garden size for houses/vacation properties
+        if (gardenSizeSqMt != null && propertyType != PropertyType.HOUSE && 
+            propertyType != PropertyType.VACATION && propertyType != PropertyType.LAND) {
+            return false;
+        }
+        
+        // Plot size for houses/land
+        if (plotSizeSqMt != null && propertyType != PropertyType.HOUSE && 
+            propertyType != PropertyType.LAND && propertyType != PropertyType.VACATION) {
+            return false;
+        }
+        
         return true;
     }
 
     @AssertTrue(message = "Cannot set both discount amount and have original price different from current price")
     public boolean isDiscountValid() {
         return !(discountAmount != null && originalPrice != null && originalPrice.compareTo(price) > 0);
+    }
+
+    @AssertTrue(message = "Discount end date must be in the future if set")
+    public boolean isDiscountEndDateValid() {
+        return discountEndDate == null || discountEndDate.isAfter(LocalDate.now());
+    }
+
+    @AssertTrue(message = "Available from date must be in the future for rentals")
+    public boolean isAvailableFromValid() {
+        if (listingType == ListingType.FOR_RENT && availableFrom != null) {
+            return availableFrom.isAfter(LocalDate.now()) || availableFrom.isEqual(LocalDate.now());
+        }
+        return true;
+    }
+
+    @AssertTrue(message = "Deposit amount is required for rentals")
+    public boolean isDepositValidForRental() {
+        if (listingType == ListingType.FOR_RENT && price != null) {
+            return depositAmount != null && depositAmount.compareTo(BigDecimal.ZERO) > 0;
+        }
+        return true;
     }
 
     // ===== GETTERS AND SETTERS =====
@@ -475,10 +558,10 @@ public class RealEstateCreateDTO {
     public Integer getMinimumRentPeriod() { return minimumRentPeriod; }
     public void setMinimumRentPeriod(Integer minimumRentPeriod) { this.minimumRentPeriod = minimumRentPeriod; }
 
-    public List<String> getFeatures() { return features; }
-    public void setFeatures(List<String> features) { this.features = features; }
+    public List<String> getFeatureCodes() { return featureCodes; }
+	public void setFeatureCodes(List<String> featureCodes) { this.featureCodes = featureCodes; }
 
-    public List<String> getImages() { return images; }
+	public List<String> getImages() { return images; }
     public void setImages(List<String> images) { this.images = images; }
 
     public Boolean getIsActive() { return isActive; }
@@ -495,4 +578,60 @@ public class RealEstateCreateDTO {
 
 	public Set<WaterSourceType> getWaterSources() { return waterSources; }
 	public void setWaterSources(Set<WaterSourceType> waterSources) { this.waterSources = waterSources; }
+
+	public String getOtherWaterSourceDescription() {
+		return otherWaterSourceDescription;
+	}
+
+	public void setOtherWaterSourceDescription(String otherWaterSourceDescription) {
+		this.otherWaterSourceDescription = otherWaterSourceDescription;
+	}
+
+	public BigDecimal getTerraceSizeSqMt() {
+		return terraceSizeSqMt;
+	}
+
+	public void setTerraceSizeSqMt(BigDecimal terraceSizeSqMt) {
+		this.terraceSizeSqMt = terraceSizeSqMt;
+	}
+
+	public BigDecimal getBalconySizeSqMt() {
+		return balconySizeSqMt;
+	}
+
+	public void setBalconySizeSqMt(BigDecimal balconySizeSqMt) {
+		this.balconySizeSqMt = balconySizeSqMt;
+	}
+
+	public BigDecimal getLoggiaSizeSqMt() {
+		return loggiaSizeSqMt;
+	}
+
+	public void setLoggiaSizeSqMt(BigDecimal loggiaSizeSqMt) {
+		this.loggiaSizeSqMt = loggiaSizeSqMt;
+	}
+
+	public BigDecimal getBasementSizeSqMt() {
+		return basementSizeSqMt;
+	}
+
+	public void setBasementSizeSqMt(BigDecimal basementSizeSqMt) {
+		this.basementSizeSqMt = basementSizeSqMt;
+	}
+
+	public BigDecimal getAtticSizeSqMt() {
+		return atticSizeSqMt;
+	}
+
+	public void setAtticSizeSqMt(BigDecimal atticSizeSqMt) {
+		this.atticSizeSqMt = atticSizeSqMt;
+	}
+
+	public BigDecimal getPlotSizeSqMt() {
+		return plotSizeSqMt;
+	}
+
+	public void setPlotSizeSqMt(BigDecimal plotSizeSqMt) {
+		this.plotSizeSqMt = plotSizeSqMt;
+	}
 }

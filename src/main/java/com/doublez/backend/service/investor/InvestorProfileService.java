@@ -14,9 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import com.doublez.backend.dto.investor.InvestorProfileDTO;
 import com.doublez.backend.dto.realestate.RealEstateResponseDTO;
-import com.doublez.backend.dto.user.UserDTO;
 import com.doublez.backend.entity.profile.InvestorProfile;
 import com.doublez.backend.entity.user.User;
 import com.doublez.backend.enums.property.PropertyType;
@@ -51,68 +49,68 @@ public class InvestorProfileService {
     /**
      * Get investor profile for a user
      */
-    public InvestorProfileDTO getInvestorProfile(Long userId) {
-        logger.info("🔍 Fetching investor profile for user ID: {}", userId);
-        
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
-
-        validateUserIsInvestor(user);
-
-        if (user.getInvestorProfile() == null) {
-            logger.warn("⚠️ No investor profile found for user: {}", userId);
-            throw new ResourceNotFoundException("Investor profile not found");
-        }
-
-        return userMapper.toInvestorProfileDTO(user.getInvestorProfile());
-    }
+//    public InvestorProfileDTO getInvestorProfile(Long userId) {
+//        logger.info("🔍 Fetching investor profile for user ID: {}", userId);
+//        
+//        User user = userRepository.findById(userId)
+//                .orElseThrow(() -> new UserNotFoundException(userId));
+//
+//        validateUserIsInvestor(user);
+//
+//        if (user.getInvestorProfile() == null) {
+//            logger.warn("⚠️ No investor profile found for user: {}", userId);
+//            throw new ResourceNotFoundException("Investor profile not found");
+//        }
+//
+//        return userMapper.toInvestorProfileDTO(user.getInvestorProfile());
+//    }
 
     /**
      * Create or update investor profile
      */
-    public UserDTO createOrUpdateInvestorProfile(Long userId, InvestorProfileDTO profileDto) {
-        logger.info("💼 Creating/updating investor profile for user ID: {}", userId);
-        
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
-
-        validateUserIsInvestor(user);
-
-        InvestorProfile investorProfile = user.getOrCreateInvestorProfile();
-        userMapper.updateInvestorProfileFromDTO(profileDto, investorProfile);
-        user.setInvestorProfile(investorProfile);
-
-        User updatedUser = userRepository.save(user);
-        logger.info("✅ Investor profile saved successfully for user: {}", userId);
-        
-        return userMapper.toDTO(updatedUser);
-    }
+//    public UserDTO createOrUpdateInvestorProfile(Long userId, InvestorProfileDTO profileDto) {
+//        logger.info("💼 Creating/updating investor profile for user ID: {}", userId);
+//        
+//        User user = userRepository.findById(userId)
+//                .orElseThrow(() -> new UserNotFoundException(userId));
+//
+//        validateUserIsInvestor(user);
+//
+//        InvestorProfile investorProfile = user.getOrCreateInvestorProfile();
+//        userMapper.updateInvestorProfileFromDTO(profileDto, investorProfile);
+//        user.setInvestorProfile(investorProfile);
+//
+//        User updatedUser = userRepository.save(user);
+//        logger.info("✅ Investor profile saved successfully for user: {}", userId);
+//        
+//        return userMapper.toDTO(updatedUser);
+//    }
 
     /**
      * Create new investor profile (fails if already exists)
      */
-    public UserDTO createInvestorProfile(Long userId, InvestorProfileDTO profileDto) {
-        logger.info("🆕 Creating new investor profile for user ID: {}", userId);
-        
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
-
-        validateUserIsInvestor(user);
-
-        if (user.getInvestorProfile() != null) {
-            logger.warn("🚫 Investor profile already exists for user: {}", userId);
-            throw new IllegalOperationException("Investor profile already exists");
-        }
-
-        InvestorProfile investorProfile = new InvestorProfile();
-        userMapper.updateInvestorProfileFromDTO(profileDto, investorProfile);
-        user.setInvestorProfile(investorProfile);
-
-        User updatedUser = userRepository.save(user);
-        logger.info("✅ New investor profile created successfully for user: {}", userId);
-        
-        return userMapper.toDTO(updatedUser);
-    }
+//    public UserDTO createInvestorProfile(Long userId, InvestorProfileDTO profileDto) {
+//        logger.info("🆕 Creating new investor profile for user ID: {}", userId);
+//        
+//        User user = userRepository.findById(userId)
+//                .orElseThrow(() -> new UserNotFoundException(userId));
+//
+//        validateUserIsInvestor(user);
+//
+//        if (user.getInvestorProfile() != null) {
+//            logger.warn("🚫 Investor profile already exists for user: {}", userId);
+//            throw new IllegalOperationException("Investor profile already exists");
+//        }
+//
+//        InvestorProfile investorProfile = new InvestorProfile();
+//        userMapper.updateInvestorProfileFromDTO(profileDto, investorProfile);
+//        user.setInvestorProfile(investorProfile);
+//
+//        User updatedUser = userRepository.save(user);
+//        logger.info("✅ New investor profile created successfully for user: {}", userId);
+//        
+//        return userMapper.toDTO(updatedUser);
+//    }
 
     /**
      * Delete investor profile
@@ -136,31 +134,31 @@ public class InvestorProfileService {
     /**
      * Get investor dashboard with portfolio statistics
      */
-    public Map<String, Object> getInvestorDashboard(Long userId) {
-        logger.info("📊 Generating investor dashboard for user ID: {}", userId);
-        
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
-
-        validateUserIsInvestor(user);
-
-        Map<String, Object> dashboard = new HashMap<>();
-        dashboard.put("user", userMapper.toDTO(user));
-        
-        // Add investor profile if exists
-        if (user.getInvestorProfile() != null) {
-            dashboard.put("investorProfile", userMapper.toInvestorProfileDTO(user.getInvestorProfile()));
-        }
-        
-        // Add portfolio statistics
-        dashboard.put("portfolioStats", getPortfolioStatistics(userId));
-        
-        // Add recent activity or other investor-specific data
-        dashboard.put("recentActivity", getRecentActivity(userId));
-        
-        logger.info("✅ Dashboard generated successfully for investor: {}", userId);
-        return dashboard;
-    }
+//    public Map<String, Object> getInvestorDashboard(Long userId) {
+//        logger.info("📊 Generating investor dashboard for user ID: {}", userId);
+//        
+//        User user = userRepository.findById(userId)
+//                .orElseThrow(() -> new UserNotFoundException(userId));
+//
+//        validateUserIsInvestor(user);
+//
+//        Map<String, Object> dashboard = new HashMap<>();
+//        dashboard.put("user", userMapper.toDTO(user));
+//        
+//        // Add investor profile if exists
+//        if (user.getInvestorProfile() != null) {
+//            dashboard.put("investorProfile", userMapper.toInvestorProfileDTO(user.getInvestorProfile()));
+//        }
+//        
+//        // Add portfolio statistics
+//        dashboard.put("portfolioStats", getPortfolioStatistics(userId));
+//        
+//        // Add recent activity or other investor-specific data
+//        dashboard.put("recentActivity", getRecentActivity(userId));
+//        
+//        logger.info("✅ Dashboard generated successfully for investor: {}", userId);
+//        return dashboard;
+//    }
 
     /**
      * Get comprehensive portfolio statistics for investor

@@ -7,7 +7,7 @@ import java.util.List;
 import org.springframework.data.jpa.domain.Specification;
 
 import com.doublez.backend.entity.realestate.RealEstate;
-import com.doublez.backend.enums.ListingType;
+import com.doublez.backend.enums.property.ListingType;
 import com.doublez.backend.enums.property.PropertyType;
 
 import jakarta.persistence.criteria.Predicate;

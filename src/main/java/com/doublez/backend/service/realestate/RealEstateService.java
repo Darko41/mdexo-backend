@@ -34,10 +34,9 @@ import com.doublez.backend.dto.realestate.RealEstateUpdateDTO;
 import com.doublez.backend.entity.agency.Agency;
 import com.doublez.backend.entity.realestate.RealEstate;
 import com.doublez.backend.entity.user.User;
-import com.doublez.backend.entity.user.UserLimitation;
-import com.doublez.backend.enums.ListingType;
 import com.doublez.backend.enums.property.EnergyEfficiency;
 import com.doublez.backend.enums.property.FurnitureStatus;
+import com.doublez.backend.enums.property.ListingType;
 import com.doublez.backend.enums.property.PropertyType;
 import com.doublez.backend.exception.IllegalOperationException;
 import com.doublez.backend.exception.LimitationExceededException;
@@ -49,8 +48,8 @@ import com.doublez.backend.exception.image.ImageOperationException;
 import com.doublez.backend.exception.image.ImageValidationException;
 import com.doublez.backend.mapper.RealEstateMapper;
 import com.doublez.backend.repository.AgencyRepository;
-import com.doublez.backend.repository.RealEstateRepository;
 import com.doublez.backend.repository.UserRepository;
+import com.doublez.backend.repository.realestate.RealEstateRepository;
 import com.doublez.backend.service.user.UserService;
 
 import jakarta.annotation.Nullable;
@@ -265,111 +264,111 @@ public class RealEstateService {
     }
 
     // IMPROVED: CREATE METHOD with better furniture status handling
-    public RealEstateResponseDTO createRealEstate(RealEstateCreateDTO createDto, MultipartFile[] images) {
-        User currentUser = userService.getAuthenticatedUser();
-        User owner = resolveOwner(createDto.getOwnerId(), currentUser);
-
-        if (!authService.canCreateRealEstate(owner.getId())) {
-            throw new LimitationExceededException("Real estate limit exceeded");
-        }
-
-        // Validate DTO specific rules
-        validateRealEstateCreateDTO(createDto);
-
-        // Handle image upload if provided
-        List<String> imageUrls = Collections.emptyList();
-        if (images != null && images.length > 0) {
-            if (!authService.canUploadImages(owner.getId(), images.length)) {
-                throw new LimitationExceededException("Image upload limit exceeded");
-            }
-            imageUrls = realEstateImageService.uploadRealEstateImages(images);
-        }
-
-        // CREATE ENTITY USING MAPPER (it now handles all required fields)
-        RealEstate entity = realEstateMapper.toEntity(createDto, owner, imageUrls);
-        
-        // Handle furniture status mapping
-        mapFurnitureStatus(createDto.getFurnitureStatus(), entity);
-
-        // DEBUG: Log the values before saving
-        logger.info("🔍 Creating property with featuredAt: {}, isActive: {}, isFeatured: {}", 
-            entity.getFeaturedAt(), entity.getIsActive(), entity.getIsFeatured());
-
-        if (currentUser.isAgencyAdmin() && createDto.getAgencyId() != null) {
-            Agency agency = agencyRepository.findById(createDto.getAgencyId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Agency not found"));
-            
-            if (!agency.getAdmin().getId().equals(currentUser.getId())) {
-                throw new IllegalOperationException("You don't have permission to create properties for this agency");
-            }
-            
-            entity.setAgency(agency);
-            entity.setAgentName(createDto.getAgentName());
-            entity.setAgentPhone(createDto.getAgentPhone());
-            entity.setAgentLicense(createDto.getAgentLicense());
-        }
-
-        entity.setCreatedAt(LocalDateTime.now()); // FIXED: Use LocalDateTime instead of LocalDate
-
-        RealEstate saved = realEstateRepository.save(entity);
-        logger.info("✅ Real estate created successfully for user {} (ID: {})", owner.getEmail(), owner.getId());
-        return realEstateMapper.toResponseDto(saved);
-    }
+//    public RealEstateResponseDTO createRealEstate(RealEstateCreateDTO createDto, MultipartFile[] images) {
+//        User currentUser = userService.getAuthenticatedUser();
+//        User owner = resolveOwner(createDto.getOwnerId(), currentUser);
+//
+//        if (!authService.canCreateRealEstate(owner.getId())) {
+//            throw new LimitationExceededException("Real estate limit exceeded");
+//        }
+//
+//        // Validate DTO specific rules
+//        validateRealEstateCreateDTO(createDto);
+//
+//        // Handle image upload if provided
+//        List<String> imageUrls = Collections.emptyList();
+//        if (images != null && images.length > 0) {
+//            if (!authService.canUploadImages(owner.getId(), images.length)) {
+//                throw new LimitationExceededException("Image upload limit exceeded");
+//            }
+//            imageUrls = realEstateImageService.uploadRealEstateImages(images);
+//        }
+//
+//        // CREATE ENTITY USING MAPPER (it now handles all required fields)
+//        RealEstate entity = realEstateMapper.toEntity(createDto, owner, imageUrls);
+//        
+//        // Handle furniture status mapping
+//        mapFurnitureStatus(createDto.getFurnitureStatus(), entity);
+//
+//        // DEBUG: Log the values before saving
+//        logger.info("🔍 Creating property with featuredAt: {}, isActive: {}, isFeatured: {}", 
+//            entity.getFeaturedAt(), entity.getIsActive(), entity.getIsFeatured());
+//
+//        if (currentUser.isAgencyAdmin() && createDto.getAgencyId() != null) {
+//            Agency agency = agencyRepository.findById(createDto.getAgencyId())
+//                    .orElseThrow(() -> new ResourceNotFoundException("Agency not found"));
+//            
+//            if (!agency.getAdmin().getId().equals(currentUser.getId())) {
+//                throw new IllegalOperationException("You don't have permission to create properties for this agency");
+//            }
+//            
+//            entity.setAgency(agency);
+//            entity.setAgentName(createDto.getAgentName());
+//            entity.setAgentPhone(createDto.getAgentPhone());
+//            entity.setAgentLicense(createDto.getAgentLicense());
+//        }
+//
+//        entity.setCreatedAt(LocalDateTime.now()); // FIXED: Use LocalDateTime instead of LocalDate
+//
+//        RealEstate saved = realEstateRepository.save(entity);
+//        logger.info("✅ Real estate created successfully for user {} (ID: {})", owner.getEmail(), owner.getId());
+//        return realEstateMapper.toResponseDto(saved);
+//    }
 
     // NEW: Validation method for create DTO
-    private void validateRealEstateCreateDTO(RealEstateCreateDTO createDto) {
-        if (!createDto.hasValidOtherDescriptions()) {
-            throw new ValidationException("Other descriptions are required when selecting 'OTHER' for enum fields");
-        }
-        
-        if (!createDto.isSubtypeValid()) {
-            throw new ValidationException("Property subtype does not match property type");
-        }
-        
-        if (!createDto.areCommercialFieldsValid()) {
-            throw new ValidationException("Commercial fields can only be used with commercial property types");
-        }
-        
-        if (!createDto.areLandFieldsValid()) {
-            throw new ValidationException("Land fields can only be used with land property type");
-        }
-        
-        if (!createDto.isDiscountValid()) {
-            throw new ValidationException("Invalid discount configuration");
-        }
-    }
+//    private void validateRealEstateCreateDTO(RealEstateCreateDTO createDto) {
+//        if (!createDto.hasValidOtherDescriptions()) {
+//            throw new ValidationException("Other descriptions are required when selecting 'OTHER' for enum fields");
+//        }
+//        
+//        if (!createDto.isSubtypeValid()) {
+//            throw new ValidationException("Property subtype does not match property type");
+//        }
+//        
+//        if (!createDto.areCommercialFieldsValid()) {
+//            throw new ValidationException("Commercial fields can only be used with commercial property types");
+//        }
+//        
+//        if (!createDto.areLandFieldsValid()) {
+//            throw new ValidationException("Land fields can only be used with land property type");
+//        }
+//        
+//        if (!createDto.isDiscountValid()) {
+//            throw new ValidationException("Invalid discount configuration");
+//        }
+//    }
 
     // NEW: Map furniture status to entity fields
-    private void mapFurnitureStatus(FurnitureStatus furnitureStatus, RealEstate entity) {
-        if (furnitureStatus != null) {
-            switch (furnitureStatus) {
-                case FURNISHED:
-                    entity.setIsFurnished(true);
-                    entity.setIsSemiFurnished(false);
-                    break;
-                case SEMI_FURNISHED:
-                    entity.setIsFurnished(false);
-                    entity.setIsSemiFurnished(true);
-                    break;
-                case PARTIALLY_FURNISHED:
-                    entity.setIsFurnished(true);
-                    entity.setIsSemiFurnished(true);
-                    break;
-                case UNFURNISHED:
-                    entity.setIsFurnished(false);
-                    entity.setIsSemiFurnished(false);
-                    break;
-                default:
-                    entity.setIsFurnished(false);
-                    entity.setIsSemiFurnished(false);
-                    break;
-            }
-        } else {
-            // Default to unfurnished if not specified
-            entity.setIsFurnished(false);
-            entity.setIsSemiFurnished(false);
-        }
-    }
+//    private void mapFurnitureStatus(FurnitureStatus furnitureStatus, RealEstate entity) {
+//        if (furnitureStatus != null) {
+//            switch (furnitureStatus) {
+//                case FURNISHED:
+//                    entity.setIsFurnished(true);
+//                    entity.setIsSemiFurnished(false);
+//                    break;
+//                case SEMI_FURNISHED:
+//                    entity.setIsFurnished(false);
+//                    entity.setIsSemiFurnished(true);
+//                    break;
+//                case PARTIALLY_FURNISHED:
+//                    entity.setIsFurnished(true);
+//                    entity.setIsSemiFurnished(true);
+//                    break;
+//                case UNFURNISHED:
+//                    entity.setIsFurnished(false);
+//                    entity.setIsSemiFurnished(false);
+//                    break;
+//                default:
+//                    entity.setIsFurnished(false);
+//                    entity.setIsSemiFurnished(false);
+//                    break;
+//            }
+//        } else {
+//            // Default to unfurnished if not specified
+//            entity.setIsFurnished(false);
+//            entity.setIsSemiFurnished(false);
+//        }
+//    }
 
     private User resolveOwner(@Nullable Long ownerId, User currentUser) {
         // Default to current user if no override
@@ -386,144 +385,144 @@ public class RealEstateService {
     }
 
     // IMPROVED: METHOD FOR ADMIN with furniture status support
-    @PreAuthorize("hasRole('ADMIN') or hasRole('AGENCY_ADMIN')")
-    public RealEstateResponseDTO createRealEstateForUser(RealEstateCreateDTO createDto, MultipartFile[] images) {
-        User currentUser = userService.getAuthenticatedUser();
-
-        User owner = (createDto.getOwnerId() != null && isAdminOrAgent(currentUser))
-                ? userService.getUserEntityById(createDto.getOwnerId())
-                : currentUser;
-
-        if (!authService.canCreateRealEstate(owner.getId())) {
-            throw new LimitationExceededException("Real estate limit exceeded");
-        }
-
-        // Validate DTO
-        validateRealEstateCreateDTO(createDto);
-
-        // Handle image upload if provided
-        List<String> imageUrls = Collections.emptyList();
-        if (images != null && images.length > 0) {
-            if (!authService.canUploadImages(owner.getId(), images.length)) {
-                throw new LimitationExceededException("Image upload limit exceeded");
-            }
-            imageUrls = realEstateImageService.uploadRealEstateImages(images);
-        }
-
-        // Create entity
-        RealEstate entity = realEstateMapper.toEntity(createDto, owner, imageUrls);
-        
-        // Handle furniture status
-        mapFurnitureStatus(createDto.getFurnitureStatus(), entity);
-        
-        // Set required fields
-        if (entity.getFeaturedAt() == null) {
-            // Only set featuredAt if the property is being featured
-            entity.setFeaturedAt(Boolean.TRUE.equals(createDto.getIsFeatured()) ? LocalDateTime.now() : null);
-        }
-        if (entity.getIsActive() == null) {
-            entity.setIsActive(createDto.getIsActive() != null ? createDto.getIsActive() : true);
-        }
-        if (entity.getIsFeatured() == null) {
-            entity.setIsFeatured(createDto.getIsFeatured() != null ? createDto.getIsFeatured() : false);
-        }
-        // featuredUntil is typically set by admin/feature system, not during creation
-//        if (entity.getFeaturedUntil() == null && createDto.getFeaturedUntil() != null) {
-//            entity.setFeaturedUntil(createDto.getFeaturedUntil());
+//    @PreAuthorize("hasRole('ADMIN') or hasRole('AGENCY_ADMIN')")
+//    public RealEstateResponseDTO createRealEstateForUser(RealEstateCreateDTO createDto, MultipartFile[] images) {
+//        User currentUser = userService.getAuthenticatedUser();
+//
+//        User owner = (createDto.getOwnerId() != null && isAdminOrAgent(currentUser))
+//                ? userService.getUserEntityById(createDto.getOwnerId())
+//                : currentUser;
+//
+//        if (!authService.canCreateRealEstate(owner.getId())) {
+//            throw new LimitationExceededException("Real estate limit exceeded");
 //        }
-
-        if (currentUser.isAgencyAdmin() && createDto.getAgencyId() != null) {
-            Agency agency = agencyRepository.findById(createDto.getAgencyId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Agency not found"));
-            
-            // Verify user owns this agency
-            if (!agency.getAdmin().getId().equals(currentUser.getId())) {
-                throw new IllegalOperationException("You don't have permission to create properties for this agency");
-            }
-            
-            entity.setAgency(agency);
-            entity.setAgentName(createDto.getAgentName());
-            entity.setAgentPhone(createDto.getAgentPhone());
-            entity.setAgentLicense(createDto.getAgentLicense());
-        }
-
-        entity.setCreatedAt(LocalDateTime.now()); // FIXED: Use LocalDateTime
-
-        RealEstate saved = realEstateRepository.save(entity);
-
-        logger.info("✅ Real estate created by admin/agent for user {} (ID: {})", owner.getEmail(), owner.getId());
-        return realEstateMapper.toResponseDto(saved);
-    }
+//
+//        // Validate DTO
+//        validateRealEstateCreateDTO(createDto);
+//
+//        // Handle image upload if provided
+//        List<String> imageUrls = Collections.emptyList();
+//        if (images != null && images.length > 0) {
+//            if (!authService.canUploadImages(owner.getId(), images.length)) {
+//                throw new LimitationExceededException("Image upload limit exceeded");
+//            }
+//            imageUrls = realEstateImageService.uploadRealEstateImages(images);
+//        }
+//
+//        // Create entity
+//        RealEstate entity = realEstateMapper.toEntity(createDto, owner, imageUrls);
+//        
+//        // Handle furniture status
+//        mapFurnitureStatus(createDto.getFurnitureStatus(), entity);
+//        
+//        // Set required fields
+//        if (entity.getFeaturedAt() == null) {
+//            // Only set featuredAt if the property is being featured
+//            entity.setFeaturedAt(Boolean.TRUE.equals(createDto.getIsFeatured()) ? LocalDateTime.now() : null);
+//        }
+//        if (entity.getIsActive() == null) {
+//            entity.setIsActive(createDto.getIsActive() != null ? createDto.getIsActive() : true);
+//        }
+//        if (entity.getIsFeatured() == null) {
+//            entity.setIsFeatured(createDto.getIsFeatured() != null ? createDto.getIsFeatured() : false);
+//        }
+//        // featuredUntil is typically set by admin/feature system, not during creation
+////        if (entity.getFeaturedUntil() == null && createDto.getFeaturedUntil() != null) {
+////            entity.setFeaturedUntil(createDto.getFeaturedUntil());
+////        }
+//
+//        if (currentUser.isAgencyAdmin() && createDto.getAgencyId() != null) {
+//            Agency agency = agencyRepository.findById(createDto.getAgencyId())
+//                    .orElseThrow(() -> new ResourceNotFoundException("Agency not found"));
+//            
+//            // Verify user owns this agency
+//            if (!agency.getAdmin().getId().equals(currentUser.getId())) {
+//                throw new IllegalOperationException("You don't have permission to create properties for this agency");
+//            }
+//            
+//            entity.setAgency(agency);
+//            entity.setAgentName(createDto.getAgentName());
+//            entity.setAgentPhone(createDto.getAgentPhone());
+//            entity.setAgentLicense(createDto.getAgentLicense());
+//        }
+//
+//        entity.setCreatedAt(LocalDateTime.now()); // FIXED: Use LocalDateTime
+//
+//        RealEstate saved = realEstateRepository.save(entity);
+//
+//        logger.info("✅ Real estate created by admin/agent for user {} (ID: {})", owner.getEmail(), owner.getId());
+//        return realEstateMapper.toResponseDto(saved);
+//    }
 
     private boolean isAdminOrAgent(User user) {
         return user.getRoles().stream()
                 .anyMatch(role -> "ROLE_ADMIN".equals(role.getName()) || "ROLE_AGENCY_ADMIN".equals(role.getName()));
     }
 
-    @Transactional
-    public RealEstateResponseDTO updateRealEstate(Long propertyId, RealEstateUpdateDTO updateDto,
-            MultipartFile[] newImages, List<String> imagesToRemove) {
-        RealEstate realEstate = realEstateRepository.findById(propertyId)
-                .orElseThrow(() -> new ResourceNotFoundException("Real estate not found"));
-
-        // Validate update DTO
-        validateRealEstateUpdateDTO(updateDto);
-
-        // Handle image removal first
-        if (imagesToRemove != null && !imagesToRemove.isEmpty()) {
-            removeImagesFromProperty(propertyId, imagesToRemove);
-        }
-
-        // Handle new image uploads (add to existing)
-        if (newImages != null && newImages.length > 0) {
-            addImagesToProperty(propertyId, newImages);
-        }
-
-        // Handle owner update
-        if (updateDto.getOwnerId() != null) {
-            User owner = userRepository.findById(updateDto.getOwnerId()).orElseThrow(
-                    () -> new ResourceNotFoundException("User not found with id: " + updateDto.getOwnerId()));
-            realEstate.setOwner(owner);
-        }
-
-        // Update other fields
-        realEstateMapper.updateEntity(updateDto, realEstate);
-        
-        // Handle furniture status update
-        if (updateDto.getFurnitureStatus() != null) {
-            mapFurnitureStatus(updateDto.getFurnitureStatus(), realEstate);
-        }
-
-        realEstate.setUpdatedAt(LocalDateTime.now()); // FIXED: Use LocalDateTime
-
-        RealEstate updated = realEstateRepository.save(realEstate);
-        return realEstateMapper.toResponseDto(updated);
-    }
+//    @Transactional
+//    public RealEstateResponseDTO updateRealEstate(Long propertyId, RealEstateUpdateDTO updateDto,
+//            MultipartFile[] newImages, List<String> imagesToRemove) {
+//        RealEstate realEstate = realEstateRepository.findById(propertyId)
+//                .orElseThrow(() -> new ResourceNotFoundException("Real estate not found"));
+//
+//        // Validate update DTO
+//        validateRealEstateUpdateDTO(updateDto);
+//
+//        // Handle image removal first
+//        if (imagesToRemove != null && !imagesToRemove.isEmpty()) {
+//            removeImagesFromProperty(propertyId, imagesToRemove);
+//        }
+//
+//        // Handle new image uploads (add to existing)
+//        if (newImages != null && newImages.length > 0) {
+//            addImagesToProperty(propertyId, newImages);
+//        }
+//
+//        // Handle owner update
+//        if (updateDto.getOwnerId() != null) {
+//            User owner = userRepository.findById(updateDto.getOwnerId()).orElseThrow(
+//                    () -> new ResourceNotFoundException("User not found with id: " + updateDto.getOwnerId()));
+//            realEstate.setOwner(owner);
+//        }
+//
+//        // Update other fields
+//        realEstateMapper.updateEntity(updateDto, realEstate);
+//        
+//        // Handle furniture status update
+//        if (updateDto.getFurnitureStatus() != null) {
+//            mapFurnitureStatus(updateDto.getFurnitureStatus(), realEstate);
+//        }
+//
+//        realEstate.setUpdatedAt(LocalDateTime.now()); // FIXED: Use LocalDateTime
+//
+//        RealEstate updated = realEstateRepository.save(realEstate);
+//        return realEstateMapper.toResponseDto(updated);
+//    }
 
     // Validation for update DTO
-    private void validateRealEstateUpdateDTO(RealEstateUpdateDTO updateDto) {
-        if (!updateDto.hasValidOtherDescriptions()) {
-            throw new ValidationException("Other descriptions are required when selecting 'OTHER' for enum fields");
-        }
-        
-        if (!updateDto.isSubtypeValid()) {
-            throw new ValidationException("Property subtype does not match property type");
-        }
-        
-        if (!updateDto.isDiscountValid()) {
-            throw new ValidationException("Invalid discount configuration");
-        }
-        
-        if (!updateDto.isDiscountEndDateValid()) {
-            throw new ValidationException("Discount end date must be in the future");
-        }
-    }
+//    private void validateRealEstateUpdateDTO(RealEstateUpdateDTO updateDto) {
+//        if (!updateDto.hasValidOtherDescriptions()) {
+//            throw new ValidationException("Other descriptions are required when selecting 'OTHER' for enum fields");
+//        }
+//        
+//        if (!updateDto.isSubtypeValid()) {
+//            throw new ValidationException("Property subtype does not match property type");
+//        }
+//        
+//        if (!updateDto.isDiscountValid()) {
+//            throw new ValidationException("Invalid discount configuration");
+//        }
+//        
+//        if (!updateDto.isDiscountEndDateValid()) {
+//            throw new ValidationException("Discount end date must be in the future");
+//        }
+//    }
 
     // Method for backward compatibility
-    @Transactional
-    public RealEstateResponseDTO updateRealEstate(Long propertyId, RealEstateUpdateDTO updateDto) {
-        return updateRealEstate(propertyId, updateDto, null, null);
-    }
+//    @Transactional
+//    public RealEstateResponseDTO updateRealEstate(Long propertyId, RealEstateUpdateDTO updateDto) {
+//        return updateRealEstate(propertyId, updateDto, null, null);
+//    }
 
     //  Bulk update method
     @Transactional
@@ -614,84 +613,84 @@ public class RealEstateService {
         return entity;
     }
 
-    public RealEstateResponseDTO getRealEstateById(Long propertyId) {
-        RealEstate realEstate = realEstateRepository.findById(propertyId)
-                .orElseThrow(() -> new ResourceNotFoundException("Real estate not found with id: " + propertyId));
-        
-        // Increment view count
-        realEstate.incrementViewCount();
-        realEstateRepository.save(realEstate);
-        
-        return realEstateMapper.toResponseDto(realEstate);
-    }
+//    public RealEstateResponseDTO getRealEstateById(Long propertyId) {
+//        RealEstate realEstate = realEstateRepository.findById(propertyId)
+//                .orElseThrow(() -> new ResourceNotFoundException("Real estate not found with id: " + propertyId));
+//        
+//        // Increment view count
+//        realEstate.incrementViewCount();
+//        realEstateRepository.save(realEstate);
+//        
+//        return realEstateMapper.toResponseDto(realEstate);
+//    }
 
     // NEW: Get real estate with detailed analytics
-    public RealEstateResponseDTO getRealEstateWithAnalytics(Long propertyId) {
-        RealEstate realEstate = realEstateRepository.findById(propertyId)
-                .orElseThrow(() -> new ResourceNotFoundException("Real estate not found with id: " + propertyId));
-        
-        // Increment view count for detailed views
-        realEstate.incrementViewCount();
-        realEstateRepository.save(realEstate);
-        
-        return realEstateMapper.toResponseDto(realEstate);
-    }
+//    public RealEstateResponseDTO getRealEstateWithAnalytics(Long propertyId) {
+//        RealEstate realEstate = realEstateRepository.findById(propertyId)
+//                .orElseThrow(() -> new ResourceNotFoundException("Real estate not found with id: " + propertyId));
+//        
+//        // Increment view count for detailed views
+//        realEstate.incrementViewCount();
+//        realEstateRepository.save(realEstate);
+//        
+//        return realEstateMapper.toResponseDto(realEstate);
+//    }
 
     // ADD IMAGES METHOD WITH USAGE TRACKING (unchanged)
-    public RealEstate addImagesToProperty(Long propertyId, MultipartFile[] files) {
-        RealEstate property = realEstateRepository.findById(propertyId)
-                .orElseThrow(() -> new ResourceNotFoundException("Property not found"));
+//    public RealEstate addImagesToProperty(Long propertyId, MultipartFile[] files) {
+//        RealEstate property = realEstateRepository.findById(propertyId)
+//                .orElseThrow(() -> new ResourceNotFoundException("Property not found"));
+//
+//        User owner = property.getOwner();
+//
+//        if (files != null && files.length > 0) {
+//            if (!authService.canUploadImages(owner.getId(), files.length)) {
+//                throw new LimitationExceededException("Image upload limit exceeded");
+//            }
+//
+//            UserLimitation limits = authService.getEffectiveLimitations(owner);
+//            int currentImageCount = property.getImages() != null ? property.getImages().size() : 0;
+//            if (currentImageCount + files.length > limits.getMaxImagesPerListing()) {
+//                throw new LimitationExceededException("Per-listing image limit exceeded");
+//            }
+//        }
+//
+//        List<String> imageUrls = realEstateImageService.uploadRealEstateImages(files);
+//        property.getImages().addAll(imageUrls);
+//
+//        logger.info("✅ {} images added to property {} for user {}", files.length, propertyId, owner.getId());
+//        return realEstateRepository.save(property);
+//    }
 
-        User owner = property.getOwner();
-
-        if (files != null && files.length > 0) {
-            if (!authService.canUploadImages(owner.getId(), files.length)) {
-                throw new LimitationExceededException("Image upload limit exceeded");
-            }
-
-            UserLimitation limits = authService.getEffectiveLimitations(owner);
-            int currentImageCount = property.getImages() != null ? property.getImages().size() : 0;
-            if (currentImageCount + files.length > limits.getMaxImagesPerListing()) {
-                throw new LimitationExceededException("Per-listing image limit exceeded");
-            }
-        }
-
-        List<String> imageUrls = realEstateImageService.uploadRealEstateImages(files);
-        property.getImages().addAll(imageUrls);
-
-        logger.info("✅ {} images added to property {} for user {}", files.length, propertyId, owner.getId());
-        return realEstateRepository.save(property);
-    }
-
-    public List<String> getAllUniqueFeatures() {
-        List<RealEstate> allRealEstates = realEstateRepository.findAll();
-        Set<String> uniqueFeatures = new TreeSet<>();
-
-        for (RealEstate realEstate : allRealEstates) {
-            if (realEstate.getFeatures() != null) {
-                uniqueFeatures.addAll(realEstate.getFeatures());
-            }
-        }
-
-        return new ArrayList<>(uniqueFeatures);
-    }
+//    public List<String> getAllUniqueFeatures() {
+//        List<RealEstate> allRealEstates = realEstateRepository.findAll();
+//        Set<String> uniqueFeatures = new TreeSet<>();
+//
+//        for (RealEstate realEstate : allRealEstates) {
+//            if (realEstate.getFeatures() != null) {
+//                uniqueFeatures.addAll(realEstate.getFeatures());
+//            }
+//        }
+//
+//        return new ArrayList<>(uniqueFeatures);
+//    }
 
     // NEW: Get features by property type
-    public Map<PropertyType, List<String>> getUniqueFeaturesByPropertyType() {
-        List<RealEstate> allRealEstates = realEstateRepository.findAll();
-        Map<PropertyType, Set<String>> featuresByType = new HashMap<>();
-
-        for (RealEstate realEstate : allRealEstates) {
-            if (realEstate.getFeatures() != null) {
-                featuresByType
-                    .computeIfAbsent(realEstate.getPropertyType(), k -> new TreeSet<>())
-                    .addAll(realEstate.getFeatures());
-            }
-        }
-
-        return featuresByType.entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, e -> new ArrayList<>(e.getValue())));
-    }
+//    public Map<PropertyType, List<String>> getUniqueFeaturesByPropertyType() {
+//        List<RealEstate> allRealEstates = realEstateRepository.findAll();
+//        Map<PropertyType, Set<String>> featuresByType = new HashMap<>();
+//
+//        for (RealEstate realEstate : allRealEstates) {
+//            if (realEstate.getFeatures() != null) {
+//                featuresByType
+//                    .computeIfAbsent(realEstate.getPropertyType(), k -> new TreeSet<>())
+//                    .addAll(realEstate.getFeatures());
+//            }
+//        }
+//
+//        return featuresByType.entrySet().stream()
+//                .collect(Collectors.toMap(Map.Entry::getKey, e -> new ArrayList<>(e.getValue())));
+//    }
 
     public Page<RealEstateResponseDTO> getPropertiesByOwner(Long ownerId, Pageable pageable) {
         Specification<RealEstate> spec = (root, query, cb) -> cb.equal(root.get("owner").get("id"), ownerId);
@@ -717,84 +716,84 @@ public class RealEstateService {
     }
 
     // REPLACE IMAGES METHOD WITH USAGE TRACKING (unchanged)
-    @Transactional
-    public RealEstate replacePropertyImages(Long propertyId, MultipartFile[] newImages) {
-        User currentUser = userService.getAuthenticatedUser();
-
-        logger.info("🔐 User {} attempting to replace all images for property {}", currentUser.getId(), propertyId);
-
-        try {
-            RealEstate property = realEstateRepository.findById(propertyId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Property not found"));
-
-            User owner = property.getOwner();
-
-            // Safety check - don't allow replacing with empty array
-            if (newImages != null && newImages.length == 0) {
-                logger.warn("⚠️ User {} attempted to replace all images with empty array for property {}",
-                        currentUser.getId(), propertyId);
-                throw new ImageValidationException(
-                        "Cannot replace images with empty array. Use remove operation instead.");
-            }
-
-            if (newImages != null && newImages.length > 0) {
-                if (!authService.canUploadImages(owner.getId(), newImages.length)) {
-                    throw new LimitationExceededException("Image upload limit exceeded");
-                }
-
-                UserLimitation limits = authService.getEffectiveLimitations(owner);
-                if (newImages.length > limits.getMaxImagesPerListing()) {
-                    throw new LimitationExceededException("Per-listing image limit exceeded for replacement",
-                            (long) newImages.length, limits.getMaxImagesPerListing().longValue());
-                }
-            }
-
-            // 1. Delete old images from S3
-            List<String> oldImageUrls = property.getImages();
-            if (oldImageUrls != null && !oldImageUrls.isEmpty()) {
-                logger.info("🗑️ User {} deleting {} old images from S3 for property {}", currentUser.getId(),
-                        oldImageUrls.size(), propertyId);
-                try {
-                    realEstateImageService.deleteImages(oldImageUrls);
-                } catch (Exception e) {
-                    logger.error("❌ User {} failed to delete old images from S3 for property {}: {}",
-                            currentUser.getId(), propertyId, e.getMessage());
-                    throw new ImageOperationException("Failed to delete old images from storage", e);
-                }
-            }
-
-            // 2. Upload new images
-            List<String> newImageUrls = Collections.emptyList();
-            if (newImages != null && newImages.length > 0) {
-                try {
-                    newImageUrls = realEstateImageService.uploadRealEstateImages(newImages);
-                    logger.info("📤 User {} uploaded {} new images to S3 for property {}", currentUser.getId(),
-                            newImageUrls.size(), propertyId);
-                } catch (Exception e) {
-                    logger.error("❌ User {} failed to upload new images for property {}: {}", currentUser.getId(),
-                            propertyId, e.getMessage());
-                    throw new ImageOperationException("Failed to upload new images to storage", e);
-                }
-            }
-
-            // 3. Update property with new image URLs
-            property.setImages(newImageUrls);
-            property.setUpdatedAt(LocalDateTime.now()); // FIXED: Use LocalDateTime
-
-            RealEstate saved = realEstateRepository.save(property);
-            logger.info("🔐 User {} successfully replaced all images for property {}", currentUser.getId(), propertyId);
-            return saved;
-
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (ImageValidationException | ImageOperationException e) {
-            throw e;
-        } catch (Exception e) {
-            logger.error("❌ User {} - unexpected error replacing images for property {}: {}", currentUser.getId(),
-                    propertyId, e.getMessage(), e);
-            throw new RuntimeException("Failed to replace property images", e);
-        }
-    }
+//    @Transactional
+//    public RealEstate replacePropertyImages(Long propertyId, MultipartFile[] newImages) {
+//        User currentUser = userService.getAuthenticatedUser();
+//
+//        logger.info("🔐 User {} attempting to replace all images for property {}", currentUser.getId(), propertyId);
+//
+//        try {
+//            RealEstate property = realEstateRepository.findById(propertyId)
+//                    .orElseThrow(() -> new ResourceNotFoundException("Property not found"));
+//
+//            User owner = property.getOwner();
+//
+//            // Safety check - don't allow replacing with empty array
+//            if (newImages != null && newImages.length == 0) {
+//                logger.warn("⚠️ User {} attempted to replace all images with empty array for property {}",
+//                        currentUser.getId(), propertyId);
+//                throw new ImageValidationException(
+//                        "Cannot replace images with empty array. Use remove operation instead.");
+//            }
+//
+//            if (newImages != null && newImages.length > 0) {
+//                if (!authService.canUploadImages(owner.getId(), newImages.length)) {
+//                    throw new LimitationExceededException("Image upload limit exceeded");
+//                }
+//
+//                UserLimitation limits = authService.getEffectiveLimitations(owner);
+//                if (newImages.length > limits.getMaxImagesPerListing()) {
+//                    throw new LimitationExceededException("Per-listing image limit exceeded for replacement",
+//                            (long) newImages.length, limits.getMaxImagesPerListing().longValue());
+//                }
+//            }
+//
+//            // 1. Delete old images from S3
+//            List<String> oldImageUrls = property.getImages();
+//            if (oldImageUrls != null && !oldImageUrls.isEmpty()) {
+//                logger.info("🗑️ User {} deleting {} old images from S3 for property {}", currentUser.getId(),
+//                        oldImageUrls.size(), propertyId);
+//                try {
+//                    realEstateImageService.deleteImages(oldImageUrls);
+//                } catch (Exception e) {
+//                    logger.error("❌ User {} failed to delete old images from S3 for property {}: {}",
+//                            currentUser.getId(), propertyId, e.getMessage());
+//                    throw new ImageOperationException("Failed to delete old images from storage", e);
+//                }
+//            }
+//
+//            // 2. Upload new images
+//            List<String> newImageUrls = Collections.emptyList();
+//            if (newImages != null && newImages.length > 0) {
+//                try {
+//                    newImageUrls = realEstateImageService.uploadRealEstateImages(newImages);
+//                    logger.info("📤 User {} uploaded {} new images to S3 for property {}", currentUser.getId(),
+//                            newImageUrls.size(), propertyId);
+//                } catch (Exception e) {
+//                    logger.error("❌ User {} failed to upload new images for property {}: {}", currentUser.getId(),
+//                            propertyId, e.getMessage());
+//                    throw new ImageOperationException("Failed to upload new images to storage", e);
+//                }
+//            }
+//
+//            // 3. Update property with new image URLs
+//            property.setImages(newImageUrls);
+//            property.setUpdatedAt(LocalDateTime.now()); // FIXED: Use LocalDateTime
+//
+//            RealEstate saved = realEstateRepository.save(property);
+//            logger.info("🔐 User {} successfully replaced all images for property {}", currentUser.getId(), propertyId);
+//            return saved;
+//
+//        } catch (ResourceNotFoundException e) {
+//            throw e;
+//        } catch (ImageValidationException | ImageOperationException e) {
+//            throw e;
+//        } catch (Exception e) {
+//            logger.error("❌ User {} - unexpected error replacing images for property {}: {}", currentUser.getId(),
+//                    propertyId, e.getMessage(), e);
+//            throw new RuntimeException("Failed to replace property images", e);
+//        }
+//    }
 
     @Transactional
     public RealEstate removeImagesFromProperty(Long propertyId, List<String> imageUrlsToRemove) {
@@ -851,10 +850,10 @@ public class RealEstateService {
         return property;
     }
     
-    private UserLimitation getLimitationsForUser(User user) {
-        // Use the auth service which already has this logic
-        return authService.getEffectiveLimitations(user);
-    }
+//    private UserLimitation getLimitationsForUser(User user) {
+//        // Use the auth service which already has this logic
+//        return authService.getEffectiveLimitations(user);
+//    }
     
     // Get agency properties
     public List<RealEstateResponseDTO> getAgencyProperties(Long agencyId) {
@@ -932,52 +931,52 @@ public class RealEstateService {
     }
     
     // Investor-specific property creation
-    public RealEstateResponseDTO createInvestmentProperty(RealEstateCreateDTO createDto, MultipartFile[] images) {
-        User currentUser = userService.getAuthenticatedUser();
-        
-        // Verify user is an investor
-        if (!currentUser.isInvestor()) {
-            throw new IllegalOperationException("Only investors can create investment properties");
-        }
-
-        // Check permission and limits
-        if (!authService.hasRealEstateCreateAccess()) {
-            throw new IllegalOperationException("You don't have permission to create properties");
-        }
-
-        if (!authService.canCreateRealEstate(currentUser.getId())) {
-            throw new LimitationExceededException("Real estate limit exceeded");
-        }
-
-        // Validate DTO
-        validateRealEstateCreateDTO(createDto);
-
-        // Handle images
-        List<String> imageUrls = Collections.emptyList();
-        if (images != null && images.length > 0) {
-            if (!authService.canUploadImages(currentUser.getId(), images.length)) {
-                throw new LimitationExceededException("Image upload limit exceeded");
-            }
-            imageUrls = realEstateImageService.uploadRealEstateImages(images);
-        }
-
-        // Create property with investor context
-        RealEstate entity = realEstateMapper.toEntity(createDto, currentUser, imageUrls);
-        
-        // Handle furniture status
-        mapFurnitureStatus(createDto.getFurnitureStatus(), entity);
-        
-        entity.setCreatedAt(LocalDateTime.now()); // FIXED: Use LocalDateTime
-        entity.setIsActive(true);
-
-        // Mark as investment property (you might want to add this field to RealEstate entity)
-        // entity.setInvestmentProperty(true);
-
-        RealEstate saved = realEstateRepository.save(entity);
-        logger.info("✅ Investment property created for investor: {} (ID: {})", currentUser.getEmail(), currentUser.getId());
-        
-        return realEstateMapper.toResponseDto(saved);
-    }
+//    public RealEstateResponseDTO createInvestmentProperty(RealEstateCreateDTO createDto, MultipartFile[] images) {
+//        User currentUser = userService.getAuthenticatedUser();
+//        
+//        // Verify user is an investor
+//        if (!currentUser.isInvestor()) {
+//            throw new IllegalOperationException("Only investors can create investment properties");
+//        }
+//
+//        // Check permission and limits
+//        if (!authService.hasRealEstateCreateAccess()) {
+//            throw new IllegalOperationException("You don't have permission to create properties");
+//        }
+//
+//        if (!authService.canCreateRealEstate(currentUser.getId())) {
+//            throw new LimitationExceededException("Real estate limit exceeded");
+//        }
+//
+//        // Validate DTO
+//        validateRealEstateCreateDTO(createDto);
+//
+//        // Handle images
+//        List<String> imageUrls = Collections.emptyList();
+//        if (images != null && images.length > 0) {
+//            if (!authService.canUploadImages(currentUser.getId(), images.length)) {
+//                throw new LimitationExceededException("Image upload limit exceeded");
+//            }
+//            imageUrls = realEstateImageService.uploadRealEstateImages(images);
+//        }
+//
+//        // Create property with investor context
+//        RealEstate entity = realEstateMapper.toEntity(createDto, currentUser, imageUrls);
+//        
+//        // Handle furniture status
+//        mapFurnitureStatus(createDto.getFurnitureStatus(), entity);
+//        
+//        entity.setCreatedAt(LocalDateTime.now()); // FIXED: Use LocalDateTime
+//        entity.setIsActive(true);
+//
+//        // Mark as investment property (you might want to add this field to RealEstate entity)
+//        // entity.setInvestmentProperty(true);
+//
+//        RealEstate saved = realEstateRepository.save(entity);
+//        logger.info("✅ Investment property created for investor: {} (ID: {})", currentUser.getEmail(), currentUser.getId());
+//        
+//        return realEstateMapper.toResponseDto(saved);
+//    }
     
     // Get investor properties
     public List<RealEstateResponseDTO> getInvestorProperties(Long investorId) {
@@ -1099,16 +1098,16 @@ public class RealEstateService {
     }
 
     // Increment contact count
-    @Transactional
-    public void incrementContactCount(Long propertyId) {
-        RealEstate property = realEstateRepository.findById(propertyId)
-                .orElseThrow(() -> new ResourceNotFoundException("Property not found"));
-        
-        property.incrementContactCount();
-        realEstateRepository.save(property);
-        
-        logger.info("✅ Contact count incremented for property {}", propertyId);
-    }
+//    @Transactional
+//    public void incrementContactCount(Long propertyId) {
+//        RealEstate property = realEstateRepository.findById(propertyId)
+//                .orElseThrow(() -> new ResourceNotFoundException("Property not found"));
+//        
+//        property.incrementContactCount();
+//        realEstateRepository.save(property);
+//        
+//        logger.info("✅ Contact count incremented for property {}", propertyId);
+//    }
 
     // Get popular properties
     public List<RealEstateResponseDTO> getPopularProperties(int limit) {

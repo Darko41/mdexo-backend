@@ -32,8 +32,8 @@ import com.doublez.backend.dto.realestate.RealEstateUpdateDTO;
 import com.doublez.backend.dto.realestate.RemoveImagesRequest;
 import com.doublez.backend.entity.realestate.RealEstate;
 import com.doublez.backend.entity.user.User;
-import com.doublez.backend.enums.ListingType;
 import com.doublez.backend.enums.property.EnergyEfficiency;
+import com.doublez.backend.enums.property.ListingType;
 import com.doublez.backend.enums.property.PropertyType;
 import com.doublez.backend.exception.IllegalOperationException;
 import com.doublez.backend.exception.LimitationExceededException;
@@ -105,88 +105,88 @@ public class RealEstateApiController {
     /**
      * Public get by ID - accessible without authentication
      */
-    @GetMapping("/{propertyId}")
-    @PreAuthorize("permitAll()")
-    public ResponseEntity<?> getRealEstateById(@PathVariable Long propertyId) {
-        try {
-            logger.info("🔍 Public fetching property: {}", propertyId);
-
-            RealEstateResponseDTO property = realEstateService.getRealEstateById(propertyId);
-
-            logger.info("✅ Public property retrieved: {}", propertyId);
-            return ResponseEntity.ok(property);
-
-        } catch (ResourceNotFoundException e) {
-            logger.warn("❌ Property not found: {}", propertyId);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Property not found"));
-        } catch (Exception e) {
-            logger.error("❌ Failed to fetch property: {}", propertyId, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to fetch property"));
-        }
-    }
+//    @GetMapping("/{propertyId}")
+//    @PreAuthorize("permitAll()")
+//    public ResponseEntity<?> getRealEstateById(@PathVariable Long propertyId) {
+//        try {
+//            logger.info("🔍 Public fetching property: {}", propertyId);
+//
+//            RealEstateResponseDTO property = realEstateService.getRealEstateById(propertyId);
+//
+//            logger.info("✅ Public property retrieved: {}", propertyId);
+//            return ResponseEntity.ok(property);
+//
+//        } catch (ResourceNotFoundException e) {
+//            logger.warn("❌ Property not found: {}", propertyId);
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Property not found"));
+//        } catch (Exception e) {
+//            logger.error("❌ Failed to fetch property: {}", propertyId, e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("error", "Failed to fetch property"));
+//        }
+//    }
 
     // NEW: Get real estate with detailed analytics
-    @GetMapping("/{propertyId}/analytics")
-    @PreAuthorize("permitAll()")
-    public ResponseEntity<?> getRealEstateWithAnalytics(@PathVariable Long propertyId) {
-        try {
-            logger.info("📊 Public fetching property with analytics: {}", propertyId);
-
-            RealEstateResponseDTO property = realEstateService.getRealEstateWithAnalytics(propertyId);
-
-            logger.info("✅ Public property with analytics retrieved: {}", propertyId);
-            return ResponseEntity.ok(property);
-
-        } catch (ResourceNotFoundException e) {
-            logger.warn("❌ Property not found: {}", propertyId);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Property not found"));
-        } catch (Exception e) {
-            logger.error("❌ Failed to fetch property analytics: {}", propertyId, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to fetch property analytics"));
-        }
-    }
+//    @GetMapping("/{propertyId}/analytics")
+//    @PreAuthorize("permitAll()")
+//    public ResponseEntity<?> getRealEstateWithAnalytics(@PathVariable Long propertyId) {
+//        try {
+//            logger.info("📊 Public fetching property with analytics: {}", propertyId);
+//
+//            RealEstateResponseDTO property = realEstateService.getRealEstateWithAnalytics(propertyId);
+//
+//            logger.info("✅ Public property with analytics retrieved: {}", propertyId);
+//            return ResponseEntity.ok(property);
+//
+//        } catch (ResourceNotFoundException e) {
+//            logger.warn("❌ Property not found: {}", propertyId);
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Property not found"));
+//        } catch (Exception e) {
+//            logger.error("❌ Failed to fetch property analytics: {}", propertyId, e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("error", "Failed to fetch property analytics"));
+//        }
+//    }
 
     /**
      * Public features list - accessible without authentication
      */
-    @GetMapping("/features")
-    @PreAuthorize("permitAll()")
-    public ResponseEntity<?> getAllUniqueFeatures() {
-        try {
-            logger.info("🔍 Fetching all unique features");
-
-            List<String> features = realEstateService.getAllUniqueFeatures();
-
-            logger.info("✅ Found {} unique features", features.size());
-            return ResponseEntity.ok(features);
-
-        } catch (Exception e) {
-            logger.error("❌ Failed to fetch features", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to fetch features"));
-        }
-    }
+//    @GetMapping("/features")
+//    @PreAuthorize("permitAll()")
+//    public ResponseEntity<?> getAllUniqueFeatures() {
+//        try {
+//            logger.info("🔍 Fetching all unique features");
+//
+//            List<String> features = realEstateService.getAllUniqueFeatures();
+//
+//            logger.info("✅ Found {} unique features", features.size());
+//            return ResponseEntity.ok(features);
+//
+//        } catch (Exception e) {
+//            logger.error("❌ Failed to fetch features", e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("error", "Failed to fetch features"));
+//        }
+//    }
 
     // NEW: Get features by property type
-    @GetMapping("/features/by-type")
-    @PreAuthorize("permitAll()")
-    public ResponseEntity<?> getFeaturesByPropertyType() {
-        try {
-            logger.info("🔍 Fetching features by property type");
-
-            Map<PropertyType, List<String>> featuresByType = realEstateService.getUniqueFeaturesByPropertyType();
-
-            logger.info("✅ Found features for {} property types", featuresByType.size());
-            return ResponseEntity.ok(featuresByType);
-
-        } catch (Exception e) {
-            logger.error("❌ Failed to fetch features by type", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to fetch features by type"));
-        }
-    }
+//    @GetMapping("/features/by-type")
+//    @PreAuthorize("permitAll()")
+//    public ResponseEntity<?> getFeaturesByPropertyType() {
+//        try {
+//            logger.info("🔍 Fetching features by property type");
+//
+//            Map<PropertyType, List<String>> featuresByType = realEstateService.getUniqueFeaturesByPropertyType();
+//
+//            logger.info("✅ Found features for {} property types", featuresByType.size());
+//            return ResponseEntity.ok(featuresByType);
+//
+//        } catch (Exception e) {
+//            logger.error("❌ Failed to fetch features by type", e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("error", "Failed to fetch features by type"));
+//        }
+//    }
 
     // NEW: Get popular properties
     @GetMapping("/popular")
@@ -332,32 +332,32 @@ public class RealEstateApiController {
     /**
      * REPLACE ALL images for a property
      */
-    @PutMapping(value = "/{propertyId}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("@realEstateAuthorizationService.hasRealEstateUpdateAccess(#propertyId)")
-    public ResponseEntity<?> replacePropertyImages(@PathVariable Long propertyId,
-            @RequestPart(value = "newImages", required = false) MultipartFile[] newImages) {
-
-        try {
-            logger.info("🔄 Replacing all images for property {}", propertyId);
-
-            RealEstate updatedProperty = realEstateService.replacePropertyImages(propertyId, newImages);
-            RealEstateResponseDTO response = new RealEstateResponseDTO(updatedProperty);
-
-            logger.info("✅ Successfully replaced images for property {}", propertyId);
-            return ResponseEntity.ok(response);
-
-        } catch (ResourceNotFoundException e) {
-            logger.warn("❌ Property not found for image replacement: {}", propertyId);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Property not found"));
-        } catch (LimitationExceededException e) {
-            logger.warn("🚫 Image limit exceeded for property: {}", propertyId);
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
-        } catch (Exception e) {
-            logger.error("❌ Failed to replace images for property: {}", propertyId, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to replace images"));
-        }
-    }
+//    @PutMapping(value = "/{propertyId}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    @PreAuthorize("@realEstateAuthorizationService.hasRealEstateUpdateAccess(#propertyId)")
+//    public ResponseEntity<?> replacePropertyImages(@PathVariable Long propertyId,
+//            @RequestPart(value = "newImages", required = false) MultipartFile[] newImages) {
+//
+//        try {
+//            logger.info("🔄 Replacing all images for property {}", propertyId);
+//
+//            RealEstate updatedProperty = realEstateService.replacePropertyImages(propertyId, newImages);
+//            RealEstateResponseDTO response = new RealEstateResponseDTO(updatedProperty);
+//
+//            logger.info("✅ Successfully replaced images for property {}", propertyId);
+//            return ResponseEntity.ok(response);
+//
+//        } catch (ResourceNotFoundException e) {
+//            logger.warn("❌ Property not found for image replacement: {}", propertyId);
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Property not found"));
+//        } catch (LimitationExceededException e) {
+//            logger.warn("🚫 Image limit exceeded for property: {}", propertyId);
+//            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
+//        } catch (Exception e) {
+//            logger.error("❌ Failed to replace images for property: {}", propertyId, e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("error", "Failed to replace images"));
+//        }
+//    }
 
     /**
      * REMOVE SPECIFIC images from a property
@@ -389,141 +389,141 @@ public class RealEstateApiController {
     /**
      * ADD images to existing property
      */
-    @PostMapping(value = "/{propertyId}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("@realEstateAuthorizationService.hasRealEstateUpdateAccess(#propertyId)")
-    public ResponseEntity<?> addPropertyImages(@PathVariable Long propertyId,
-            @RequestPart("images") MultipartFile[] images) {
-
-        try {
-            logger.info("📤 Adding {} images to property {}", images.length, propertyId);
-
-            RealEstate updatedProperty = realEstateService.addImagesToProperty(propertyId, images);
-            RealEstateResponseDTO response = new RealEstateResponseDTO(updatedProperty);
-
-            logger.info("✅ Successfully added images to property {}", propertyId);
-            return ResponseEntity.ok(response);
-
-        } catch (ResourceNotFoundException e) {
-            logger.warn("❌ Property not found for image addition: {}", propertyId);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Property not found"));
-        } catch (LimitationExceededException e) {
-            logger.warn("🚫 Image limit exceeded for property: {}", propertyId);
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
-        } catch (Exception e) {
-            logger.error("❌ Failed to add images to property: {}", propertyId, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to add images"));
-        }
-    }
+//    @PostMapping(value = "/{propertyId}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    @PreAuthorize("@realEstateAuthorizationService.hasRealEstateUpdateAccess(#propertyId)")
+//    public ResponseEntity<?> addPropertyImages(@PathVariable Long propertyId,
+//            @RequestPart("images") MultipartFile[] images) {
+//
+//        try {
+//            logger.info("📤 Adding {} images to property {}", images.length, propertyId);
+//
+//            RealEstate updatedProperty = realEstateService.addImagesToProperty(propertyId, images);
+//            RealEstateResponseDTO response = new RealEstateResponseDTO(updatedProperty);
+//
+//            logger.info("✅ Successfully added images to property {}", propertyId);
+//            return ResponseEntity.ok(response);
+//
+//        } catch (ResourceNotFoundException e) {
+//            logger.warn("❌ Property not found for image addition: {}", propertyId);
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Property not found"));
+//        } catch (LimitationExceededException e) {
+//            logger.warn("🚫 Image limit exceeded for property: {}", propertyId);
+//            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
+//        } catch (Exception e) {
+//            logger.error("❌ Failed to add images to property: {}", propertyId, e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("error", "Failed to add images"));
+//        }
+//    }
 
     // === CREATE ENDPOINTS ===
 
     /**
      * Unified create endpoint with image processing
      */
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("@realEstateAuthorizationService.hasRealEstateCreateAccess()")
-    public ResponseEntity<?> createRealEstate(@Valid @RequestPart("realEstate") RealEstateCreateDTO createDto,
-            @RequestPart(value = "images", required = false) MultipartFile[] images) {
-
-        try {
-            logger.info("🏠 Creating new real estate listing with {} images", images != null ? images.length : 0);
-
-            RealEstateResponseDTO response = realEstateService.createRealEstate(createDto, images);
-
-            logger.info("✅ Successfully created real estate with ID: {}", response.getPropertyId());
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .header("Location", "/api/real-estates/" + response.getPropertyId()).body(response);
-
-        } catch (LimitationExceededException e) {
-            logger.warn("🚫 Real estate creation limit exceeded");
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
-        } catch (Exception e) {
-            logger.error("❌ Failed to create real estate: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to create real estate"));
-        }
-    }
+//    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    @PreAuthorize("@realEstateAuthorizationService.hasRealEstateCreateAccess()")
+//    public ResponseEntity<?> createRealEstate(@Valid @RequestPart("realEstate") RealEstateCreateDTO createDto,
+//            @RequestPart(value = "images", required = false) MultipartFile[] images) {
+//
+//        try {
+//            logger.info("🏠 Creating new real estate listing with {} images", images != null ? images.length : 0);
+//
+//            RealEstateResponseDTO response = realEstateService.createRealEstate(createDto, images);
+//
+//            logger.info("✅ Successfully created real estate with ID: {}", response.getPropertyId());
+//            return ResponseEntity.status(HttpStatus.CREATED)
+//                    .header("Location", "/api/real-estates/" + response.getPropertyId()).body(response);
+//
+//        } catch (LimitationExceededException e) {
+//            logger.warn("🚫 Real estate creation limit exceeded");
+//            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
+//        } catch (Exception e) {
+//            logger.error("❌ Failed to create real estate: {}", e.getMessage(), e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("error", "Failed to create real estate"));
+//        }
+//    }
 
     // NEW: Create investment property
-    @PostMapping(value = "/investment", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasRole('INVESTOR')")
-    public ResponseEntity<?> createInvestmentProperty(@Valid @RequestPart("realEstate") RealEstateCreateDTO createDto,
-            @RequestPart(value = "images", required = false) MultipartFile[] images) {
-
-        try {
-            logger.info("💰 Creating investment property with {} images", images != null ? images.length : 0);
-
-            RealEstateResponseDTO response = realEstateService.createInvestmentProperty(createDto, images);
-
-            logger.info("✅ Successfully created investment property with ID: {}", response.getPropertyId());
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .header("Location", "/api/real-estates/" + response.getPropertyId()).body(response);
-
-        } catch (LimitationExceededException e) {
-            logger.warn("🚫 Investment property creation limit exceeded");
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
-        } catch (IllegalOperationException e) {
-            logger.warn("🚫 User is not an investor");
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
-        } catch (Exception e) {
-            logger.error("❌ Failed to create investment property: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to create investment property"));
-        }
-    }
+//    @PostMapping(value = "/investment", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    @PreAuthorize("hasRole('INVESTOR')")
+//    public ResponseEntity<?> createInvestmentProperty(@Valid @RequestPart("realEstate") RealEstateCreateDTO createDto,
+//            @RequestPart(value = "images", required = false) MultipartFile[] images) {
+//
+//        try {
+//            logger.info("💰 Creating investment property with {} images", images != null ? images.length : 0);
+//
+//            RealEstateResponseDTO response = realEstateService.createInvestmentProperty(createDto, images);
+//
+//            logger.info("✅ Successfully created investment property with ID: {}", response.getPropertyId());
+//            return ResponseEntity.status(HttpStatus.CREATED)
+//                    .header("Location", "/api/real-estates/" + response.getPropertyId()).body(response);
+//
+//        } catch (LimitationExceededException e) {
+//            logger.warn("🚫 Investment property creation limit exceeded");
+//            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
+//        } catch (IllegalOperationException e) {
+//            logger.warn("🚫 User is not an investor");
+//            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
+//        } catch (Exception e) {
+//            logger.error("❌ Failed to create investment property: {}", e.getMessage(), e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("error", "Failed to create investment property"));
+//        }
+//    }
 
     /**
      * Agent/Admin creating listing for other users
      */
-    @PostMapping(value = "/for-user", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasRole('ADMIN') or hasRole('AGENT')")
-    public ResponseEntity<?> createRealEstateForUser(@Valid @RequestPart("realEstate") RealEstateCreateDTO createDto,
-            @RequestPart(value = "images", required = false) MultipartFile[] images) {
-
-        try {
-            logger.info("👤 Creating real estate for user with {} images", images != null ? images.length : 0);
-
-            RealEstateResponseDTO response = realEstateService.createRealEstateForUser(createDto, images);
-
-            logger.info("✅ Successfully created real estate for user with ID: {}", response.getPropertyId());
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .header("Location", "/api/real-estates/" + response.getPropertyId()).body(response);
-
-        } catch (LimitationExceededException e) {
-            logger.warn("🚫 Real estate creation limit exceeded for target user");
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
-        } catch (Exception e) {
-            logger.error("❌ Failed to create real estate for user: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to create real estate for user"));
-        }
-    }
+//    @PostMapping(value = "/for-user", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    @PreAuthorize("hasRole('ADMIN') or hasRole('AGENT')")
+//    public ResponseEntity<?> createRealEstateForUser(@Valid @RequestPart("realEstate") RealEstateCreateDTO createDto,
+//            @RequestPart(value = "images", required = false) MultipartFile[] images) {
+//
+//        try {
+//            logger.info("👤 Creating real estate for user with {} images", images != null ? images.length : 0);
+//
+//            RealEstateResponseDTO response = realEstateService.createRealEstateForUser(createDto, images);
+//
+//            logger.info("✅ Successfully created real estate for user with ID: {}", response.getPropertyId());
+//            return ResponseEntity.status(HttpStatus.CREATED)
+//                    .header("Location", "/api/real-estates/" + response.getPropertyId()).body(response);
+//
+//        } catch (LimitationExceededException e) {
+//            logger.warn("🚫 Real estate creation limit exceeded for target user");
+//            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
+//        } catch (Exception e) {
+//            logger.error("❌ Failed to create real estate for user: {}", e.getMessage(), e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("error", "Failed to create real estate for user"));
+//        }
+//    }
 
     /**
      * JSON-only endpoint for backward compatibility
      */
-    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("@realEstateAuthorizationService.hasRealEstateCreateAccess()")
-    public ResponseEntity<?> createRealEstateJson(@RequestBody @Valid RealEstateCreateDTO createDto) {
-        try {
-            logger.info("📄 Creating real estate from JSON (no images)");
-
-            RealEstateResponseDTO response = realEstateService.createRealEstate(createDto, null);
-
-            logger.info("✅ Successfully created real estate from JSON with ID: {}", response.getPropertyId());
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .header("Location", "/api/real-estates/" + response.getPropertyId()).body(response);
-
-        } catch (LimitationExceededException e) {
-            logger.warn("🚫 Real estate creation limit exceeded");
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
-        } catch (Exception e) {
-            logger.error("❌ Failed to create real estate from JSON: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to create real estate"));
-        }
-    }
+//    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+//    @PreAuthorize("@realEstateAuthorizationService.hasRealEstateCreateAccess()")
+//    public ResponseEntity<?> createRealEstateJson(@RequestBody @Valid RealEstateCreateDTO createDto) {
+//        try {
+//            logger.info("📄 Creating real estate from JSON (no images)");
+//
+//            RealEstateResponseDTO response = realEstateService.createRealEstate(createDto, null);
+//
+//            logger.info("✅ Successfully created real estate from JSON with ID: {}", response.getPropertyId());
+//            return ResponseEntity.status(HttpStatus.CREATED)
+//                    .header("Location", "/api/real-estates/" + response.getPropertyId()).body(response);
+//
+//        } catch (LimitationExceededException e) {
+//            logger.warn("🚫 Real estate creation limit exceeded");
+//            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
+//        } catch (Exception e) {
+//            logger.error("❌ Failed to create real estate from JSON: {}", e.getMessage(), e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("error", "Failed to create real estate"));
+//        }
+//    }
 
     // === UPDATE & DELETE ENDPOINTS ===
 
@@ -551,80 +551,80 @@ public class RealEstateApiController {
     /**
      * ENHANCED UPDATE with image support
      */
-    @PutMapping(value = "/{propertyId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("@realEstateAuthorizationService.hasRealEstateUpdateAccess(#propertyId)")
-    public ResponseEntity<?> updateRealEstateWithImages(@PathVariable Long propertyId,
-            @RequestPart("realEstate") @Valid RealEstateUpdateDTO updateDto,
-            @RequestPart(value = "newImages", required = false) MultipartFile[] newImages,
-            @RequestParam(value = "imagesToRemove", required = false) List<String> imagesToRemove) {
-
-        try {
-            logger.info("✏️ Updating real estate {} with {} new images, removing {} images", propertyId,
-                    newImages != null ? newImages.length : 0, imagesToRemove != null ? imagesToRemove.size() : 0);
-
-            RealEstateResponseDTO response = realEstateService.updateRealEstate(propertyId, updateDto, newImages,
-                    imagesToRemove);
-
-            logger.info("✅ Successfully updated real estate with ID: {}", propertyId);
-            return ResponseEntity.ok(response);
-
-        } catch (ResourceNotFoundException e) {
-            logger.warn("❌ Property not found for update: {}", propertyId);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Property not found"));
-        } catch (Exception e) {
-            logger.error("❌ Failed to update real estate {}: {}", propertyId, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to update property"));
-        }
-    }
+//    @PutMapping(value = "/{propertyId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    @PreAuthorize("@realEstateAuthorizationService.hasRealEstateUpdateAccess(#propertyId)")
+//    public ResponseEntity<?> updateRealEstateWithImages(@PathVariable Long propertyId,
+//            @RequestPart("realEstate") @Valid RealEstateUpdateDTO updateDto,
+//            @RequestPart(value = "newImages", required = false) MultipartFile[] newImages,
+//            @RequestParam(value = "imagesToRemove", required = false) List<String> imagesToRemove) {
+//
+//        try {
+//            logger.info("✏️ Updating real estate {} with {} new images, removing {} images", propertyId,
+//                    newImages != null ? newImages.length : 0, imagesToRemove != null ? imagesToRemove.size() : 0);
+//
+//            RealEstateResponseDTO response = realEstateService.updateRealEstate(propertyId, updateDto, newImages,
+//                    imagesToRemove);
+//
+//            logger.info("✅ Successfully updated real estate with ID: {}", propertyId);
+//            return ResponseEntity.ok(response);
+//
+//        } catch (ResourceNotFoundException e) {
+//            logger.warn("❌ Property not found for update: {}", propertyId);
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Property not found"));
+//        } catch (Exception e) {
+//            logger.error("❌ Failed to update real estate {}: {}", propertyId, e.getMessage(), e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("error", "Failed to update property"));
+//        }
+//    }
 
     /**
      * JSON-only update for backward compatibility
      */
-    @PutMapping(value = "/{propertyId}", consumes = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("@realEstateAuthorizationService.hasRealEstateUpdateAccess(#propertyId)")
-    public ResponseEntity<?> updateRealEstateJson(@PathVariable Long propertyId,
-            @RequestBody @Valid RealEstateUpdateDTO updateDto) {
-
-        try {
-            logger.info("✏️ Updating real estate {} (JSON only)", propertyId);
-
-            RealEstateResponseDTO response = realEstateService.updateRealEstate(propertyId, updateDto);
-
-            logger.info("✅ Successfully updated real estate with ID: {}", propertyId);
-            return ResponseEntity.ok(response);
-
-        } catch (ResourceNotFoundException e) {
-            logger.warn("❌ Property not found for update: {}", propertyId);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Property not found"));
-        } catch (Exception e) {
-            logger.error("❌ Failed to update real estate {}: {}", propertyId, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to update property"));
-        }
-    }
+//    @PutMapping(value = "/{propertyId}", consumes = MediaType.APPLICATION_JSON_VALUE)
+//    @PreAuthorize("@realEstateAuthorizationService.hasRealEstateUpdateAccess(#propertyId)")
+//    public ResponseEntity<?> updateRealEstateJson(@PathVariable Long propertyId,
+//            @RequestBody @Valid RealEstateUpdateDTO updateDto) {
+//
+//        try {
+//            logger.info("✏️ Updating real estate {} (JSON only)", propertyId);
+//
+//            RealEstateResponseDTO response = realEstateService.updateRealEstate(propertyId, updateDto);
+//
+//            logger.info("✅ Successfully updated real estate with ID: {}", propertyId);
+//            return ResponseEntity.ok(response);
+//
+//        } catch (ResourceNotFoundException e) {
+//            logger.warn("❌ Property not found for update: {}", propertyId);
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Property not found"));
+//        } catch (Exception e) {
+//            logger.error("❌ Failed to update real estate {}: {}", propertyId, e.getMessage(), e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("error", "Failed to update property"));
+//        }
+//    }
 
     // NEW: Increment contact count
-    @PostMapping("/{propertyId}/increment-contact")
-    @PreAuthorize("permitAll()")
-    public ResponseEntity<?> incrementContactCount(@PathVariable Long propertyId) {
-        try {
-            logger.info("📞 Incrementing contact count for property: {}", propertyId);
-
-            realEstateService.incrementContactCount(propertyId);
-
-            logger.info("✅ Contact count incremented for property: {}", propertyId);
-            return ResponseEntity.ok(Map.of("success", true, "message", "Contact count incremented"));
-
-        } catch (ResourceNotFoundException e) {
-            logger.warn("❌ Property not found for contact count: {}", propertyId);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Property not found"));
-        } catch (Exception e) {
-            logger.error("❌ Failed to increment contact count for property {}: {}", propertyId, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to increment contact count"));
-        }
-    }
+//    @PostMapping("/{propertyId}/increment-contact")
+//    @PreAuthorize("permitAll()")
+//    public ResponseEntity<?> incrementContactCount(@PathVariable Long propertyId) {
+//        try {
+//            logger.info("📞 Incrementing contact count for property: {}", propertyId);
+//
+//            realEstateService.incrementContactCount(propertyId);
+//
+//            logger.info("✅ Contact count incremented for property: {}", propertyId);
+//            return ResponseEntity.ok(Map.of("success", true, "message", "Contact count incremented"));
+//
+//        } catch (ResourceNotFoundException e) {
+//            logger.warn("❌ Property not found for contact count: {}", propertyId);
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Property not found"));
+//        } catch (Exception e) {
+//            logger.error("❌ Failed to increment contact count for property {}: {}", propertyId, e.getMessage(), e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("error", "Failed to increment contact count"));
+//        }
+//    }
 
     // 🆕 ADDITIONAL ENDPOINTS
 
@@ -678,36 +678,36 @@ public class RealEstateApiController {
     /**
      * Feature a real estate listing
      */
-    @PostMapping("/{propertyId}/feature")
-    @PreAuthorize("hasRole('USER') or hasRole('AGENT')")
-    public ResponseEntity<?> featureRealEstate(@PathVariable Long propertyId, @RequestParam Integer featuredDays) {
-        try {
-            logger.info("⭐ Featuring property {} for {} days", propertyId, featuredDays);
-
-            User currentUser = userService.getAuthenticatedUser();
-            Long userId = currentUser.getId();
-
-            RealEstate featuredRealEstate = featuredListingService.featureRealEstate(userId, propertyId, featuredDays);
-            RealEstateResponseDTO response = new RealEstateResponseDTO(featuredRealEstate);
-
-            logger.info("✅ Successfully featured property {}", propertyId);
-            return ResponseEntity.ok(response);
-
-        } catch (ResourceNotFoundException e) {
-            logger.warn("❌ Property not found for featuring: {}", propertyId);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Property not found"));
-        } catch (LimitationExceededException e) {
-            logger.warn("🚫 Feature limit exceeded for user");
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
-        } catch (IllegalOperationException e) {
-            logger.warn("🚫 User doesn't own property: {}", propertyId);
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
-        } catch (Exception e) {
-            logger.error("❌ Failed to feature property {}: {}", propertyId, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to feature property"));
-        }
-    }
+//    @PostMapping("/{propertyId}/feature")
+//    @PreAuthorize("hasRole('USER') or hasRole('AGENT')")
+//    public ResponseEntity<?> featureRealEstate(@PathVariable Long propertyId, @RequestParam Integer featuredDays) {
+//        try {
+//            logger.info("⭐ Featuring property {} for {} days", propertyId, featuredDays);
+//
+//            User currentUser = userService.getAuthenticatedUser();
+//            Long userId = currentUser.getId();
+//
+//            RealEstate featuredRealEstate = featuredListingService.featureRealEstate(userId, propertyId, featuredDays);
+//            RealEstateResponseDTO response = new RealEstateResponseDTO(featuredRealEstate);
+//
+//            logger.info("✅ Successfully featured property {}", propertyId);
+//            return ResponseEntity.ok(response);
+//
+//        } catch (ResourceNotFoundException e) {
+//            logger.warn("❌ Property not found for featuring: {}", propertyId);
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Property not found"));
+//        } catch (LimitationExceededException e) {
+//            logger.warn("🚫 Feature limit exceeded for user");
+//            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
+//        } catch (IllegalOperationException e) {
+//            logger.warn("🚫 User doesn't own property: {}", propertyId);
+//            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
+//        } catch (Exception e) {
+//            logger.error("❌ Failed to feature property {}: {}", propertyId, e.getMessage(), e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("error", "Failed to feature property"));
+//        }
+//    }
 
     /**
      * Unfeature a real estate listing
@@ -743,21 +743,21 @@ public class RealEstateApiController {
     /**
      * Check if user can feature a specific property
      */
-    @GetMapping("/{propertyId}/can-feature")
-    @PreAuthorize("hasRole('USER') or hasRole('AGENT')")
-    public ResponseEntity<?> canFeatureRealEstate(@PathVariable Long propertyId) {
-        try {
-            User currentUser = userService.getAuthenticatedUser();
-            Long userId = currentUser.getId();
-
-            boolean canFeature = featuredListingService.canFeatureRealEstate(userId, propertyId);
-
-            return ResponseEntity.ok(Map.of("canFeature", canFeature));
-
-        } catch (Exception e) {
-            logger.error("❌ Failed to check feature eligibility for property {}: {}", propertyId, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to check feature eligibility"));
-        }
-    }
+//    @GetMapping("/{propertyId}/can-feature")
+//    @PreAuthorize("hasRole('USER') or hasRole('AGENT')")
+//    public ResponseEntity<?> canFeatureRealEstate(@PathVariable Long propertyId) {
+//        try {
+//            User currentUser = userService.getAuthenticatedUser();
+//            Long userId = currentUser.getId();
+//
+//            boolean canFeature = featuredListingService.canFeatureRealEstate(userId, propertyId);
+//
+//            return ResponseEntity.ok(Map.of("canFeature", canFeature));
+//
+//        } catch (Exception e) {
+//            logger.error("❌ Failed to check feature eligibility for property {}: {}", propertyId, e.getMessage(), e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("error", "Failed to check feature eligibility"));
+//        }
+//    }
 }

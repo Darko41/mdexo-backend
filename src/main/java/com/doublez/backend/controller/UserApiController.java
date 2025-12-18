@@ -22,9 +22,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.doublez.backend.dto.agency.AgencyDTO;
-import com.doublez.backend.dto.investor.InvestorProfileDTO;
-import com.doublez.backend.dto.user.UserDTO;
 import com.doublez.backend.entity.agency.Agency;
 import com.doublez.backend.entity.user.User;
 import com.doublez.backend.entity.user.UserTier;
@@ -55,156 +52,156 @@ public class UserApiController {
     /**
      * Public user registration
      */
-    @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@Valid @RequestBody UserDTO.Create createDto) {
-        try {
-            logger.info("👤 User registration attempt for email: {}", createDto.getEmail());
-
-            // Override any roles/tier for public registration
-            createDto.setRoles(List.of("ROLE_USER"));
-            createDto.setTier(UserTier.FREE_USER);
-
-            UserDTO user = userService.registerUser(createDto, false);
-            
-            logger.info("✅ User registered successfully: {}", user.getEmail());
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .header("Location", "/api/users/" + user.getId())
-                    .body(user);
-
-        } catch (EmailExistsException e) {
-            logger.warn("❌ Email already exists: {}", createDto.getEmail());
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(Map.of("error", "Email already exists"));
-        } catch (IllegalArgumentException e) {
-            logger.warn("❌ Invalid registration data: {}", e.getMessage());
-            return ResponseEntity.badRequest()
-                    .body(Map.of("error", e.getMessage()));
-        } catch (Exception e) {
-            logger.error("❌ Registration failed for: {}", createDto.getEmail(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Registration failed"));
-        }
-    }
+//    @PostMapping("/register")
+//    public ResponseEntity<?> registerUser(@Valid @RequestBody UserDTO.Create createDto) {
+//        try {
+//            logger.info("👤 User registration attempt for email: {}", createDto.getEmail());
+//
+//            // Override any roles/tier for public registration
+//            createDto.setRoles(List.of("ROLE_USER"));
+//            createDto.setTier(UserTier.FREE_USER);
+//
+//            UserDTO user = userService.registerUser(createDto, false);
+//            
+//            logger.info("✅ User registered successfully: {}", user.getEmail());
+//            return ResponseEntity.status(HttpStatus.CREATED)
+//                    .header("Location", "/api/users/" + user.getId())
+//                    .body(user);
+//
+//        } catch (EmailExistsException e) {
+//            logger.warn("❌ Email already exists: {}", createDto.getEmail());
+//            return ResponseEntity.status(HttpStatus.CONFLICT)
+//                    .body(Map.of("error", "Email already exists"));
+//        } catch (IllegalArgumentException e) {
+//            logger.warn("❌ Invalid registration data: {}", e.getMessage());
+//            return ResponseEntity.badRequest()
+//                    .body(Map.of("error", e.getMessage()));
+//        } catch (Exception e) {
+//            logger.error("❌ Registration failed for: {}", createDto.getEmail(), e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("error", "Registration failed"));
+//        }
+//    }
 
     /**
      * Admin user creation
      */
-    @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> createUser(@Valid @RequestBody UserDTO.Create createDto) {
-        try {
-            logger.info("👑 Admin creating user: {}", createDto.getEmail());
-
-            UserDTO user = userService.registerUser(createDto, true);
-            
-            logger.info("✅ Admin created user successfully: {}", user.getEmail());
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .header("Location", "/api/users/" + user.getId())
-                    .body(user);
-
-        } catch (EmailExistsException e) {
-            logger.warn("❌ Email already exists: {}", createDto.getEmail());
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(Map.of("error", "Email already exists"));
-        } catch (Exception e) {
-            logger.error("❌ Admin user creation failed", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to create user"));
-        }
-    }
+//    @PostMapping
+//    @PreAuthorize("hasRole('ADMIN')")
+//    public ResponseEntity<?> createUser(@Valid @RequestBody UserDTO.Create createDto) {
+//        try {
+//            logger.info("👑 Admin creating user: {}", createDto.getEmail());
+//
+//            UserDTO user = userService.registerUser(createDto, true);
+//            
+//            logger.info("✅ Admin created user successfully: {}", user.getEmail());
+//            return ResponseEntity.status(HttpStatus.CREATED)
+//                    .header("Location", "/api/users/" + user.getId())
+//                    .body(user);
+//
+//        } catch (EmailExistsException e) {
+//            logger.warn("❌ Email already exists: {}", createDto.getEmail());
+//            return ResponseEntity.status(HttpStatus.CONFLICT)
+//                    .body(Map.of("error", "Email already exists"));
+//        } catch (Exception e) {
+//            logger.error("❌ Admin user creation failed", e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("error", "Failed to create user"));
+//        }
+//    }
 
     // === USER RETRIEVAL ENDPOINTS ===
 
     /**
      * Get current user profile
      */
-    @GetMapping("/me")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<?> getCurrentUser() {
-        try {
-            Long userId = userService.getCurrentUserId();
-            UserDTO user = userService.getUserById(userId);
-            
-            logger.debug("✅ Retrieved current user: {}", userId);
-            return ResponseEntity.ok(user);
-
-        } catch (UserNotFoundException e) {
-            logger.warn("❌ Current user not found");
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", "User not found"));
-        } catch (Exception e) {
-            logger.error("❌ Failed to fetch current user", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to fetch user profile"));
-        }
-    }
+//    @GetMapping("/me")
+//    @PreAuthorize("hasRole('USER')")
+//    public ResponseEntity<?> getCurrentUser() {
+//        try {
+//            Long userId = userService.getCurrentUserId();
+//            UserDTO user = userService.getUserById(userId);
+//            
+//            logger.debug("✅ Retrieved current user: {}", userId);
+//            return ResponseEntity.ok(user);
+//
+//        } catch (UserNotFoundException e) {
+//            logger.warn("❌ Current user not found");
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+//                    .body(Map.of("error", "User not found"));
+//        } catch (Exception e) {
+//            logger.error("❌ Failed to fetch current user", e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("error", "Failed to fetch user profile"));
+//        }
+//    }
 
     /**
      * Get user by ID
      */
-    @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
-    public ResponseEntity<?> getUserById(@PathVariable Long id) {
-        try {
-            UserDTO user = userService.getUserById(id);
-            
-            logger.debug("✅ Retrieved user: {}", id);
-            return ResponseEntity.ok(user);
-
-        } catch (UserNotFoundException e) {
-            logger.warn("❌ User not found: {}", id);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", "User not found"));
-        } catch (Exception e) {
-            logger.error("❌ Failed to fetch user: {}", id, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to fetch user"));
-        }
-    }
+//    @GetMapping("/{id}")
+//    @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
+//    public ResponseEntity<?> getUserById(@PathVariable Long id) {
+//        try {
+//            UserDTO user = userService.getUserById(id);
+//            
+//            logger.debug("✅ Retrieved user: {}", id);
+//            return ResponseEntity.ok(user);
+//
+//        } catch (UserNotFoundException e) {
+//            logger.warn("❌ User not found: {}", id);
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+//                    .body(Map.of("error", "User not found"));
+//        } catch (Exception e) {
+//            logger.error("❌ Failed to fetch user: {}", id, e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("error", "Failed to fetch user"));
+//        }
+//    }
 
     /**
      * Get all users (admin only)
      */
-    @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> getAllUsers() {
-        try {
-            List<UserDTO> users = userService.getAllUsers();
-            
-            logger.info("✅ Admin retrieved all users, count: {}", users.size());
-            return users.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(users);
-
-        } catch (Exception e) {
-            logger.error("❌ Failed to fetch users", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to fetch users"));
-        }
-    }
+//    @GetMapping
+//    @PreAuthorize("hasRole('ADMIN')")
+//    public ResponseEntity<?> getAllUsers() {
+//        try {
+//            List<UserDTO> users = userService.getAllUsers();
+//            
+//            logger.info("✅ Admin retrieved all users, count: {}", users.size());
+//            return users.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(users);
+//
+//        } catch (Exception e) {
+//            logger.error("❌ Failed to fetch users", e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("error", "Failed to fetch users"));
+//        }
+//    }
 
     // === USER UPDATE ENDPOINTS ===
 
     /**
      * Update user
-     */
-    @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
-    public ResponseEntity<?> updateUser(@PathVariable Long id, @Valid @RequestBody UserDTO.Update updateDto) {
-        try {
-            UserDTO user = userService.updateUser(id, updateDto);
-            
-            logger.info("✅ Updated user: {}", id);
-            return ResponseEntity.ok(user);
-
-        } catch (UserNotFoundException e) {
-            logger.warn("❌ User not found for update: {}", id);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", "User not found"));
-        } catch (Exception e) {
-            logger.error("❌ Failed to update user: {}", id, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to update user"));
-        }
-    }
+//     */
+//    @PutMapping("/{id}")
+//    @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
+//    public ResponseEntity<?> updateUser(@PathVariable Long id, @Valid @RequestBody UserDTO.Update updateDto) {
+//        try {
+//            UserDTO user = userService.updateUser(id, updateDto);
+//            
+//            logger.info("✅ Updated user: {}", id);
+//            return ResponseEntity.ok(user);
+//
+//        } catch (UserNotFoundException e) {
+//            logger.warn("❌ User not found for update: {}", id);
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+//                    .body(Map.of("error", "User not found"));
+//        } catch (Exception e) {
+//            logger.error("❌ Failed to update user: {}", id, e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("error", "Failed to update user"));
+//        }
+//    }
 
     // === USER DELETION ENDPOINTS ===
 
@@ -265,27 +262,27 @@ public class UserApiController {
     /**
      * Get current user's agency info
      */
-    @GetMapping("/me/agency")
-    @PreAuthorize("hasAnyRole('USER', 'AGENT', 'AGENCY_ADMIN')")
-    public ResponseEntity<?> getMyAgency() {
-        try {
-            Long userId = userService.getCurrentUserId();
-            Optional<AgencyDTO> agency = userService.getUserAgency(userId);
-            
-            if (agency.isPresent()) {
-                logger.info("✅ Retrieved agency info for user: {}", userId);
-                return ResponseEntity.ok(agency.get());
-            } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(Map.of("error", "User does not have an agency"));
-            }
-
-        } catch (Exception e) {
-            logger.error("❌ Failed to fetch user agency", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to fetch agency information"));
-        }
-    }
+//    @GetMapping("/me/agency")
+//    @PreAuthorize("hasAnyRole('USER', 'AGENT', 'AGENCY_ADMIN')")
+//    public ResponseEntity<?> getMyAgency() {
+//        try {
+//            Long userId = userService.getCurrentUserId();
+//            Optional<AgencyDTO> agency = userService.getUserAgency(userId);
+//            
+//            if (agency.isPresent()) {
+//                logger.info("✅ Retrieved agency info for user: {}", userId);
+//                return ResponseEntity.ok(agency.get());
+//            } else {
+//                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+//                        .body(Map.of("error", "User does not have an agency"));
+//            }
+//
+//        } catch (Exception e) {
+//            logger.error("❌ Failed to fetch user agency", e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("error", "Failed to fetch agency information"));
+//        }
+//    }
 
     /**
      * Check if current user has agency
@@ -349,43 +346,43 @@ public class UserApiController {
     /**
      * Get current user's trial status
      */
-    @GetMapping("/me/trial-status")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<?> getMyTrialStatus() {
-        try {
-            Long userId = userService.getCurrentUserId();
-            User user = userService.getUserEntityById(userId);
-            
-            Map<String, Object> status = new HashMap<>();
-            status.put("inTrial", trialService.isInTrial(user));
-            status.put("trialExpired", trialService.isTrialExpired(user));
-            status.put("daysRemaining", trialService.getTrialDaysRemaining(user));
-            status.put("progressPercentage", trialService.getTrialProgressPercentage(user));
-            status.put("tier", user.getTier());
-            
-            if (user.getTrialStartDate() != null) {
-                status.put("trialStartDate", user.getTrialStartDate());
-            }
-            if (user.getTrialEndDate() != null) {
-                status.put("trialEndDate", user.getTrialEndDate());
-            }
-            
-            // Add agency info if applicable
-            if (user.isAgencyAdmin() && !user.getOwnedAgencies().isEmpty()) {
-                Agency agency = user.getOwnedAgencies().get(0);
-                status.put("agencyInTrial", trialService.isAgencyInTrial(agency));
-                status.put("agencyName", agency.getName());
-            }
-            
-            logger.info("✅ Retrieved trial status for user: {}", userId);
-            return ResponseEntity.ok(status);
-
-        } catch (Exception e) {
-            logger.error("❌ Failed to fetch trial status", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to fetch trial status"));
-        }
-    }
+//    @GetMapping("/me/trial-status")
+//    @PreAuthorize("hasRole('USER')")
+//    public ResponseEntity<?> getMyTrialStatus() {
+//        try {
+//            Long userId = userService.getCurrentUserId();
+//            User user = userService.getUserEntityById(userId);
+//            
+//            Map<String, Object> status = new HashMap<>();
+//            status.put("inTrial", trialService.isInTrial(user));
+//            status.put("trialExpired", trialService.isTrialExpired(user));
+//            status.put("daysRemaining", trialService.getTrialDaysRemaining(user));
+//            status.put("progressPercentage", trialService.getTrialProgressPercentage(user));
+//            status.put("tier", user.getTier());
+//            
+//            if (user.getTrialStartDate() != null) {
+//                status.put("trialStartDate", user.getTrialStartDate());
+//            }
+//            if (user.getTrialEndDate() != null) {
+//                status.put("trialEndDate", user.getTrialEndDate());
+//            }
+//            
+//            // Add agency info if applicable
+//            if (user.isAgencyAdmin() && !user.getOwnedAgencies().isEmpty()) {
+//                Agency agency = user.getOwnedAgencies().get(0);
+//                status.put("agencyInTrial", trialService.isAgencyInTrial(agency));
+//                status.put("agencyName", agency.getName());
+//            }
+//            
+//            logger.info("✅ Retrieved trial status for user: {}", userId);
+//            return ResponseEntity.ok(status);
+//
+//        } catch (Exception e) {
+//            logger.error("❌ Failed to fetch trial status", e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("error", "Failed to fetch trial status"));
+//        }
+//    }
 
     /**
      * Start trial for current user (self-service)
@@ -448,23 +445,23 @@ public class UserApiController {
     /**
      * Expire trial immediately (admin only)
      */
-    @PostMapping("/{id}/expire-trial")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> expireTrial(@PathVariable Long id) {
-        try {
-            trialService.expireTrial(id);
-            
-            logger.info("✅ Manually expired trial for user: {}", id);
-            return ResponseEntity.ok(Map.of("message", "Trial expired successfully"));
-
-        } catch (UserNotFoundException e) {
-            logger.warn("❌ User not found for trial expiration: {}", id);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", "User not found"));
-        } catch (Exception e) {
-            logger.error("❌ Failed to expire trial for user: {}", id, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to expire trial"));
-        }
-    }
+//    @PostMapping("/{id}/expire-trial")
+//    @PreAuthorize("hasRole('ADMIN')")
+//    public ResponseEntity<?> expireTrial(@PathVariable Long id) {
+//        try {
+//            trialService.expireTrial(id);
+//            
+//            logger.info("✅ Manually expired trial for user: {}", id);
+//            return ResponseEntity.ok(Map.of("message", "Trial expired successfully"));
+//
+//        } catch (UserNotFoundException e) {
+//            logger.warn("❌ User not found for trial expiration: {}", id);
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+//                    .body(Map.of("error", "User not found"));
+//        } catch (Exception e) {
+//            logger.error("❌ Failed to expire trial for user: {}", id, e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("error", "Failed to expire trial"));
+//        }
+//    }
 }

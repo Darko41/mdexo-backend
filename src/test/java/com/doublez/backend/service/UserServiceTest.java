@@ -223,15 +223,15 @@ class UserServiceTest {
 //    }
 
     // Helper methods
-    private UserResponseDTO createTestUserResponseDTO() {
-        return new UserResponseDTO(
-            1L,
-            "test@test.com",
-            List.of("ROLE_USER"),
-            LocalDate.now(),
-            LocalDate.now()
-        );
-    }
+//    private UserResponseDTO createTestUserResponseDTO() {
+//        return new UserResponseDTO(
+//            1L,
+//            "test@test.com",
+//            List.of("ROLE_USER"),
+//            LocalDate.now(),
+//            LocalDate.now()
+//        );
+//    }
 
     private Role createTestRole(String roleName) {
         Role role = new Role();

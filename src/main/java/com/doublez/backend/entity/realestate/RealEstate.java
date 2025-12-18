@@ -23,10 +23,11 @@ import com.doublez.backend.entity.agency.Agency;
 import com.doublez.backend.entity.agency.Agent;
 import com.doublez.backend.entity.user.User;
 import com.doublez.backend.entity.warning.ActiveWarning;
-import com.doublez.backend.enums.ListingType;
 import com.doublez.backend.enums.property.EnergyEfficiency;
+import com.doublez.backend.enums.property.FeatureCategory;
 import com.doublez.backend.enums.property.FurnitureStatus;
 import com.doublez.backend.enums.property.HeatingType;
+import com.doublez.backend.enums.property.ListingType;
 import com.doublez.backend.enums.property.OwnershipType;
 import com.doublez.backend.enums.property.PropertyCondition;
 import com.doublez.backend.enums.property.PropertySubtype;
@@ -47,6 +48,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
@@ -55,6 +58,8 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
@@ -257,6 +262,9 @@ public class RealEstate {
     @Column(name = "balcony_size_sqmt", precision = 10, scale = 2)
     private BigDecimal balconySizeSqMt;	// Total balcony size
     
+    @Column(name = "has_loggia")
+    private Boolean hasLoggia;	// Loggia available
+    
     @Column(name = "loggia_size_sqmt", precision = 10, scale = 2)
     private BigDecimal loggiaSizeSqMt;	// Loggia/covered balcony size
     
@@ -301,6 +309,10 @@ public class RealEstate {
     private Boolean isRegistered;	// Property is registered in cadastre (uknjiženo)
 
     // ===== COMMERCIAL-SPECIFIC FIELDS =====
+    @Column(name = "business_type", length = 100)
+    @Size(max = 100, message = "Business type cannot exceed 100 characters")
+    private String businessType;
+    
     @Column(name = "has_showcase_window")
     private Boolean hasShowcaseWindow;	// Has storefront/showcase window
     
@@ -308,9 +320,15 @@ public class RealEstate {
     private Boolean hasStorageRoom;	// Has separate storage room
     
     @Column(name = "employee_capacity")
-    private Integer employeeCapacity;	// Maximum employee capacity
+    @Min(value = 0, message = "Employee capacity cannot be negative")
+    @Max(value = 1000, message = "Employee capacity cannot exceed 1000")
+    private Integer employeeCapacity;
 
     // ===== LAND-SPECIFIC FIELDS =====
+    
+    @Column(name = "land_type", length = 50)
+    @Size(max = 50, message = "Land type cannot exceed 50 characters")
+    private String landType;
     
     @Column(name = "has_electricity_access")
     private Boolean hasElectricityAccess;	// Electricity access available
@@ -355,14 +373,15 @@ public class RealEstate {
     private Integer minimumRentPeriod;	// Minimum rental period in months
 
     // ===== MEDIA & FEATURES =====
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(
-        name = "real_estate_features",
-        joinColumns = @JoinColumn(name = "property_id")
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "real_estate_features_map",
+        joinColumns = @JoinColumn(name = "property_id"),
+        inverseJoinColumns = @JoinColumn(name = "feature_id")
     )
-    @Column(name = "feature_value", length = 100)
-    @Size(max = 15)
-    private List<String> features = new ArrayList<>();	// Additional features list
+    @Size(max = 15, message = "Cannot have more than 15 features")
+    private Set<PropertyFeature> features = new HashSet<>();
+
     
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(
@@ -537,6 +556,44 @@ public class RealEstate {
     }
 
     // ===== HELPER METHODS =====
+    
+    // Features helper methods
+    @Transient
+    public boolean hasFeature(String code) {
+        return features != null &&
+               features.stream().anyMatch(f -> f.getCode().equals(code));
+    }
+
+    @Transient
+    public Set<PropertyFeature> getFeaturesByCategory(FeatureCategory category) {
+        if (features == null) return Set.of();
+        return features.stream()
+                .filter(f -> f.getCategory() == category)
+                .collect(Collectors.toSet());
+    }
+
+    @Transient
+    public void addFeature(PropertyFeature feature) {
+        if (features == null) {
+            features = new HashSet<>();
+        }
+        features.add(feature);
+    }
+
+    @Transient
+    public void removeFeature(String code) {
+        if (features != null) {
+            features.removeIf(f -> f.getCode().equals(code));
+        }
+    }
+
+    @Transient
+    public void clearFeatures() {
+        if (features != null) {
+            features.clear();
+        }
+    }
+
     
     // Property type helpers
     @Transient
@@ -1651,9 +1708,6 @@ public class RealEstate {
     public Integer getMinimumRentPeriod() { return minimumRentPeriod; }
     public void setMinimumRentPeriod(Integer minimumRentPeriod) { this.minimumRentPeriod = minimumRentPeriod; }
 
-    public List<String> getFeatures() { return features; }
-    public void setFeatures(List<String> features) { this.features = features; }
-
     public List<String> getImages() { return images; }
     public void setImages(List<String> images) {
         this.images = images;
@@ -1934,5 +1988,37 @@ public class RealEstate {
 
 	public void setLastAdminCheckedBy(Long lastAdminCheckedBy) {
 		this.lastAdminCheckedBy = lastAdminCheckedBy;
+	}
+
+	public Boolean getHasLoggia() {
+		return hasLoggia;
+	}
+
+	public void setHasLoggia(Boolean hasLoggia) {
+		this.hasLoggia = hasLoggia;
+	}
+
+	public Set<PropertyFeature> getFeatures() {
+		return features;
+	}
+
+	public void setFeatures(Set<PropertyFeature> features) {
+		this.features = features;
+	}
+
+	public String getBusinessType() {
+		return businessType;
+	}
+
+	public void setBusinessType(String businessType) {
+		this.businessType = businessType;
+	}
+
+	public String getLandType() {
+		return landType;
+	}
+
+	public void setLandType(String landType) {
+		this.landType = landType;
 	}
 }

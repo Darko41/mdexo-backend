@@ -65,22 +65,22 @@ public class TierController {
      * GET INDIVIDUAL USER TIERS
      * Public endpoint - anyone can view individual user tiers
      */
-    @GetMapping("/benefits/individual")
-    public ResponseEntity<?> getIndividualTiers() {
-        try {
-            logger.info("👤 Fetching individual user tiers");
-            
-            List<Map<String, Object>> tiers = tierBenefitsService.getIndividualTiers();
-            
-            logger.info("✅ Found {} individual tiers", tiers.size());
-            return ResponseEntity.ok(tiers);
-            
-        } catch (Exception e) {
-            logger.error("❌ Failed to fetch individual tiers", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to retrieve individual tiers"));
-        }
-    }
+//    @GetMapping("/benefits/individual")
+//    public ResponseEntity<?> getIndividualTiers() {
+//        try {
+//            logger.info("👤 Fetching individual user tiers");
+//            
+//            List<Map<String, Object>> tiers = tierBenefitsService.getIndividualTiers();
+//            
+//            logger.info("✅ Found {} individual tiers", tiers.size());
+//            return ResponseEntity.ok(tiers);
+//            
+//        } catch (Exception e) {
+//            logger.error("❌ Failed to fetch individual tiers", e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("error", "Failed to retrieve individual tiers"));
+//        }
+//    }
 
     /**
      * GET AGENCY TIERS
@@ -107,98 +107,98 @@ public class TierController {
      * GET INVESTOR TIERS
      * Public endpoint - anyone can view investor tiers
      */
-    @GetMapping("/benefits/investor")
-    public ResponseEntity<?> getInvestorTiers() {
-        try {
-            logger.info("💰 Fetching investor tiers");
-            
-            List<Map<String, Object>> tiers = tierBenefitsService.getInvestorTiers();
-            
-            logger.info("✅ Found {} investor tiers", tiers.size());
-            return ResponseEntity.ok(tiers);
-            
-        } catch (Exception e) {
-            logger.error("❌ Failed to fetch investor tiers", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to retrieve investor tiers"));
-        }
-    }
+//    @GetMapping("/benefits/investor")
+//    public ResponseEntity<?> getInvestorTiers() {
+//        try {
+//            logger.info("💰 Fetching investor tiers");
+//            
+//            List<Map<String, Object>> tiers = tierBenefitsService.getInvestorTiers();
+//            
+//            logger.info("✅ Found {} investor tiers", tiers.size());
+//            return ResponseEntity.ok(tiers);
+//            
+//        } catch (Exception e) {
+//            logger.error("❌ Failed to fetch investor tiers", e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("error", "Failed to retrieve investor tiers"));
+//        }
+//    }
 
     /**
      * GET CURRENT USER'S TIER INFORMATION
      * Authenticated endpoint - returns current user's tier, benefits, and trial status
      */
-    @GetMapping("/my-tier")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<?> getMyTierBenefits() {
-        try {
-            // ✅ FIX: Use getAuthenticatedUser() instead of getCurrentUserId()
-            User user = userService.getAuthenticatedUser();
-            logger.info("🎯 Fetching tier information for user: {} (Tier: {})", user.getEmail(), user.getTier());
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("currentTier", user.getTier());
-            response.put("tierName", user.getTier().name());
-            response.put("benefits", tierBenefitsService.getTierBenefits(user.getTier()));
-            response.put("inTrial", trialService.isInTrial(user));
-            response.put("trialDaysRemaining", trialService.getTrialDaysRemaining(user));
-            response.put("trialActive", trialService.isInTrial(user));
-            
-            // Add trial end date if in trial
-            if (trialService.isInTrial(user)) {
-                response.put("trialEndDate", user.getTrialEndDate());
-                response.put("trialStartDate", user.getTrialStartDate());
-            }
-            
-            // Add agency information if user is an agency admin
-            if (user.isAgencyAdmin()) {
-                try {
-                    // ✅ FIX: Use AgencyService to get agency info properly
-                    // You might need to inject AgencyService for this
-                    // For now, using the existing method if available
-                    if (!user.getOwnedAgencies().isEmpty()) {
-                        Agency agency = user.getOwnedAgencies().get(0);
-                        response.put("agency", Map.of(
-                            "id", agency.getId(), 
-                            "name", agency.getName(), 
-                            "isActive", agency.getIsActive()
-                        ));
-                        logger.info("🏢 Agency info added for user: {}", user.getEmail());
-                    }
-                } catch (Exception e) {
-                    logger.warn("⚠️ Could not fetch agency info for user: {}", user.getEmail(), e);
-                }
-            }
-            
-            // Add investor information if user is an investor
-            if (user.isInvestor()) {
-                response.put("investor", Map.of(
-                    "hasProfile", user.getInvestorProfile() != null,
-                    "profileComplete", user.getInvestorProfile() != null && 
-                                      isInvestorProfileComplete(user.getInvestorProfile())
-                ));
-            }
-            
-            // Add usage statistics if available
-            try {
-                // You might want to add usage stats here from your authorization service
-                response.put("usage", Map.of(
-                    "propertiesCreated", getCurrentUserPropertyCount(user.getId()),
-                    "imagesUploaded", getCurrentUserImageCount(user.getId())
-                ));
-            } catch (Exception e) {
-                logger.debug("Usage statistics not available for user: {}", user.getEmail());
-            }
-            
-            logger.info("✅ Tier information retrieved successfully for user: {}", user.getEmail());
-            return ResponseEntity.ok(response);
-            
-        } catch (Exception e) {
-            logger.error("❌ Failed to retrieve tier information", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to retrieve tier information: " + e.getMessage()));
-        }
-    }
+//    @GetMapping("/my-tier")
+//    @PreAuthorize("isAuthenticated()")
+//    public ResponseEntity<?> getMyTierBenefits() {
+//        try {
+//            // ✅ FIX: Use getAuthenticatedUser() instead of getCurrentUserId()
+//            User user = userService.getAuthenticatedUser();
+//            logger.info("🎯 Fetching tier information for user: {} (Tier: {})", user.getEmail(), user.getTier());
+//            
+//            Map<String, Object> response = new HashMap<>();
+//            response.put("currentTier", user.getTier());
+//            response.put("tierName", user.getTier().name());
+//            response.put("benefits", tierBenefitsService.getTierBenefits(user.getTier()));
+//            response.put("inTrial", trialService.isInTrial(user));
+//            response.put("trialDaysRemaining", trialService.getTrialDaysRemaining(user));
+//            response.put("trialActive", trialService.isInTrial(user));
+//            
+//            // Add trial end date if in trial
+//            if (trialService.isInTrial(user)) {
+//                response.put("trialEndDate", user.getTrialEndDate());
+//                response.put("trialStartDate", user.getTrialStartDate());
+//            }
+//            
+//            // Add agency information if user is an agency admin
+//            if (user.isAgencyAdmin()) {
+//                try {
+//                    // ✅ FIX: Use AgencyService to get agency info properly
+//                    // You might need to inject AgencyService for this
+//                    // For now, using the existing method if available
+//                    if (!user.getOwnedAgencies().isEmpty()) {
+//                        Agency agency = user.getOwnedAgencies().get(0);
+//                        response.put("agency", Map.of(
+//                            "id", agency.getId(), 
+//                            "name", agency.getName(), 
+//                            "isActive", agency.getIsActive()
+//                        ));
+//                        logger.info("🏢 Agency info added for user: {}", user.getEmail());
+//                    }
+//                } catch (Exception e) {
+//                    logger.warn("⚠️ Could not fetch agency info for user: {}", user.getEmail(), e);
+//                }
+//            }
+//            
+//            // Add investor information if user is an investor
+//            if (user.isInvestor()) {
+//                response.put("investor", Map.of(
+//                    "hasProfile", user.getInvestorProfile() != null,
+//                    "profileComplete", user.getInvestorProfile() != null && 
+//                                      isInvestorProfileComplete(user.getInvestorProfile())
+//                ));
+//            }
+//            
+//            // Add usage statistics if available
+//            try {
+//                // You might want to add usage stats here from your authorization service
+//                response.put("usage", Map.of(
+//                    "propertiesCreated", getCurrentUserPropertyCount(user.getId()),
+//                    "imagesUploaded", getCurrentUserImageCount(user.getId())
+//                ));
+//            } catch (Exception e) {
+//                logger.debug("Usage statistics not available for user: {}", user.getEmail());
+//            }
+//            
+//            logger.info("✅ Tier information retrieved successfully for user: {}", user.getEmail());
+//            return ResponseEntity.ok(response);
+//            
+//        } catch (Exception e) {
+//            logger.error("❌ Failed to retrieve tier information", e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("error", "Failed to retrieve tier information: " + e.getMessage()));
+//        }
+//    }
 
     /**
      * GET TIER BENEFITS FOR SPECIFIC TIER

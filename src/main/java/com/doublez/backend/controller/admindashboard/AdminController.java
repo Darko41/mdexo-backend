@@ -26,7 +26,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.doublez.backend.dto.realestate.RealEstateCreateDTO;
 import com.doublez.backend.dto.realestate.RealEstateResponseDTO;
 import com.doublez.backend.dto.realestate.RealEstateUpdateDTO;
-import com.doublez.backend.dto.user.UserDTO;
 import com.doublez.backend.dto.user.UserResponseDTO;
 import com.doublez.backend.service.realestate.AdminRealEstateService;
 import com.doublez.backend.service.realestate.RealEstateService;
@@ -81,12 +80,12 @@ public class AdminController {
         return "admin/dashboard";
     }
 
-    @GetMapping("/users")
-    public String showUserData(Model model) {
-        List<UserDTO> users = userService.getAllUsers();
-        model.addAttribute("users", users);
-        return "admin/userdata";
-    }
+//    @GetMapping("/users")
+//    public String showUserData(Model model) {
+//        List<UserDTO> users = userService.getAllUsers();
+//        model.addAttribute("users", users);
+//        return "admin/userdata";
+//    }
 
     @GetMapping("/real-estates")
     public String showRealEstatesData(Model model) {
@@ -101,57 +100,57 @@ public class AdminController {
         return "admin/realestate-form";
     }
 
-    @GetMapping("/real-estates/{propertyId}/edit")
-    public String showEditRealEstateForm(@PathVariable Long propertyId, Model model) {
-        RealEstateResponseDTO realEstate = realEstateService.getRealEstateById(propertyId);
-        model.addAttribute("realEstate", realEstate);
-        model.addAttribute("isEdit", true);
-        return "admin/realestate-form";
-    }
+//    @GetMapping("/real-estates/{propertyId}/edit")
+//    public String showEditRealEstateForm(@PathVariable Long propertyId, Model model) {
+//        RealEstateResponseDTO realEstate = realEstateService.getRealEstateById(propertyId);
+//        model.addAttribute("realEstate", realEstate);
+//        model.addAttribute("isEdit", true);
+//        return "admin/realestate-form";
+//    }
 
-    @GetMapping("/real-estates/{propertyId}")
-    @ResponseBody
-    public ResponseEntity<RealEstateResponseDTO> getRealEstate(@PathVariable Long propertyId) {
-        RealEstateResponseDTO realEstate = realEstateService.getRealEstateById(propertyId);
-        return ResponseEntity.ok(realEstate);
-    }
+//    @GetMapping("/real-estates/{propertyId}")
+//    @ResponseBody
+//    public ResponseEntity<RealEstateResponseDTO> getRealEstate(@PathVariable Long propertyId) {
+//        RealEstateResponseDTO realEstate = realEstateService.getRealEstateById(propertyId);
+//        return ResponseEntity.ok(realEstate);
+//    }
     
-    @GetMapping("/real-estates/{propertyId}/view")
-    public String viewRealEstate(@PathVariable Long propertyId, Model model) {
-        RealEstateResponseDTO realEstate = realEstateService.getRealEstateById(propertyId);
-        model.addAttribute("property", realEstate);
-        return "admin/property";
-    }
+//    @GetMapping("/real-estates/{propertyId}/view")
+//    public String viewRealEstate(@PathVariable Long propertyId, Model model) {
+//        RealEstateResponseDTO realEstate = realEstateService.getRealEstateById(propertyId);
+//        model.addAttribute("property", realEstate);
+//        return "admin/property";
+//    }
     
-    @PostMapping("/real-estates/{propertyId}/update")
-    public String updateRealEstateAndRedirect(@PathVariable Long propertyId,
-                                              @ModelAttribute RealEstateUpdateDTO updateDto,
-                                              @RequestParam(required = false) MultipartFile[] images,
-                                              RedirectAttributes redirectAttributes) {
-        try {
-            adminRealEstateService.updateRealEstate(propertyId, updateDto, images);
-            redirectAttributes.addFlashAttribute("success", "Real estate updated successfully!");
-            return "redirect:/admin/real-estates/" + propertyId + "/view";
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Failed to update real estate: " + e.getMessage());
-            return "redirect:/admin/real-estates/" + propertyId + "/edit";
-        }
-    }
+//    @PostMapping("/real-estates/{propertyId}/update")
+//    public String updateRealEstateAndRedirect(@PathVariable Long propertyId,
+//                                              @ModelAttribute RealEstateUpdateDTO updateDto,
+//                                              @RequestParam(required = false) MultipartFile[] images,
+//                                              RedirectAttributes redirectAttributes) {
+//        try {
+//            adminRealEstateService.updateRealEstate(propertyId, updateDto, images);
+//            redirectAttributes.addFlashAttribute("success", "Real estate updated successfully!");
+//            return "redirect:/admin/real-estates/" + propertyId + "/view";
+//        } catch (Exception e) {
+//            redirectAttributes.addFlashAttribute("error", "Failed to update real estate: " + e.getMessage());
+//            return "redirect:/admin/real-estates/" + propertyId + "/edit";
+//        }
+//    }
     
-    @PostMapping("/real-estates")
-    public String createRealEstateAndRedirect(
-            @ModelAttribute RealEstateCreateDTO createDto,
-            @RequestParam(required = false) MultipartFile[] images,
-            RedirectAttributes redirectAttributes) {
-        try {
-            RealEstateResponseDTO response = realEstateService.createRealEstateForUser(createDto, images);
-            redirectAttributes.addFlashAttribute("success", "Real estate created successfully!");
-            return "redirect:/admin/real-estates/" + response.getPropertyId() + "/view";
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Failed to create real estate: " + e.getMessage());
-            return "redirect:/admin/real-estates/new";
-        }
-    }
+//    @PostMapping("/real-estates")
+//    public String createRealEstateAndRedirect(
+//            @ModelAttribute RealEstateCreateDTO createDto,
+//            @RequestParam(required = false) MultipartFile[] images,
+//            RedirectAttributes redirectAttributes) {
+//        try {
+//            RealEstateResponseDTO response = realEstateService.createRealEstateForUser(createDto, images);
+//            redirectAttributes.addFlashAttribute("success", "Real estate created successfully!");
+//            return "redirect:/admin/real-estates/" + response.getPropertyId() + "/view";
+//        } catch (Exception e) {
+//            redirectAttributes.addFlashAttribute("error", "Failed to create real estate: " + e.getMessage());
+//            return "redirect:/admin/real-estates/new";
+//        }
+//    }
     
     @GetMapping("/session-status")
     @ResponseBody

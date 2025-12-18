@@ -89,22 +89,22 @@ public class TeamAnalyticsController {
         return ResponseEntity.ok(warnings);
     }
     
-    @GetMapping("/agency/{agencyId}/dashboard")
-    @PreAuthorize("hasRole('AGENCY')")
-    public ResponseEntity<AnalyticsDashboardDTO> getAnalyticsDashboard(@PathVariable Long agencyId) {
-        AnalyticsDashboardDTO dashboard = new AnalyticsDashboardDTO();
-        
-        // Get various analytics
-        dashboard.setTierAnalytics(analyticsService.getTierAnalytics(agencyId));
-        dashboard.setMarketInsights(analyticsService.getMarketInsights(agencyId));
-        
-        // Get productivity for last 30 days
-        LocalDateTime monthAgo = LocalDateTime.now().minusDays(30);
-        dashboard.setTeamProductivity(analyticsService.getTeamProductivity(agencyId, monthAgo, LocalDateTime.now()));
-        
-        // Get active warnings
-        dashboard.setActiveWarnings(warningService.getActiveWarningsForAgency(agencyId));
-        
-        return ResponseEntity.ok(dashboard);
-    }
+//    @GetMapping("/agency/{agencyId}/dashboard")
+//    @PreAuthorize("hasRole('AGENCY')")
+//    public ResponseEntity<AnalyticsDashboardDTO> getAnalyticsDashboard(@PathVariable Long agencyId) {
+//        AnalyticsDashboardDTO dashboard = new AnalyticsDashboardDTO();
+//        
+//        // Get various analytics
+//        dashboard.setTierAnalytics(analyticsService.getTierAnalytics(agencyId));
+//        dashboard.setMarketInsights(analyticsService.getMarketInsights(agencyId));
+//        
+//        // Get productivity for last 30 days
+//        LocalDateTime monthAgo = LocalDateTime.now().minusDays(30);
+//        dashboard.setTeamProductivity(analyticsService.getTeamProductivity(agencyId, monthAgo, LocalDateTime.now()));
+//        
+//        // Get active warnings
+//        dashboard.setActiveWarnings(warningService.getActiveWarningsForAgency(agencyId));
+//        
+//        return ResponseEntity.ok(dashboard);
+//    }
 }

@@ -16,5 +16,3 @@ public enum FurnitureStatus {
         return displayName;
     }
 }
-
-

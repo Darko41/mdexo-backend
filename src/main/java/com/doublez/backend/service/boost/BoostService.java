@@ -14,8 +14,8 @@ import com.doublez.backend.entity.realestate.RealEstate;
 import com.doublez.backend.entity.user.User;
 import com.doublez.backend.exception.FeatureNotImplementedException;
 import com.doublez.backend.repository.AgencyRepository;
-import com.doublez.backend.repository.RealEstateRepository;
 import com.doublez.backend.repository.UserRepository;
+import com.doublez.backend.repository.realestate.RealEstateRepository;
 import com.doublez.backend.service.credit.CreditService;
 
 import jakarta.persistence.EntityNotFoundException;

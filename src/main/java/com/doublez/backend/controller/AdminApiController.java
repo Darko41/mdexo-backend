@@ -33,9 +33,8 @@ import com.doublez.backend.dto.realestate.RealEstateCreateDTO;
 import com.doublez.backend.dto.realestate.RealEstateFormUpdateDTO;
 import com.doublez.backend.dto.realestate.RealEstateResponseDTO;
 import com.doublez.backend.dto.realestate.RealEstateUpdateDTO;
-import com.doublez.backend.dto.user.UserDTO;
-import com.doublez.backend.enums.ListingType;
 import com.doublez.backend.enums.property.EnergyEfficiency;
+import com.doublez.backend.enums.property.ListingType;
 import com.doublez.backend.enums.property.PropertyType;
 import com.doublez.backend.exception.UserNotFoundException;
 import com.doublez.backend.response.ApiResponse;
@@ -68,17 +67,17 @@ public class AdminApiController {
     // REAL ESTATE ENDPOINTS
     // ========================
 
-    @PostMapping(value = "/real-estates", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<RealEstateResponseDTO> createRealEstate(@RequestPart @Valid RealEstateCreateDTO createDto,
-            @RequestPart(required = false) MultipartFile[] images) {
-
-        logger.info("👑 Admin creating real estate for user: {}",
-                createDto.getOwnerId() != null ? createDto.getOwnerId() : "current user");
-
-        RealEstateResponseDTO response = realEstateService.createRealEstateForUser(createDto, images);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .header("Location", "/api/real-estates/" + response.getPropertyId()).body(response);
-    }
+//    @PostMapping(value = "/real-estates", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    public ResponseEntity<RealEstateResponseDTO> createRealEstate(@RequestPart @Valid RealEstateCreateDTO createDto,
+//            @RequestPart(required = false) MultipartFile[] images) {
+//
+//        logger.info("👑 Admin creating real estate for user: {}",
+//                createDto.getOwnerId() != null ? createDto.getOwnerId() : "current user");
+//
+//        RealEstateResponseDTO response = realEstateService.createRealEstateForUser(createDto, images);
+//        return ResponseEntity.status(HttpStatus.CREATED)
+//                .header("Location", "/api/real-estates/" + response.getPropertyId()).body(response);
+//    }
 
     // ENHANCED: Get all real estates with pagination and filters
     @GetMapping("/real-estates")
@@ -133,78 +132,78 @@ public class AdminApiController {
     /**
      * ENHANCED ADMIN UPDATE with image support
      */
-    @PutMapping(value = "/real-estates/{propertyId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Map<String, Object>> updateRealEstate(@PathVariable Long propertyId,
-            @ModelAttribute @Valid RealEstateFormUpdateDTO formUpdateDto, HttpServletRequest request) {
-
-        if (formUpdateDto == null || formUpdateDto.getUpdateDto() == null) {
-            throw new IllegalArgumentException("Update data cannot be null");
-        }
-
-        try {
-            logger.info("👑 Admin updating real estate {} with image changes", propertyId);
-
-            RealEstateUpdateDTO updateDto = formUpdateDto.getUpdateDto();
-            MultipartFile[] images = formUpdateDto.getImages();
-
-            // Use the enhanced method with image support
-            RealEstateResponseDTO response = adminRealEstateService.updateRealEstate(propertyId, updateDto, images,
-                    null); // 🆕 imagesToRemove can be handled via updateDto
-
-            Map<String, Object> result = new HashMap<>();
-            result.put("success", true);
-            result.put("message", "Real estate updated successfully");
-            result.put("redirectUrl", "/admin/real-estates/" + propertyId + "/view");
-            result.put("propertyId", propertyId);
-            result.put("property", response);
-
-            return ResponseEntity.ok(result);
-
-        } catch (Exception e) {
-            logger.error("❌ Admin failed to update real estate {}: {}", propertyId, e.getMessage(), e);
-            Map<String, Object> result = new HashMap<>();
-            result.put("success", false);
-            result.put("message", "Failed to update real estate: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
-        }
-    }
+//    @PutMapping(value = "/real-estates/{propertyId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    public ResponseEntity<Map<String, Object>> updateRealEstate(@PathVariable Long propertyId,
+//            @ModelAttribute @Valid RealEstateFormUpdateDTO formUpdateDto, HttpServletRequest request) {
+//
+//        if (formUpdateDto == null || formUpdateDto.getUpdateDto() == null) {
+//            throw new IllegalArgumentException("Update data cannot be null");
+//        }
+//
+//        try {
+//            logger.info("👑 Admin updating real estate {} with image changes", propertyId);
+//
+//            RealEstateUpdateDTO updateDto = formUpdateDto.getUpdateDto();
+//            MultipartFile[] images = formUpdateDto.getImages();
+//
+//            // Use the enhanced method with image support
+//            RealEstateResponseDTO response = adminRealEstateService.updateRealEstate(propertyId, updateDto, images,
+//                    null); // 🆕 imagesToRemove can be handled via updateDto
+//
+//            Map<String, Object> result = new HashMap<>();
+//            result.put("success", true);
+//            result.put("message", "Real estate updated successfully");
+//            result.put("redirectUrl", "/admin/real-estates/" + propertyId + "/view");
+//            result.put("propertyId", propertyId);
+//            result.put("property", response);
+//
+//            return ResponseEntity.ok(result);
+//
+//        } catch (Exception e) {
+//            logger.error("❌ Admin failed to update real estate {}: {}", propertyId, e.getMessage(), e);
+//            Map<String, Object> result = new HashMap<>();
+//            result.put("success", false);
+//            result.put("message", "Failed to update real estate: " + e.getMessage());
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
+//        }
+//    }
 
     // NEW: Enhanced update with image removal support
-    @PutMapping(value = "/real-estates/{propertyId}/images")
-    public ResponseEntity<Map<String, Object>> updateRealEstateImages(@PathVariable Long propertyId,
-            @RequestPart(required = false) MultipartFile[] newImages,
-            @RequestParam(required = false) List<String> imagesToRemove,
-            @RequestParam(required = false) Boolean replaceImages) {
-
-        try {
-            logger.info("👑 Admin updating images for real estate {} - new: {}, remove: {}, replace: {}", 
-                    propertyId, 
-                    newImages != null ? newImages.length : 0, 
-                    imagesToRemove != null ? imagesToRemove.size() : 0,
-                    replaceImages);
-
-            // Create a minimal update DTO for image operations
-            RealEstateUpdateDTO updateDto = new RealEstateUpdateDTO();
-            updateDto.setReplaceImages(replaceImages);
-
-            RealEstateResponseDTO response = adminRealEstateService.updateRealEstate(
-                    propertyId, updateDto, newImages, imagesToRemove);
-
-            Map<String, Object> result = new HashMap<>();
-            result.put("success", true);
-            result.put("message", "Images updated successfully");
-            result.put("property", response);
-
-            return ResponseEntity.ok(result);
-
-        } catch (Exception e) {
-            logger.error("❌ Admin failed to update images for real estate {}: {}", propertyId, e.getMessage(), e);
-            Map<String, Object> result = new HashMap<>();
-            result.put("success", false);
-            result.put("message", "Failed to update images: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
-        }
-    }
+//    @PutMapping(value = "/real-estates/{propertyId}/images")
+//    public ResponseEntity<Map<String, Object>> updateRealEstateImages(@PathVariable Long propertyId,
+//            @RequestPart(required = false) MultipartFile[] newImages,
+//            @RequestParam(required = false) List<String> imagesToRemove,
+//            @RequestParam(required = false) Boolean replaceImages) {
+//
+//        try {
+//            logger.info("👑 Admin updating images for real estate {} - new: {}, remove: {}, replace: {}", 
+//                    propertyId, 
+//                    newImages != null ? newImages.length : 0, 
+//                    imagesToRemove != null ? imagesToRemove.size() : 0,
+//                    replaceImages);
+//
+//            // Create a minimal update DTO for image operations
+//            RealEstateUpdateDTO updateDto = new RealEstateUpdateDTO();
+//            updateDto.setReplaceImages(replaceImages);
+//
+//            RealEstateResponseDTO response = adminRealEstateService.updateRealEstate(
+//                    propertyId, updateDto, newImages, imagesToRemove);
+//
+//            Map<String, Object> result = new HashMap<>();
+//            result.put("success", true);
+//            result.put("message", "Images updated successfully");
+//            result.put("property", response);
+//
+//            return ResponseEntity.ok(result);
+//
+//        } catch (Exception e) {
+//            logger.error("❌ Admin failed to update images for real estate {}: {}", propertyId, e.getMessage(), e);
+//            Map<String, Object> result = new HashMap<>();
+//            result.put("success", false);
+//            result.put("message", "Failed to update images: " + e.getMessage());
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
+//        }
+//    }
 
     @DeleteMapping("/real-estates/{propertyId}")
     public ResponseEntity<Void> deleteRealEstate(@PathVariable Long propertyId) {
@@ -235,12 +234,12 @@ public class AdminApiController {
     }
 
     // NEW: Get real estate with detailed analytics
-    @GetMapping("/real-estates/{propertyId}/analytics")
-    public ResponseEntity<RealEstateResponseDTO> getRealEstateWithAnalytics(@PathVariable Long propertyId) {
-        logger.info("👑 Admin fetching real estate with analytics: {}", propertyId);
-        RealEstateResponseDTO realEstate = adminRealEstateService.getRealEstateWithAnalytics(propertyId);
-        return ResponseEntity.ok(realEstate);
-    }
+//    @GetMapping("/real-estates/{propertyId}/analytics")
+//    public ResponseEntity<RealEstateResponseDTO> getRealEstateWithAnalytics(@PathVariable Long propertyId) {
+//        logger.info("👑 Admin fetching real estate with analytics: {}", propertyId);
+//        RealEstateResponseDTO realEstate = adminRealEstateService.getRealEstateWithAnalytics(propertyId);
+//        return ResponseEntity.ok(realEstate);
+//    }
 
     // ========================
     // PROPERTY STATUS MANAGEMENT
@@ -352,26 +351,26 @@ public class AdminApiController {
     // USER MANAGEMENT ENDPOINTS
     // ========================
 
-    @PostMapping("/users")
-    public ResponseEntity<UserDTO> createUser(@RequestBody @Valid UserDTO.Create createDto) {
-        logger.info("👑 Admin creating user: {}", createDto.getEmail());
-        UserDTO response = userService.registerUser(createDto, true);
-        return ResponseEntity.status(HttpStatus.CREATED).header("Location", "/api/users/" + response.getId())
-                .body(response);
-    }
+//    @PostMapping("/users")
+//    public ResponseEntity<UserDTO> createUser(@RequestBody @Valid UserDTO.Create createDto) {
+//        logger.info("👑 Admin creating user: {}", createDto.getEmail());
+//        UserDTO response = userService.registerUser(createDto, true);
+//        return ResponseEntity.status(HttpStatus.CREATED).header("Location", "/api/users/" + response.getId())
+//                .body(response);
+//    }
 
-    @PutMapping("/users/{id}")
-    public ResponseEntity<UserDTO> updateUser(@PathVariable Long id, @RequestBody @Valid UserDTO.Update updateDto) {
-        logger.info("👑 Admin updating user: {}", id);
-        UserDTO updatedUser = userService.updateUser(id, updateDto);
-        return ResponseEntity.ok(updatedUser);
-    }
+//    @PutMapping("/users/{id}")
+//    public ResponseEntity<UserDTO> updateUser(@PathVariable Long id, @RequestBody @Valid UserDTO.Update updateDto) {
+//        logger.info("👑 Admin updating user: {}", id);
+//        UserDTO updatedUser = userService.updateUser(id, updateDto);
+//        return ResponseEntity.ok(updatedUser);
+//    }
 
-    @GetMapping("/users")
-    public ResponseEntity<List<UserDTO>> getAllUsers() {
-        logger.info("👑 Admin fetching all users");
-        return ResponseEntity.ok(userService.getAllUsers());
-    }
+//    @GetMapping("/users")
+//    public ResponseEntity<List<UserDTO>> getAllUsers() {
+//        logger.info("👑 Admin fetching all users");
+//        return ResponseEntity.ok(userService.getAllUsers());
+//    }
 
     @DeleteMapping("/users/{id}")
     public ResponseEntity<ApiResponse<String>> deleteUser(@PathVariable Long id) {
@@ -469,16 +468,16 @@ public class AdminApiController {
     }
 
     // NEW: Increment contact count (for testing/admin tracking)
-    @PostMapping("/real-estates/{propertyId}/increment-contact")
-    public ResponseEntity<ApiResponse<String>> incrementContactCount(@PathVariable Long propertyId) {
-        logger.info("👑 Admin incrementing contact count for property: {}", propertyId);
-        try {
-            realEstateService.incrementContactCount(propertyId);
-            return ResponseEntity.ok(ApiResponse.success("Contact count incremented"));
-        } catch (Exception e) {
-            logger.error("❌ Failed to increment contact count: {}", e.getMessage());
-            return ResponseEntity.internalServerError()
-                    .body(ApiResponse.error("Failed to increment contact count: " + e.getMessage()));
-        }
-    }
+//    @PostMapping("/real-estates/{propertyId}/increment-contact")
+//    public ResponseEntity<ApiResponse<String>> incrementContactCount(@PathVariable Long propertyId) {
+//        logger.info("👑 Admin incrementing contact count for property: {}", propertyId);
+//        try {
+//            realEstateService.incrementContactCount(propertyId);
+//            return ResponseEntity.ok(ApiResponse.success("Contact count incremented"));
+//        } catch (Exception e) {
+//            logger.error("❌ Failed to increment contact count: {}", e.getMessage());
+//            return ResponseEntity.internalServerError()
+//                    .body(ApiResponse.error("Failed to increment contact count: " + e.getMessage()));
+//        }
+//    }
 }

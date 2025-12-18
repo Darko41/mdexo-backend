@@ -1,4 +1,4 @@
-package com.doublez.backend.repository;
+package com.doublez.backend.repository.realestate;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -17,8 +17,8 @@ import com.doublez.backend.entity.agency.Agency;
 import com.doublez.backend.entity.agency.Agent;
 import com.doublez.backend.entity.realestate.RealEstate;
 import com.doublez.backend.entity.user.User;
-import com.doublez.backend.enums.ListingType;
 import com.doublez.backend.enums.property.EnergyEfficiency;
+import com.doublez.backend.enums.property.ListingType;
 import com.doublez.backend.enums.property.PropertyType;
 
 @Repository

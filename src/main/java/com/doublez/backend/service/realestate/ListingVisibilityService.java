@@ -12,7 +12,7 @@ import com.doublez.backend.entity.agency.Agent;
 import com.doublez.backend.entity.realestate.RealEstate;
 import com.doublez.backend.entity.user.User;
 import com.doublez.backend.repository.AgentRepository;
-import com.doublez.backend.repository.RealEstateRepository;
+import com.doublez.backend.repository.realestate.RealEstateRepository;
 import com.doublez.backend.service.usage.PermissionService;
 
 @Service

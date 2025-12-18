@@ -82,12 +82,12 @@ public class TrialService {
         return Math.min(Math.max(percentage, 0), 100);
     }
 
-    public void expireTrial(Long userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
-        user.setTrialEndDate(LocalDateTime.now().minusDays(1));
-        userRepository.save(user);
-        handleTrialExpiration(user);
-    }
+//    public void expireTrial(Long userId) {
+//        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+//        user.setTrialEndDate(LocalDateTime.now().minusDays(1));
+//        userRepository.save(user);
+//        handleTrialExpiration(user);
+//    }
 
     public void extendTrial(Long userId, int additionalMonths) {
         User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
@@ -104,20 +104,20 @@ public class TrialService {
         }
     }
 
-    @Scheduled(cron = "0 0 9 * * ?") // Daily at 9 AM
-    public void checkExpiringTrials() {
-        LocalDateTime now = LocalDateTime.now();
-        
-        // Notifications at 15, 7, 3, and 1 days before expiry
-        sendTrialNotifications(now.plusDays(15), 15);
-        sendTrialNotifications(now.plusDays(7), 7);
-        sendTrialNotifications(now.plusDays(3), 3);
-        sendTrialNotifications(now.plusDays(1), 1);
-        
-        // Handle expired trials
-        handleExpiredTrials(now);
-    }
-    
+//    @Scheduled(cron = "0 0 9 * * ?") // Daily at 9 AM
+//    public void checkExpiringTrials() {
+//        LocalDateTime now = LocalDateTime.now();
+//        
+//        // Notifications at 15, 7, 3, and 1 days before expiry
+//        sendTrialNotifications(now.plusDays(15), 15);
+//        sendTrialNotifications(now.plusDays(7), 7);
+//        sendTrialNotifications(now.plusDays(3), 3);
+//        sendTrialNotifications(now.plusDays(1), 1);
+//        
+//        // Handle expired trials
+//        handleExpiredTrials(now);
+//    }
+//    
     private void sendTrialNotifications(LocalDateTime targetDate, int daysRemaining) {
         List<User> users = userRepository.findUsersWithTrialEndingBetween(
             targetDate.minusHours(1), targetDate.plusHours(1)
@@ -128,23 +128,23 @@ public class TrialService {
             .forEach(user -> sendTrialExpirationWarning(user, daysRemaining));
     }
 
-    private void handleExpiredTrials(LocalDateTime now) {
-        List<User> expiredUsers = userRepository.findByTrialEndDateBefore(now);
-        
-        expiredUsers.stream()
-            .filter(this::isTrialExpired)
-            .forEach(user -> {
-                // Auto-downgrade logic
-                if (user.isAgencyAdmin() && user.getOwnedAgency().isPresent()) {
-                    handleAgencyTrialExpiration(user, user.getOwnedAgency().get());
-                } else {
-                    handleTrialExpiration(user);
-                }
-                
-                // Send final expiration notice - FIXED: Use the method we just created
-                sendTrialExpiredNotification(user);
-            });
-    }
+//    private void handleExpiredTrials(LocalDateTime now) {
+//        List<User> expiredUsers = userRepository.findByTrialEndDateBefore(now);
+//        
+//        expiredUsers.stream()
+//            .filter(this::isTrialExpired)
+//            .forEach(user -> {
+//                // Auto-downgrade logic
+//                if (user.isAgencyAdmin() && user.getOwnedAgency().isPresent()) {
+//                    handleAgencyTrialExpiration(user, user.getOwnedAgency().get());
+//                } else {
+//                    handleTrialExpiration(user);
+//                }
+//                
+//                // Send final expiration notice - FIXED: Use the method we just created
+//                sendTrialExpiredNotification(user);
+//            });
+//    }
     
  // 🆕 TRIAL SUNSET MECHANISM (remove trial option after 2-3 months)
     public boolean isTrialAvailable() {
@@ -178,21 +178,21 @@ public class TrialService {
         }
     }
 
-    private void handleTrialExpiration(User user) {
-        // For regular users, just mark trial as expired
-        // No tier changes needed as per business model
-        logger.info("Trial expired for user: {}", user.getEmail());
-        
-        try {
-            resendEmailService.sendTrialExpiredEmail(
-                user.getEmail(), 
-                getUserDisplayName(user), 
-                null // No tier info needed
-            );
-        } catch (Exception e) {
-            logger.warn("Failed to send trial expired email: {}", e.getMessage());
-        }
-    }
+//    private void handleTrialExpiration(User user) {
+//        // For regular users, just mark trial as expired
+//        // No tier changes needed as per business model
+//        logger.info("Trial expired for user: {}", user.getEmail());
+//        
+//        try {
+//            resendEmailService.sendTrialExpiredEmail(
+//                user.getEmail(), 
+//                getUserDisplayName(user), 
+//                null // No tier info needed
+//            );
+//        } catch (Exception e) {
+//            logger.warn("Failed to send trial expired email: {}", e.getMessage());
+//        }
+//    }
 
     private String getUserDisplayName(User user) {
         if (user.getFirstName() != null && user.getLastName() != null) {
@@ -248,21 +248,21 @@ public class TrialService {
     }
 
     // Agency trial expiration handler
-    private void handleAgencyTrialExpiration(User user, Agency agency) {
-        // After trial, agency keeps their chosen tier but loses PRO features
-        // The effective tier calculation in Agency entity handles this
-        logger.info("Agency trial expired for user: {}, agency: {}", user.getEmail(), agency.getName());
-        
-        try {
-            resendEmailService.sendTrialExpiredEmail(
-                user.getEmail(),
-                getUserDisplayName(user),
-                agency.getTier() // Send their base tier
-            );
-        } catch (Exception e) {
-            logger.warn("Failed to send agency trial expired email: {}", e.getMessage());
-        }
-    }
+//    private void handleAgencyTrialExpiration(User user, Agency agency) {
+//        // After trial, agency keeps their chosen tier but loses PRO features
+//        // The effective tier calculation in Agency entity handles this
+//        logger.info("Agency trial expired for user: {}, agency: {}", user.getEmail(), agency.getName());
+//        
+//        try {
+//            resendEmailService.sendTrialExpiredEmail(
+//                user.getEmail(),
+//                getUserDisplayName(user),
+//                agency.getTier() // Send their base tier
+//            );
+//        } catch (Exception e) {
+//            logger.warn("Failed to send agency trial expired email: {}", e.getMessage());
+//        }
+//    }
     
     // Enhanced trial statistics
     public Map<String, Object> getEnhancedTrialStatistics() {
@@ -294,15 +294,15 @@ public class TrialService {
         return stats;
     }
     
-    private void sendTrialExpiredNotification(User user) {
-        try {
-            resendEmailService.sendTrialExpiredEmail(
-                user.getEmail(),
-                getUserDisplayName(user),
-                null // No tier info needed for basic users
-            );
-        } catch (Exception e) {
-            logger.warn("Failed to send trial expired notification to {}: {}", user.getEmail(), e.getMessage());
-        }
-    }
+//    private void sendTrialExpiredNotification(User user) {
+//        try {
+//            resendEmailService.sendTrialExpiredEmail(
+//                user.getEmail(),
+//                getUserDisplayName(user),
+//                null // No tier info needed for basic users
+//            );
+//        } catch (Exception e) {
+//            logger.warn("Failed to send trial expired notification to {}: {}", user.getEmail(), e.getMessage());
+//        }
+//    }
 }

@@ -12,9 +12,9 @@ import com.doublez.backend.entity.agency.Agency;
 import com.doublez.backend.entity.credit.CreditTransaction;
 import com.doublez.backend.entity.user.User;
 import com.doublez.backend.entity.user.UserTier;
-import com.doublez.backend.repository.RealEstateRepository;
 import com.doublez.backend.repository.UserRepository;
 import com.doublez.backend.repository.credit.CreditTransactionRepository;
+import com.doublez.backend.repository.realestate.RealEstateRepository;
 import com.doublez.backend.service.credit.CreditService;
 
 import jakarta.persistence.EntityNotFoundException;

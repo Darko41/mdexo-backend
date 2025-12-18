@@ -1,4 +1,4 @@
-package com.doublez.backend.enums;
+package com.doublez.backend.enums.property;
 
 public enum LocationDataSource {
     OSM,            // OpenStreetMap
