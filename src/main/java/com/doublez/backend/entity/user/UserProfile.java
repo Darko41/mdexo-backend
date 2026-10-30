@@ -23,7 +23,7 @@ public class UserProfile {
     private String lastName;
 
     @Column(name = "phone")
-    @Pattern(regexp = "^[0-9\\s\\-\\/\\(\\)]{5,20}$", message = "Invalid phone number format")
+    @Pattern(regexp = "^[+]?[0-9\\s\\-\\/\\(\\)]{5,20}$", message = "Invalid phone number format")
     private String phone;
 
     @Column(name = "bio", columnDefinition = "TEXT")

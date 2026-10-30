@@ -143,7 +143,7 @@ public class Agent {
     @OneToMany(mappedBy = "assignedAgent", fetch = FetchType.LAZY)
     private List<Lead> assignedLeads = new ArrayList<>(); // Leads assigned to this agent
     
-    @OneToMany(mappedBy = "targetUser", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "targetAgent", fetch = FetchType.LAZY)
     private List<ActiveWarning> warnings = new ArrayList<>(); // Warnings targeting this agent
     
     @OneToMany(mappedBy = "listingAgent", fetch = FetchType.LAZY)

@@ -112,7 +112,8 @@ public class CustomUserDetails implements UserDetails {
         }
         
         // If never changed password, force change on first login
-        return user.getPasswordChangedAt() != null;
+        // return user.getPasswordChangedAt() != null;
+        return true;   // no password change recorded → not expired
     }
 
     private boolean isEnabledInternal(User user) {

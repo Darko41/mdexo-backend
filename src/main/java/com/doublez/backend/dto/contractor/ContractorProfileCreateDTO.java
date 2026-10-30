@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.constraints.Pattern;
 
 public class ContractorProfileCreateDTO {
@@ -14,7 +15,7 @@ public class ContractorProfileCreateDTO {
     private String website;
     private String contactPerson;
     
-    @Pattern(regexp = "^[0-9\\s\\-\\/\\(\\)]{5,20}$")
+    @Pattern(regexp = "^[+]?[0-9\\s\\-\\/\\(\\)]{5,20}$")
     private String phoneNumber;
     
     private String serviceCategories; // JSON or comma-separated: "renovation,plumbing,electrical"
@@ -60,18 +61,20 @@ public class ContractorProfileCreateDTO {
         return yearsExperience != null && yearsExperience > 0;
     }
 
+    @JsonIgnore
     public List<String> getServiceCategoriesList() {
         if (serviceCategories == null || serviceCategories.trim().isEmpty()) {
             return new ArrayList<>();
         }
-        return Arrays.asList(serviceCategories.split(","));
+        return new ArrayList<>(Arrays.asList(serviceCategories.split(",")));
     }
 
+    @JsonIgnore
     public List<String> getServiceAreasList() {
         if (serviceAreas == null || serviceAreas.trim().isEmpty()) {
             return new ArrayList<>();
         }
-        return Arrays.asList(serviceAreas.split(","));
+        return new ArrayList<>(Arrays.asList(serviceAreas.split(",")));
     }
 
     // Getters and Setters

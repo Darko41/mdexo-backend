@@ -1081,20 +1081,26 @@ public class RealEstateService {
         return "NEEDS_ATTENTION";
     }
 
-    // Get similar properties
     public List<RealEstateResponseDTO> getSimilarProperties(Long propertyId, int limit) {
         RealEstate property = realEstateRepository.findById(propertyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Property not found"));
 
+        // Calculate price range (e.g., ±20%)
+        BigDecimal price = property.getPrice();
+        BigDecimal minPrice = price.multiply(new BigDecimal("0.8")); // 20% less
+        BigDecimal maxPrice = price.multiply(new BigDecimal("1.2")); // 20% more
+
         return realEstateRepository.findSimilarProperties(
-                property.getPropertyType(), 
-                property.getCity(), 
-                property.getPrice(),
-                propertyId, 
-                PageRequest.of(0, limit)
-            ).stream()
-            .map(realEstateMapper::toResponseDto)
-            .collect(Collectors.toList());
+                        property.getPropertyType(),
+                        property.getCity(),
+                        minPrice,
+                        maxPrice,
+                        price,                       // targetPrice (original price)
+                        propertyId,
+                        PageRequest.of(0, limit)
+                ).stream()
+                .map(realEstateMapper::toResponseDto)
+                .collect(Collectors.toList());
     }
 
     // Increment contact count

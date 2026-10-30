@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.doublez.backend.enums.property.FurnitureStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -109,7 +110,10 @@ public interface RealEstateRepository extends JpaRepository<RealEstate, Long>, J
     // ===== NEW ENHANCED METHODS =====
 
     // NEW: Find popular properties by view count
-    @Query("SELECT re FROM RealEstate re WHERE re.isActive = true ORDER BY re.viewCount DESC, re.createdAt DESC")
+    @Query("SELECT re FROM RealEstate re " +
+            "LEFT JOIN PropertyMetrics pm ON pm.property = re " +
+            "WHERE re.isActive = true " +
+            "ORDER BY pm.viewCount DESC, re.createdAt DESC")
     List<RealEstate> findPopularProperties(Pageable pageable);
 
     // NEW: Find recently added properties
@@ -117,16 +121,19 @@ public interface RealEstateRepository extends JpaRepository<RealEstate, Long>, J
     List<RealEstate> findRecentlyAddedProperties(Pageable pageable);
 
     // NEW: Find similar properties (excludes current property)
-    @Query("SELECT re FROM RealEstate re WHERE " +
-           "re.propertyType = :propertyType AND " +
-           "LOWER(re.city) = LOWER(:city) AND " +
-           "re.price BETWEEN :minPrice AND :maxPrice AND " +
-           "re.propertyId != :excludeId AND " +
-           "re.isActive = true " +
-           "ORDER BY ABS(re.price - :targetPrice), re.viewCount DESC")
+    @Query("SELECT re FROM RealEstate re " +
+            "LEFT JOIN PropertyMetrics pm ON pm.property = re " +
+            "WHERE re.propertyType = :propertyType AND " +
+            "LOWER(re.city) = LOWER(:city) AND " +
+            "re.price BETWEEN :minPrice AND :maxPrice AND " +
+            "re.propertyId != :excludeId AND " +
+            "re.isActive = true " +
+            "ORDER BY ABS(re.price - :targetPrice), pm.viewCount DESC NULLS LAST")
     List<RealEstate> findSimilarProperties(
             @Param("propertyType") PropertyType propertyType,
             @Param("city") String city,
+            @Param("minPrice") BigDecimal minPrice,
+            @Param("maxPrice") BigDecimal maxPrice,
             @Param("targetPrice") BigDecimal targetPrice,
             @Param("excludeId") Long excludeId,
             Pageable pageable);
@@ -159,12 +166,10 @@ public interface RealEstateRepository extends JpaRepository<RealEstate, Long>, J
 
     // NEW: Find properties with furniture status
     @Query("SELECT re FROM RealEstate re WHERE " +
-           "re.isActive = true AND " +
-           "(:isFurnished IS NULL OR re.isFurnished = :isFurnished) AND " +
-           "(:isSemiFurnished IS NULL OR re.isSemiFurnished = :isSemiFurnished)")
+            "re.isActive = true AND " +
+            "(:furnitureStatus IS NULL OR re.furnitureStatus = :furnitureStatus)")
     Page<RealEstate> findByFurnitureStatus(
-            @Param("isFurnished") Boolean isFurnished,
-            @Param("isSemiFurnished") Boolean isSemiFurnished,
+            @Param("furnitureStatus") FurnitureStatus furnitureStatus,
             Pageable pageable);
 
     // NEW: Count properties by property type
@@ -188,10 +193,11 @@ public interface RealEstateRepository extends JpaRepository<RealEstate, Long>, J
     List<RealEstate> findFeaturedPropertiesExpiringSoon(@Param("thresholdDate") LocalDateTime thresholdDate);
 
     // NEW: Find properties with high engagement
-    @Query("SELECT re FROM RealEstate re WHERE " +
-           "re.isActive = true AND " +
-           "(re.viewCount > :minViews OR re.contactCount > :minContacts OR re.favoriteCount > :minFavorites) " +
-           "ORDER BY (re.viewCount + re.contactCount * 2 + re.favoriteCount * 3) DESC")
+    @Query("SELECT re FROM RealEstate re " +
+            "LEFT JOIN PropertyMetrics pm ON pm.property = re " +
+            "WHERE re.isActive = true AND " +
+            "(pm.viewCount > :minViews OR pm.contactCount > :minContacts OR pm.favoriteCount > :minFavorites) " +
+            "ORDER BY (pm.viewCount + pm.contactCount * 2 + pm.favoriteCount * 3) DESC")
     List<RealEstate> findHighEngagementProperties(
             @Param("minViews") Long minViews,
             @Param("minContacts") Long minContacts,

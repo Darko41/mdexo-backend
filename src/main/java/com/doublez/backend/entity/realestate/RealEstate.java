@@ -457,8 +457,8 @@ public class RealEstate {
     @OneToMany(mappedBy = "property", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<Lead> leads = new ArrayList<>(); // Leads generated for this property
     
-    @OneToMany(mappedBy = "listing", fetch = FetchType.LAZY)
-    private List<ActiveWarning> warnings = new ArrayList<>(); // Warnings for this listing
+//    @OneToMany(mappedBy = "listing", fetch = FetchType.LAZY)
+//    private List<ActiveWarning> warnings = new ArrayList<>(); // Warnings for this listing
 
     // ===== NEW: CONFIGURATION & CACHE FIELDS =====
     
@@ -1850,13 +1850,13 @@ public class RealEstate {
 		this.leads = leads;
 	}
 
-	public List<ActiveWarning> getWarnings() {
-		return warnings;
-	}
+//	public List<ActiveWarning> getWarnings() {
+//		return warnings;
+//	}
 
-	public void setWarnings(List<ActiveWarning> warnings) {
-		this.warnings = warnings;
-	}
+//	public void setWarnings(List<ActiveWarning> warnings) {
+//		this.warnings = warnings;
+//	}
 
 	public String getGeocodingAccuracy() {
 		return geocodingAccuracy;

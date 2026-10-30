@@ -64,7 +64,37 @@ public class SecurityConfig {
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests((authz) -> authz
-                // =============================================
+                    // =============================================
+                    // TEMPLATE ENDPOINTS (Session-based authentication)
+                    // =============================================
+
+                    // Public static resources
+                    .requestMatchers(
+                            "/",
+                            "/dist/**",
+                            "/pages/**",
+                            "/plugins/**",
+                            "/css/**",
+                            "/js/**",
+                            "/images/**",
+                            "/static/**",
+                            "/assets/**",
+                            "/favicon.ico",
+                            "/manifest.json",
+                            "/robots.txt",
+                            "/v3/api-docs/**",
+                            "/swagger-ui/**",
+                            "/swagger-resources/**",
+                            "/webjars/**"
+                    ).permitAll()
+
+                    // Public auth endpoints
+                    .requestMatchers("/auth/**").permitAll()
+
+                    // Admin dashboard endpoints (Session + ROLE_ADMIN)
+                    .requestMatchers("/admin/**").hasRole("ADMIN")
+
+                    // =============================================
                 // PUBLIC API ENDPOINTS (No authentication required)
                 // =============================================
                 
@@ -84,12 +114,16 @@ public class SecurityConfig {
                 // PUBLIC AUTH & REGISTRATION ENDPOINTS
                 // =============================================
                 .requestMatchers(
-                    "/api/users/register",
+                    "/api/auth/register",
                     "/api/auth/authenticate",
                     "/api/auth/me",
                     "/api/auth/validate",
                     "/api/auth/refresh"
                 ).permitAll()
+                    // =============================================
+                    // GENERAL API PROTECTION (catch-all)
+                    // =============================================
+                    .requestMatchers("/api/**").authenticated()
                 
                 // =============================================
                 // PUBLIC REAL ESTATE ENDPOINTS
@@ -248,41 +282,6 @@ public class SecurityConfig {
                 // Admin featured listings
                 .requestMatchers(HttpMethod.GET, "/api/featured/statistics").hasRole("ADMIN")
                 
-                // =============================================
-                // GENERAL API PROTECTION (catch-all)
-                // =============================================
-                .requestMatchers("/api/**").authenticated()
-                
-                // =============================================
-                // TEMPLATE ENDPOINTS (Session-based authentication)
-                // =============================================
-                
-                // Public static resources
-                .requestMatchers(
-                    "/",
-                    "/dist/**",
-                    "/pages/**", 
-                    "/plugins/**",
-                    "/css/**",
-                    "/js/**",
-                    "/images/**",
-                    "/static/**",
-                    "/assets/**",
-                    "/favicon.ico",
-                    "/manifest.json",
-                    "/robots.txt",
-                    "/v3/api-docs/**",
-                    "/swagger-ui/**", 
-                    "/swagger-resources/**",
-                    "/webjars/**"
-                ).permitAll()
-                
-                // Public auth endpoints
-                .requestMatchers("/auth/**").permitAll()
-                
-                // Admin dashboard endpoints (Session + ROLE_ADMIN)  
-                .requestMatchers("/admin/**").hasRole("ADMIN")
-                
                 // Any other request must be authenticated
                 .anyRequest().authenticated()
             )
@@ -293,7 +292,7 @@ public class SecurityConfig {
             // Form login for templates (Session-based)
             .formLogin(form -> form
                 .loginPage("/auth/login")
-                .loginProcessingUrl("/auth/login") 
+                .loginProcessingUrl("/auth/login")
                 .defaultSuccessUrl("/auth/success", true)
                 .failureUrl("/auth/login?error=true")
                 .permitAll()

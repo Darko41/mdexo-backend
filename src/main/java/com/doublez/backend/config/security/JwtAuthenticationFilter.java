@@ -37,7 +37,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         "/api/auth/authenticate",
         
         // User registration
-        "/api/users/register",
+        "/api/auth/register",
         "/api/users/check-email/*",
         
         // Public real estate browsing

@@ -1,5 +1,6 @@
 package com.doublez.backend.dto.user;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.doublez.backend.dto.agency.AgencyCreateDTO;
@@ -8,6 +9,7 @@ import com.doublez.backend.dto.investor.InvestorProfileCreateDTO;
 import com.doublez.backend.dto.owner.OwnerProfileCreateDTO;
 import com.doublez.backend.entity.user.UserRole;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -27,13 +29,13 @@ public class UserCreateDTO {
     @NotNull
     private UserRole role = UserRole.USER;
     
-    @NotBlank
+//    @NotBlank
     private String firstName;
     
-    @NotBlank  
+//    @NotBlank
     private String lastName;
-    
-    @Pattern(regexp = "^[0-9\\s\\-\\/\\(\\)]{5,20}$")
+
+    @Pattern(regexp = "^[+]?[0-9\\s\\-\\/\\(\\)]{5,20}$")
     private String phone;
     
     private String bio;
@@ -100,8 +102,9 @@ public class UserCreateDTO {
     }
 
     // Get the role as a list for entity conversion (your User entity expects List<String>)
+    @JsonIgnore
     public List<String> getRolesAsList() {
-        return List.of("ROLE_" + role.name());
+        return new ArrayList<>(List.of("ROLE_" + role.name()));
     }
 
     // Validate that only the correct role-specific data is provided

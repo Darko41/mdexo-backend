@@ -6,7 +6,7 @@ public class UserProfileDTO {
     private String firstName;
     private String lastName;
     
-    @Pattern(regexp = "^[0-9\\s\\-\\/\\(\\)]{5,20}$", message = "Invalid phone number format")
+    @Pattern(regexp = "^[+]?[0-9\\s\\-\\/\\(\\)]{5,20}$", message = "Invalid phone number format")
     private String phone;
     
     private String bio;

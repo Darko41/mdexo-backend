@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.Map;
 
 import com.doublez.backend.entity.agency.Agency;
+import com.doublez.backend.entity.agency.Agent;
 import com.doublez.backend.entity.user.User;
 import com.doublez.backend.enums.warnings.WarningStatus;
 import com.doublez.backend.utils.JsonUtils;
@@ -28,7 +29,7 @@ import jakarta.persistence.JoinColumn;
 
 @Entity
 @Table(name = "active_warnings", indexes = {
-    @Index(name = "idx_warning_user", columnList = "target_user_id"),
+    @Index(name = "idx_warning_agent", columnList = "target_agent_id"),
     @Index(name = "idx_warning_status", columnList = "status"),
     @Index(name = "idx_warning_detected", columnList = "detected_at"),
     @Index(name = "idx_warning_entity", columnList = "entity_type,entity_id")
@@ -46,8 +47,8 @@ public class ActiveWarning {
     
     // === TARGET USER ===
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "target_user_id")
-    private User targetUser;
+    @JoinColumn(name = "target_agent_id")
+    private Agent targetAgent;
     
     // === AGENCY CONTEXT ===
     @ManyToOne(fetch = FetchType.LAZY)
@@ -265,12 +266,12 @@ public class ActiveWarning {
 		this.definition = definition;
 	}
 
-	public User getTargetUser() {
-		return targetUser;
+	public Agent getTargetAgent() {
+		return targetAgent;
 	}
 
-	public void setTargetUser(User targetUser) {
-		this.targetUser = targetUser;
+	public void setTargetAgent(Agent targetAgent) {
+		this.targetAgent = targetAgent;
 	}
 
 	public Agency getAgency() {

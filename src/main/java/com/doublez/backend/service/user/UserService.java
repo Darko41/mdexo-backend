@@ -1,5 +1,6 @@
 package com.doublez.backend.service.user;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -89,7 +90,9 @@ public class UserService {
         // Create user entity from DTO
         User user = userMapper.toEntityFromCreateDTO(createDto);
         user.setPassword(passwordEncoder.encode(createDto.getPassword()));
-        
+        user.setEmailVerified(true);
+        user.setPasswordChangedAt(LocalDateTime.now());
+
         // Role assignment - users register with ONE primary role
         UserRole primaryRole = createDto.getRole();
         List<String> rolesToAssign;

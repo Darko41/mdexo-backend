@@ -1,5 +1,7 @@
 package com.doublez.backend.dto.owner;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -42,11 +44,12 @@ public class OwnerProfileCreateDTO {
         return bankAccountNumber != null && !bankAccountNumber.trim().isEmpty();
     }
 
+    @JsonIgnore
     public List<String> getOwnershipDocsList() {
         if (propertyOwnershipDocs == null || propertyOwnershipDocs.trim().isEmpty()) {
             return new ArrayList<>();
         }
-        return Arrays.asList(propertyOwnershipDocs.split(","));
+        return new ArrayList<>(Arrays.asList(propertyOwnershipDocs.split(",")));
     }
 
     // Getters and Setters

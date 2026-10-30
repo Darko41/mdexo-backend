@@ -6,7 +6,7 @@ public class UserUpdateDTO {
     private String firstName;
     private String lastName;
     
-    @Pattern(regexp = "^[0-9\\s\\-\\/\\(\\)]{5,20}$")
+    @Pattern(regexp = "^[+]?[0-9\\s\\-\\/\\(\\)]{5,20}$")
     private String phone;
     
     private String bio;

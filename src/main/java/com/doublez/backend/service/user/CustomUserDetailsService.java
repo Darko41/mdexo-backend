@@ -21,9 +21,9 @@ import com.doublez.backend.repository.UserRepository;
 
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
-    
+
     private final UserRepository userRepository;
-    
+
     public CustomUserDetailsService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
@@ -33,10 +33,10 @@ public class CustomUserDetailsService implements UserDetailsService {
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
-        
+
         // Update last login attempt time
-        user.recordFailedLogin(); // This records the attempt (will be cleared on success)
-        
+        // user.recordFailedLogin(); // This records the attempt (will be cleared on success)
+
         // Use the PRIMARY constructor that takes the full User entity
         // This allows CustomUserDetails to access all security fields and methods
         return new CustomUserDetails(user);

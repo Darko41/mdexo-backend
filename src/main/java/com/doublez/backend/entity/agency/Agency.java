@@ -187,15 +187,6 @@ public class Agency {
     private List<WarningConfiguration> warningConfigurations = new ArrayList<>(); // Custom warning settings
 
     // ========================
-    // LIFECYCLE METHODS
-    // ========================
-
-    @PrePersist
-    public void prePersist() {
-        this.createdAt = LocalDateTime.now();
-    }
-
-    // ========================
     // CONSTRUCTORS
     // ========================
 

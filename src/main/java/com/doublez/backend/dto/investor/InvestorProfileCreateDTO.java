@@ -14,7 +14,7 @@ public class InvestorProfileCreateDTO {
     private String website;
     private String contactPerson;
     
-    @Pattern(regexp = "^[0-9\\s\\-\\/\\(\\)]{5,20}$")
+    @Pattern(regexp = "^[+]?[0-9\\s\\-\\/\\(\\)]{5,20}$")
     private String phoneNumber;
     
     @NotNull

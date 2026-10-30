@@ -17,8 +17,8 @@ public class SwaggerConfig {
 	OpenAPI customOpenAPI() {
 		return new OpenAPI()
 				.info(new Info()
-						.title("MDexo API")
-						.description("This is the API documentation for Mdexo application")
+						.title("Dwellia API")
+						.description("This is the API documentation for Dwellia application")
 						.version("1.0.0")
 				)
 				.addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
