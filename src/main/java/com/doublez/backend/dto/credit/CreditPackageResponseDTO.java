@@ -3,7 +3,7 @@ package com.doublez.backend.dto.credit;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import com.doublez.backend.enums.CreditPackageType;
+import com.doublez.backend.enums.credit.CreditPackageType;
 
 public class CreditPackageResponseDTO {
     private Long id;

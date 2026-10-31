@@ -10,7 +10,7 @@ import com.doublez.backend.entity.credit.CreditPackage;
 import com.doublez.backend.entity.credit.CreditTransaction;
 import com.doublez.backend.entity.credit.UserCredit;
 import com.doublez.backend.entity.user.User;
-import com.doublez.backend.enums.CreditTransactionType;
+import com.doublez.backend.enums.credit.CreditTransactionType;
 import com.doublez.backend.repository.UserRepository;
 import com.doublez.backend.repository.credit.CreditPackageRepository;
 import com.doublez.backend.repository.credit.CreditTransactionRepository;

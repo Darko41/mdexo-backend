@@ -1,9 +1,12 @@
 package com.doublez.backend.controller;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -214,15 +217,32 @@ public class TrialController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> getExpiringTrials(@RequestParam(defaultValue = "7") Integer daysThreshold) {
         try {
-            // This would require a new repository method to find trials expiring soon
-            // For now, returning a placeholder response
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime cutoff = now.plusDays(daysThreshold);
+
+            List<User> expiring = trialService.getUsersWithTrialExpiringBetween(now, cutoff);
+
+            List<Map<String, Object>> users = expiring.stream()
+                    .map(u -> {
+                        Map<String, Object> m = new LinkedHashMap<>();
+                        m.put("userId", u.getId());
+                        m.put("email", u.getEmail());
+                        m.put("firstName", u.getFirstName());
+                        m.put("lastName", u.getLastName());
+                        m.put("trialEndDate", u.getTrialEndDate());
+                        m.put("daysRemaining", u.getTrialDaysRemaining());
+                        return m;
+                    })
+                    .collect(Collectors.toList());
+
             Map<String, Object> response = new HashMap<>();
-            response.put("message", "This endpoint requires additional repository implementation");
             response.put("daysThreshold", daysThreshold);
-            
-            logger.info("📊 Fetching trials expiring within {} days", daysThreshold);
+            response.put("count", users.size());
+            response.put("users", users);
+
+            logger.info("📊 Found {} trials expiring within {} days", users.size(), daysThreshold);
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             logger.error("❌ Failed to fetch expiring trials", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -250,10 +270,10 @@ public class TrialController {
             if (user.getTrialStartDate() != null && user.getTrialEndDate() != null) {
                 progress.put("startDate", user.getTrialStartDate());
                 progress.put("endDate", user.getTrialEndDate());
-                progress.put("currentDate", LocalDate.now());
+                progress.put("currentDate", LocalDateTime.now());
                 
                 long totalDays = ChronoUnit.DAYS.between(user.getTrialStartDate(), user.getTrialEndDate());
-                long daysPassed = ChronoUnit.DAYS.between(user.getTrialStartDate(), LocalDate.now());
+                long daysPassed = ChronoUnit.DAYS.between(user.getTrialStartDate(), LocalDateTime.now());
                 progress.put("daysPassed", daysPassed);
                 progress.put("totalDays", totalDays);
             }

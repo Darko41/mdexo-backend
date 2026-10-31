@@ -2,7 +2,7 @@ package com.doublez.backend.dto.credit;
 
 import java.math.BigDecimal;
 
-import com.doublez.backend.enums.CreditPackageType;
+import com.doublez.backend.enums.credit.CreditPackageType;
 
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;

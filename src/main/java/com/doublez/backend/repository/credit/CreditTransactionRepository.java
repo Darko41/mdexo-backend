@@ -13,7 +13,7 @@ import org.springframework.stereotype.Repository;
 
 import com.doublez.backend.entity.agency.Agency;
 import com.doublez.backend.entity.credit.CreditTransaction;
-import com.doublez.backend.enums.CreditTransactionType;
+import com.doublez.backend.enums.credit.CreditTransactionType;
 import com.doublez.backend.enums.PaymentStatus;
 
 @Repository

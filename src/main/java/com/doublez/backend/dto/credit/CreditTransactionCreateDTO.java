@@ -2,7 +2,7 @@ package com.doublez.backend.dto.credit;
 
 import java.math.BigDecimal;
 
-import com.doublez.backend.enums.CreditTransactionType;
+import com.doublez.backend.enums.credit.CreditTransactionType;
 
 import jakarta.validation.constraints.NotNull;
 

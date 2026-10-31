@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 
-import com.doublez.backend.enums.CreditPackageType;
+import com.doublez.backend.enums.credit.CreditPackageType;
 import com.doublez.backend.enums.subscription.SubscriptionPeriod;
 
 import jakarta.persistence.Column;

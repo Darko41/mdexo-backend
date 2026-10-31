@@ -10,7 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.doublez.backend.entity.credit.CreditPackage;
-import com.doublez.backend.enums.CreditPackageType;
+import com.doublez.backend.enums.credit.CreditPackageType;
 
 @Repository
 public interface CreditPackageRepository extends JpaRepository<CreditPackage, Long> {

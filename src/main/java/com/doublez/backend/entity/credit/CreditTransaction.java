@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 import com.doublez.backend.dto.credit.CreditTransactionResponseDTO;
 import com.doublez.backend.entity.agency.Agency;
 import com.doublez.backend.entity.user.User;
-import com.doublez.backend.enums.CreditTransactionType;
+import com.doublez.backend.enums.credit.CreditTransactionType;
 import com.doublez.backend.enums.PaymentStatus;
 
 import jakarta.persistence.Column;

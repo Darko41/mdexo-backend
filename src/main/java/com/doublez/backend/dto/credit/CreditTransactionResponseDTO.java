@@ -2,7 +2,7 @@ package com.doublez.backend.dto.credit;
 
 import java.time.LocalDateTime;
 
-import com.doublez.backend.enums.CreditTransactionType;
+import com.doublez.backend.enums.credit.CreditTransactionType;
 import com.doublez.backend.enums.PaymentStatus;
 
 public class CreditTransactionResponseDTO {

@@ -305,4 +305,8 @@ public class TrialService {
 //            logger.warn("Failed to send trial expired notification to {}: {}", user.getEmail(), e.getMessage());
 //        }
 //    }
+
+    public List<User> getUsersWithTrialExpiringBetween(LocalDateTime start, LocalDateTime end) {
+        return userRepository.findUsersWithTrialEndingBetween(start, end);
+    }
 }

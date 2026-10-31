@@ -1,4 +1,4 @@
-package com.doublez.backend.enums;
+package com.doublez.backend.enums.credit;
 
 public enum CreditPackageType {
     TIER_SUBSCRIPTION("Pretplata na tier"),

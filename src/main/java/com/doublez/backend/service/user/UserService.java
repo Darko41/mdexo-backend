@@ -107,6 +107,14 @@ public class UserService {
         
         user.setRoles(resolveRoles(rolesToAssign));
 
+        boolean hasUserRole = user.getRoles().stream()
+                .anyMatch(r -> r.getName().equals("ROLE_USER"));
+        if (!hasUserRole) {
+            Role userRole = roleRepository.findByName("ROLE_USER")
+                    .orElseThrow(() -> new IllegalStateException("ROLE_USER missing"));
+            user.getRoles().add(userRole);
+        }
+
         // Validate role-specific data consistency
         if (!createDto.hasValidRoleDataCombination()) {
             throw new IllegalArgumentException("Invalid role data combination provided");
