@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -64,5 +65,8 @@ public interface AgentRepository extends JpaRepository<Agent, Long> {
     // Find top performing agents by deals closed
     @Query("SELECT a FROM Agent a WHERE a.agency = :agency ORDER BY a.dealsClosed DESC")
     List<Agent> findTopPerformers(@Param("agency") Agency agency);
-    
+
+    @Modifying
+    @Query("UPDATE Agent a SET a.invitedBy = null WHERE a.invitedBy.id = :userId")
+    void clearInvitedByForUser(@Param("userId") Long userId);
 }

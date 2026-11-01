@@ -34,6 +34,8 @@ import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import jakarta.persistence.UniqueConstraint;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "agents", 
@@ -119,13 +121,16 @@ public class Agent {
     private LocalDateTime updatedAt;
     
     // ===== WARNING/NOTIFICATION SYSTEM =====
-    
+
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "performance_metrics_json", columnDefinition = "JSON")
     private String performanceMetricsJson; // Detailed performance metrics
-    
+
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "notification_settings_json", columnDefinition = "JSON")
     private String notificationSettingsJson; // Agent-specific notification preferences
-    
+
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "warning_stats_json", columnDefinition = "JSON")
     private String warningStatsJson; // Warning statistics and history
     
@@ -134,7 +139,8 @@ public class Agent {
     
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt; // For inactivity warnings
-    
+
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "working_hours_json", columnDefinition = "JSON")
     private String workingHoursJson; // Agent's working hours schedule
     

@@ -29,6 +29,8 @@ import jakarta.persistence.Transient;
 import jakarta.persistence.Version;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "notification_queue", indexes = {
@@ -69,7 +71,8 @@ public class NotificationQueue {
     
     @Column(name = "short_content", length = 500)
     private String shortContent; // For SMS/push preview
-    
+
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "metadata_json", columnDefinition = "JSON")
     private String metadataJson; // Additional data for rendering
     

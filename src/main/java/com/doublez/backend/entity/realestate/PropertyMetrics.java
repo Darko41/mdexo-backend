@@ -23,6 +23,8 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import jakarta.persistence.Version;
 import jakarta.persistence.Index;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "property_metrics",
@@ -75,12 +77,15 @@ public class PropertyMetrics {
     private LocalDateTime lastLeadAt;
     
     // === TIME-SERIES DATA ===
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "daily_views_json", columnDefinition = "JSON")
     private String dailyViewsJson; // {"2024-01-01": 15, "2024-01-02": 20}
-    
+
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "weekly_views_json", columnDefinition = "JSON")
     private String weeklyViewsJson; // {"2024-W01": 150, "2024-W02": 180}
-    
+
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "hourly_pattern_json", columnDefinition = "JSON")
     private String hourlyPatternJson; // {"8": 5, "9": 10, "10": 15}
     

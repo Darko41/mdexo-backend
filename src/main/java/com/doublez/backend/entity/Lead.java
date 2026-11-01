@@ -31,6 +31,8 @@ import jakarta.persistence.Transient;
 import jakarta.persistence.Version;
 import jakarta.validation.constraints.Email;
 import jakarta.persistence.Index;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "leads", indexes = {
@@ -130,7 +132,8 @@ public class Lead {
     // === METADATA & TAGS ===
     @Column(name = "tags", length = 500)
     private String tags; // Comma-separated: "urgent,foreign,buyer"
-    
+
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "metadata_json", columnDefinition = "JSON")
     private String metadataJson; // Additional flexible data
     

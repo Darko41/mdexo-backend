@@ -16,6 +16,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.springframework.data.geo.Point;
 
 import com.doublez.backend.entity.Lead;
@@ -470,10 +472,12 @@ public class RealEstate {
     
     @Column(name = "data_quality_score")
     private Integer dataQualityScore; // 0-100 score of listing completeness
-    
+
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "completeness_json", columnDefinition = "JSON")
     private String completenessJson; // {"basic_info": 85, "photos": 70, "location": 90}
-    
+
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "warning_flags_json", columnDefinition = "JSON")
     private String warningFlagsJson; // {"no_photos": true, "incomplete_address": false}
     

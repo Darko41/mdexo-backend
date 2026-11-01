@@ -26,6 +26,8 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import jakarta.persistence.Version;
 import jakarta.persistence.Index;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "real_estate_location_metadata",
@@ -160,12 +162,15 @@ public class LocationMetadata {
     private LocationDataSource dataSource = LocationDataSource.OSM;
     
     // === CACHE & DETAILED DATA ===
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "detailed_data_json", columnDefinition = "JSON")
     private String detailedDataJson; // All other detailed info
-    
+
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "raw_osm_data_json", columnDefinition = "JSON")
     private String rawOsmDataJson; // Raw OSM response cache
-    
+
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "raw_commute_data_json", columnDefinition = "JSON")
     private String rawCommuteDataJson; // Raw commute API cache
     

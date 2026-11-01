@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -49,4 +50,16 @@ public interface AgencyRepository extends JpaRepository<Agency, Long> {
     // 🆕 FOR TRIAL SUNSET MECHANISM
     @Query("SELECT COUNT(a) FROM Agency a WHERE a.createdAt > :cutoffDate")
     long countByCreatedAtAfter(@Param("cutoffDate") LocalDateTime cutoffDate);
+
+    @Modifying
+    @Query("DELETE FROM Lead l WHERE l.agency.id = :agencyId")
+    void deleteLeadsByAgencyId(@Param("agencyId") Long agencyId);
+
+    @Modifying
+    @Query("DELETE FROM ActiveWarning w WHERE w.agency.id = :agencyId")
+    void deleteWarningsByAgencyId(@Param("agencyId") Long agencyId);
+
+    @Modifying
+    @Query("DELETE FROM WarningConfiguration wc WHERE wc.agency.id = :agencyId")
+    void deleteWarningConfigurationsByAgencyId(@Param("agencyId") Long agencyId);
 }

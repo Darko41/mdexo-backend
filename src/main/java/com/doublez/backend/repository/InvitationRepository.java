@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -57,4 +58,12 @@ public interface InvitationRepository extends JpaRepository<Invitation, Long> {
     // Find invitations that need to be resent (pending and older than X days)
     @Query("SELECT i FROM Invitation i WHERE i.status = 'PENDING' AND i.sentAt < :cutoffDate")
     List<Invitation> findInvitationsToResend(@Param("cutoffDate") LocalDateTime cutoffDate);
+
+    @Modifying
+    @Query("DELETE FROM Invitation i WHERE i.invitedBy.id = :userId")
+    void deleteByInvitedById(@Param("userId") Long userId);
+
+    @Modifying
+    @Query("DELETE FROM Invitation i WHERE i.invitedUser.id = :userId")
+    void deleteByInvitedUserId(@Param("userId") Long userId);
 }

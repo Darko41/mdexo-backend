@@ -26,6 +26,8 @@ import jakarta.persistence.Transient;
 import jakarta.persistence.Version;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "active_warnings", indexes = {
@@ -101,6 +103,7 @@ public class ActiveWarning {
     private LocalDateTime snoozedUntil;
     
     // === CONTEXT DATA ===
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "details_json", columnDefinition = "JSON")
     private String detailsJson; // Additional context
     

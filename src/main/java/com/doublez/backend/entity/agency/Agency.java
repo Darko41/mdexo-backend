@@ -40,6 +40,8 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import jakarta.validation.constraints.NotBlank;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "agencies")
@@ -159,16 +161,20 @@ public class Agency {
     private List<Invitation> invitations = new ArrayList<>();
     
     // WARNING/NOTIFICATION SYSTEM =====
-    
+
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "plan_limits_json", columnDefinition = "JSON")
     private String planLimitsJson; // Tier limits and features
-    
+
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "current_usage_json", columnDefinition = "JSON")
     private String currentUsageJson; // Current usage counters
-    
+
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "notification_settings_json", columnDefinition = "JSON")
     private String notificationSettingsJson; // Agency-wide notification preferences
-    
+
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "warning_config_json", columnDefinition = "JSON")
     private String warningConfigJson; // Agency warning configuration
     

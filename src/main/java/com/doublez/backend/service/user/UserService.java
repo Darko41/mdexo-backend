@@ -3,8 +3,13 @@ package com.doublez.backend.service.user;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.doublez.backend.entity.agency.Agent;
+import com.doublez.backend.enums.agency.AgentRole;
+import com.doublez.backend.repository.*;
+import com.doublez.backend.repository.credit.CreditTransactionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
@@ -37,9 +42,6 @@ import com.doublez.backend.exception.EmailExistsException;
 import com.doublez.backend.exception.IllegalOperationException;
 import com.doublez.backend.exception.UserNotFoundException;
 import com.doublez.backend.mapper.UserMapper;
-import com.doublez.backend.repository.AgencyRepository;
-import com.doublez.backend.repository.RoleRepository;
-import com.doublez.backend.repository.UserRepository;
 import com.doublez.backend.repository.realestate.RealEstateRepository;
 import com.doublez.backend.service.agency.AgencyService;
 import com.doublez.backend.service.credit.CreditInitializationService;
@@ -62,10 +64,15 @@ public class UserService {
 	private final TrialService trialService;
 	private final AgencyService agencyService;
 	private final CreditInitializationService creditInitializationService;
+    private final AgentRepository agentRepository;
+    private final CreditTransactionRepository creditTransactionRepository;
+    private final InvitationRepository invitationRepository;
 
 	public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, RoleRepository roleRepository,
 			UserMapper userMapper, RealEstateRepository realEstateRepository, AgencyRepository agencyRepository,
-			TrialService trialService, AgencyService agencyService, CreditInitializationService creditInitializationService) {
+			TrialService trialService, AgencyService agencyService, CreditInitializationService creditInitializationService,
+                       AgentRepository agentRepository, CreditTransactionRepository creditTransactionRepository,
+                       InvitationRepository invitationRepository) {
 		this.userRepository = userRepository;
 		this.passwordEncoder = passwordEncoder;
 		this.roleRepository = roleRepository;
@@ -75,6 +82,9 @@ public class UserService {
 		this.trialService = trialService;
 		this.agencyService = agencyService;
 		this.creditInitializationService = creditInitializationService;
+        this.agentRepository = agentRepository;
+        this.creditTransactionRepository = creditTransactionRepository;
+        this.invitationRepository = invitationRepository;
 	}
 
 	// Consolidated user registration
@@ -111,7 +121,11 @@ public class UserService {
                 .anyMatch(r -> r.getName().equals("ROLE_USER"));
         if (!hasUserRole) {
             Role userRole = roleRepository.findByName("ROLE_USER")
-                    .orElseThrow(() -> new IllegalStateException("ROLE_USER missing"));
+                    .orElseGet(() -> {
+                        Role r = new Role();
+                        r.setName("ROLE_USER");
+                        return roleRepository.save(r);
+                    });
             user.getRoles().add(userRole);
         }
 
@@ -215,6 +229,10 @@ public class UserService {
         user.setOwnedAgency(savedAgency);
         userRepository.save(user);
 
+        // Create Agent row with OWNER role
+        Agent owner = new Agent(user, savedAgency, AgentRole.OWNER);
+        agentRepository.save(owner);
+
         logger.info("✅ Agency created successfully: {} for user: {}", agencyDto.getName(), user.getEmail());
     }
 	
@@ -268,12 +286,20 @@ public class UserService {
     // Separate method for role update (admin only)
     public UserResponseDTO updateUserRole(Long id, UserRole newRole) {
         User user = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException(id));
-        
-        List<String> newRoles = List.of("ROLE_" + newRole.name());
-        user.setRoles(resolveRoles(newRoles));
+
+        // Preserve ROLE_USER + ROLE_ADMIN, replace the role-specific one
+        Set<Role> preserved = user.getRoles().stream()
+                .filter(r -> r.getName().equals("ROLE_USER") || r.getName().equals("ROLE_ADMIN"))
+                .collect(Collectors.toSet());
+
+        // Remove old role-specific roles
+        user.getRoles().removeIf(r -> !r.getName().equals("ROLE_USER") && !r.getName().equals("ROLE_ADMIN"));
+
+        // Add the new role-specific one
+        user.getRoles().addAll(resolveRoles(List.of("ROLE_" + newRole.name())));
+
         user.preUpdate();
         userRepository.save(user);
-        
         return userMapper.toResponseDTO(user);
     }
 	
@@ -365,32 +391,67 @@ public class UserService {
 	}
 
 	// Delete user with all associated data
+    @Transactional
     public void deleteUserWithCascade(Long userId, boolean isSuperAdmin) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
 
-        // 1) Delete agency owned by user (if any)
+        // 0) Delete invitations FIRST — they reference users AND agencies,
+        //    and they must go before the agency cascade touches them
+        invitationRepository.deleteByInvitedById(userId);
+        invitationRepository.deleteByInvitedUserId(userId);
+
+        // Detach from User's collections so the User cascade doesn't try to re-delete
+        if (user.getSentInvitations() != null) user.getSentInvitations().clear();
+        if (user.getReceivedInvitations() != null) user.getReceivedInvitations().clear();
+
+        // 1) Handle agency — clean up dependencies, then delete
         user.getOwnedAgency().ifPresent(agency -> {
+            Long agencyId = agency.getId();
+
+            agencyRepository.deleteLeadsByAgencyId(agencyId);
+            agencyRepository.deleteWarningsByAgencyId(agencyId);
+            agencyRepository.deleteWarningConfigurationsByAgencyId(agencyId);
+
+            List<RealEstate> agencyListings = realEstateRepository.findByAgencyId(agencyId);
+            if (!agencyListings.isEmpty()) {
+                realEstateRepository.deleteAll(agencyListings);
+            }
+
+            List<Agent> agencyAgents = agentRepository.findByAgency(agency);
+            if (user.getAgentMemberships() != null && !agencyAgents.isEmpty()) {
+                user.getAgentMemberships().removeAll(agencyAgents);
+            }
+            if (!agencyAgents.isEmpty()) {
+                agentRepository.deleteAll(agencyAgents);
+            }
+
             agencyRepository.delete(agency);
         });
 
-        // 2) Delete user's real estate properties
+        // 2) User-owned individual listings (leads cascade via RealEstate.leads)
         List<RealEstate> userProperties = realEstateRepository.findByUserId(userId);
-        for (RealEstate property : userProperties) {
-            realEstateRepository.delete(property);
+        if (!userProperties.isEmpty()) {
+            realEstateRepository.deleteAll(userProperties);
         }
 
-        // 3) Delete role-specific profiles (cascade should handle this, but explicit for clarity)
-        if (user.getInvestorProfile() != null) {
-            // Cascade should delete this
-        }
-        if (user.getOwnerProfile() != null) {
-            // Cascade should delete this
-        }
-        if (user.getContractorProfile() != null) {
-            // Cascade should delete this
-        }
+        // 3) Credit transactions referencing this user
+        creditTransactionRepository.deleteByUserId(userId);
 
-        // 4) Finally delete the user
+        // 4) Notification settings + queue entries
+        userRepository.deleteNotificationSettingsByUserId(userId);
+        userRepository.deleteNotificationQueueByRecipientId(userId);
+
+        // 5) Agent rows where user is agent elsewhere + null invitedBy
+        List<Agent> otherAgentRows = agentRepository.findByUser(user);
+        if (!otherAgentRows.isEmpty()) {
+            otherAgentRows.forEach(a -> a.setInvitedBy(null));
+            agentRepository.saveAll(otherAgentRows);
+            agentRepository.deleteAll(otherAgentRows);
+        }
+        agentRepository.clearInvitedByForUser(userId);
+
+        // 6) Finally delete the user
         userRepository.delete(user);
     }
 

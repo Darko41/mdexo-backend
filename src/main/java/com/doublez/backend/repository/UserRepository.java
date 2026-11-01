@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -65,5 +66,14 @@ public interface UserRepository extends JpaRepository<User, Long>{
     // Find users by role
     @Query("SELECT u FROM User u JOIN u.roles r WHERE r.name = :roleName")
     List<User> findByRole(@Param("roleName") String roleName);
+
+    @Modifying
+    @Query("DELETE FROM UserNotificationSettings u WHERE u.user.id = :userId")
+    void deleteNotificationSettingsByUserId(@Param("userId") Long userId);
+
+    @Modifying
+    @Query("DELETE FROM NotificationQueue n WHERE n.recipient.id = :userId")
+    void deleteNotificationQueueByRecipientId(@Param("userId") Long userId);
+
 
 }

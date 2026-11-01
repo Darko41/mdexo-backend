@@ -24,6 +24,8 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "notification_templates",
@@ -71,10 +73,12 @@ public class NotificationTemplate {
     private String locale; // e.g., "en_US", "sr_RS"
     
     // === VARIABLE DEFINITIONS ===
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "available_variables_json", columnDefinition = "JSON")
     private String availableVariablesJson;
     // {"agentName": "Full name of agent", "leadCount": "Number of new leads"}
-    
+
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "default_values_json", columnDefinition = "JSON")
     private String defaultValuesJson;
     // {"platformName": "RealEstate Pro", "supportEmail": "support@example.com"}

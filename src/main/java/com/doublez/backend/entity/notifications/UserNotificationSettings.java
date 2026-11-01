@@ -31,6 +31,8 @@ import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import jakarta.persistence.Version;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "user_notification_settings",
@@ -124,7 +126,8 @@ public class UserNotificationSettings {
     // === DEVICE PREFERENCES ===
     @Column(name = "preferred_device_types", length = 200)
     private String preferredDeviceTypes; // "MOBILE,DESKTOP" or "MOBILE_ONLY"
-    
+
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "push_device_tokens_json", columnDefinition = "JSON")
     private String pushDeviceTokensJson; // {"ios": ["token1"], "android": ["token2"]}
     
