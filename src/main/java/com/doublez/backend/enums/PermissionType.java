@@ -10,6 +10,7 @@ public enum PermissionType {
     // Listing permissions
     CREATE_LISTING("create_listing", "Create new property listings"),
     VIEW_LISTING("view_listing", "View property listings"),
+    VIEW_AGENCY_LISTINGS("view_agency_listings", "View all listings belonging to an agency"),
     EDIT_LISTING("edit_listing", "Edit property listings"),
     DELETE_LISTING("delete_listing", "Delete property listings"),
     MANAGE_LISTINGS("manage_listings", "Manage all agency listings"),

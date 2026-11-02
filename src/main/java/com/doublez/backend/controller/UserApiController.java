@@ -288,7 +288,7 @@ public class UserApiController {
      * Check if current user has agency
      */
     @GetMapping("/me/has-agency")
-    @PreAuthorize("hasAnyRole('USER', 'AGENT', 'AGENCY_ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> hasAgency() {
         try {
             Long userId = userService.getCurrentUserId();

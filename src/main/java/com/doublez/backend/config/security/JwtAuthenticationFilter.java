@@ -99,6 +99,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         // JWT validation for protected API endpoints
         try {
+            // Clear any session-loaded authentication so the JWT result always wins.
+            // Without this, the HTTP session (SessionCreationPolicy.ALWAYS) can populate
+            // SecurityContextHolder with a stale user before this filter runs.
+            SecurityContextHolder.clearContext();
+
             String token = getJwtFromRequest(request);
 
             if (token == null) {
@@ -111,7 +116,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String username = jwtTokenUtil.extractEmail(token);
             logger.debug("Extracted username from token: {}", username);
 
-            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            if (username != null) {
                 if (jwtTokenUtil.validateToken(token, username)) {
                     UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 

@@ -26,7 +26,6 @@ import com.doublez.backend.mapper.TeamDashboardMapper;
 import com.doublez.backend.repository.AgencyRepository;
 import com.doublez.backend.repository.AgentRepository;
 import com.doublez.backend.repository.UserRepository;
-import com.doublez.backend.service.usage.PermissionService;
 import com.doublez.backend.service.usage.TierLimitationService;
 
 @Service

@@ -97,6 +97,14 @@ public class UserService {
         // Validate password
         validatePassword(createDto.getPassword());
 
+        // Pre-validate agency name before creating anything
+        if (createDto.getRole() == UserRole.AGENCY && createDto.getAgency() != null) {
+            if (agencyRepository.existsByName(createDto.getAgency().getName())) {
+                throw new IllegalOperationException(
+                        "Agency name already exists: " + createDto.getAgency().getName());
+            }
+        }
+
         // Create user entity from DTO
         User user = userMapper.toEntityFromCreateDTO(createDto);
         user.setPassword(passwordEncoder.encode(createDto.getPassword()));
@@ -149,12 +157,7 @@ public class UserService {
 
         // Handle agency creation for AGENCY role
         if (primaryRole == UserRole.AGENCY && createDto.getAgency() != null) {
-            try {
-                createAgencyForUser(createDto.getAgency(), savedUser);
-            } catch (Exception e) {
-                logger.error("⚠️ Agency creation failed but user registration succeeded: {}", e.getMessage());
-                // User can create agency later via profile
-            }
+            createAgencyForUser(createDto.getAgency(), savedUser);
         }
 
         // Start trial for non-admin registrations

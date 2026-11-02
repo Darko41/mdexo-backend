@@ -14,7 +14,7 @@ import com.doublez.backend.repository.UserRepository;
 public class SecurityUtils {
     
     @Autowired
-    private UserRepository userRepository; // Add this dependency
+    private UserRepository userRepository;
     
     public Long getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

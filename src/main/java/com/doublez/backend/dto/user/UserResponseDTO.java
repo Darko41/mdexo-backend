@@ -18,9 +18,9 @@ public class UserResponseDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private UserProfileDTO profile;
-    
-    // Agency Administration (only for ROLE_AGENCY_ADMIN)
+
     // Represents the Agency entity this user owns and manages
+    // Agency Administration (only for users with an AGENCY account)
     private AgencyInfoDTO administeredAgency;
     
     // Role-specific profiles
@@ -49,7 +49,7 @@ public class UserResponseDTO {
 
     // Helper methods
     public boolean isAgencyAdmin() {
-        return roles != null && roles.contains("ROLE_AGENCY_ADMIN");
+        return roles != null && roles.contains("ROLE_AGENCY");
     }
 
     public boolean isInvestor() {
@@ -110,7 +110,7 @@ public class UserResponseDTO {
             case "ROLE_USER": return "User";
             case "ROLE_OWNER": return "Property Owner";
             case "ROLE_BUSINESS": return "Business";
-            case "ROLE_AGENCY_ADMIN": return "Agency Administrator";
+            case "ROLE_AGENCY": return "Agency Administrator";
             case "ROLE_INVESTOR": return "Investor";
             case "ROLE_CONTRACTOR": return "Contractor";
             default: return primaryRole.replace("ROLE_", "");

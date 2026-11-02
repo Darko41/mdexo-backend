@@ -12,11 +12,9 @@ import com.doublez.backend.enums.PermissionType;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface RequiresPermission {
-    
     PermissionType value();
-    
-    String agencyIdParam() default "";
-    String listingIdParam() default "";
-    String agentIdParam() default "";
-    String userIdParam() default "currentUser";
+    int agencyIdIndex() default -1;
+    int listingIdIndex() default -1;
+    int agentIdIndex() default -1;
 }
+

@@ -2,11 +2,19 @@ package com.doublez.backend.controller;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import com.doublez.backend.annotation.RequiresPermission;
+import com.doublez.backend.entity.agency.Agency;
+import com.doublez.backend.entity.agency.Agent;
+import com.doublez.backend.enums.PermissionType;
+import com.doublez.backend.exception.ResourceNotFoundException;
+import com.doublez.backend.repository.AgencyRepository;
+import com.doublez.backend.repository.AgentRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -41,13 +49,18 @@ public class AgencyController {
     private final AgencyService agencyService;
     private final UserService userService;
     private final RealEstateService realEstateService;
+    private final AgentRepository agentRepository;
+    private final AgencyRepository agencyRepository;
     
     private static final Logger logger = LoggerFactory.getLogger(AgencyController.class);
 
-    public AgencyController(AgencyService agencyService, UserService userService, RealEstateService realEstateService) {
+    public AgencyController(AgencyService agencyService, UserService userService, RealEstateService realEstateService,
+                            AgentRepository agentRepository, AgencyRepository agencyRepository) {
         this.agencyService = agencyService;
         this.userService = userService;
         this.realEstateService = realEstateService;
+        this.agentRepository = agentRepository;
+        this.agencyRepository = agencyRepository;
     }
 
     // ========================
@@ -143,12 +156,13 @@ public class AgencyController {
      * Agency admins can view their properties, admins can view any agency's properties
      */
     @GetMapping("/{agencyId}/properties")
-    @PreAuthorize("hasRole('AGENCY_ADMIN') and @agencyService.isAgencyAdmin(#agencyId, authentication.principal.id) or hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'AGENCY', 'AGENT')")
+    @RequiresPermission(value = PermissionType.VIEW_AGENCY_LISTINGS, agencyIdIndex = 0)
     public ResponseEntity<List<RealEstateResponseDTO>> getAgencyProperties(@PathVariable Long agencyId) {
         logger.info("🏠 Fetching properties for agency ID: {}", agencyId);
-        
+
         List<RealEstateResponseDTO> properties = realEstateService.getAgencyProperties(agencyId);
-        
+
         logger.info("✅ Found {} properties for agency ID: {}", properties.size(), agencyId);
         return ResponseEntity.ok(properties);
     }
@@ -162,7 +176,8 @@ public class AgencyController {
      * Agency admins can deactivate their own agency, admins can deactivate any agency
      */
     @PostMapping("/{agencyId}/deactivate")
-    @PreAuthorize("hasRole('AGENCY_ADMIN') and @agencyService.isAgencyAdmin(#agencyId, authentication.principal.id) or hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'AGENCY')")
+    @RequiresPermission(value = PermissionType.MANAGE_AGENCY_SETTINGS, agencyIdIndex = 0)
     public ResponseEntity<ApiResponse<String>> deactivateAgency(@PathVariable Long agencyId) {
         logger.info("⏸️ Deactivating agency ID: {}", agencyId);
         
@@ -177,7 +192,8 @@ public class AgencyController {
      * Agency admins can activate their own agency, admins can activate any agency
      */
     @PostMapping("/{agencyId}/activate")
-    @PreAuthorize("hasRole('AGENCY_ADMIN') and @agencyService.isAgencyAdmin(#agencyId, authentication.principal.id) or hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'AGENCY')")
+    @RequiresPermission(value = PermissionType.MANAGE_AGENCY_SETTINGS, agencyIdIndex = 0)
     public ResponseEntity<ApiResponse<String>> activateAgency(@PathVariable Long agencyId) {
         logger.info("▶️ Activating agency ID: {}", agencyId);
         
@@ -196,7 +212,8 @@ public class AgencyController {
      * Agency admins can view their stats, admins can view any agency's stats
      */
     @GetMapping("/{agencyId}/statistics")
-    @PreAuthorize("hasRole('AGENCY_ADMIN') and @agencyService.isAgencyAdmin(#agencyId, authentication.principal.id) or hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'AGENCY')")
+    @RequiresPermission(value = PermissionType.VIEW_ANALYTICS, agencyIdIndex = 0)
     public ResponseEntity<Map<String, Object>> getAgencyStatistics(@PathVariable Long agencyId) {
         logger.info("📊 Fetching statistics for agency ID: {}", agencyId);
         
@@ -244,7 +261,8 @@ public class AgencyController {
      * GET AGENCY PROPERTIES WITH PAGINATION
      */
     @GetMapping("/{agencyId}/properties/paged")
-    @PreAuthorize("hasRole('AGENCY_ADMIN') and @agencyService.isAgencyAdmin(#agencyId, authentication.principal.id) or hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'AGENCY')")
+    @RequiresPermission(value = PermissionType.VIEW_AGENCY_LISTINGS, agencyIdIndex = 0)
     public ResponseEntity<Page<RealEstateResponseDTO>> getAgencyPropertiesPaged(
             @PathVariable Long agencyId,
             @RequestParam(required = false) String searchTerm,
@@ -302,4 +320,37 @@ public class AgencyController {
 //        logger.info("✅ Found {} agencies matching search criteria", filteredAgencies.size());
 //        return ResponseEntity.ok(filteredAgencies);
 //    }
+
+    // In AgencyController or a new TeamController
+
+    @GetMapping("/api/agencies/{agencyId}/team")
+    @PreAuthorize("hasAnyRole('AGENCY', 'ADMIN')")
+    @RequiresPermission(value = PermissionType.VIEW_TEAM, agencyIdIndex = 0)
+    public ResponseEntity<?> getTeam(@PathVariable Long agencyId) {
+        Agency agency = agencyRepository.findById(agencyId)
+                .orElseThrow(() -> new ResourceNotFoundException("Agency not found: " + agencyId));
+
+        List<Agent> agents = agentRepository.findByAgencyAndIsActive(agency, true);
+
+        List<Map<String, Object>> team = agents.stream()
+                .map(a -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("agentId", a.getId());
+                    m.put("userId", a.getUser().getId());
+                    m.put("email", a.getUser().getEmail());
+                    m.put("name", a.getDisplayName());
+                    m.put("role", a.getRole().name());
+                    m.put("isActive", a.getIsActive());
+                    m.put("joinDate", a.getJoinDate());
+                    return m;
+                })
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(Map.of(
+                "agencyId", agencyId,
+                "agencyName", agency.getName(),
+                "count", team.size(),
+                "team", team
+        ));
+    }
 }

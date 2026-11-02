@@ -1,4 +1,4 @@
-package com.doublez.backend.service.usage;
+package com.doublez.backend.service.agency;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,7 +13,6 @@ import com.doublez.backend.entity.user.User;
 import com.doublez.backend.enums.agency.AgentRole;
 import com.doublez.backend.repository.AgentRepository;
 import com.doublez.backend.repository.realestate.RealEstateRepository;
-import com.doublez.backend.service.agency.TeamService;
 
 @Service
 public class PermissionService {
@@ -227,5 +226,21 @@ public class PermissionService {
         }
         
         return userAgent.getRole() == AgentRole.OWNER || userAgent.getRole() == AgentRole.SUPER_AGENT;
+    }
+
+    public boolean canViewAgencyListings(User user, Agency agency) {
+        if (user.isAgencyAdmin() && user.getOwnedAgency().isPresent()
+                && user.getOwnedAgency().get().getId().equals(agency.getId())) {
+            return true;
+        }
+        return agentRepository.findByUserIdAndAgencyId(user.getId(), agency.getId())
+                .map(agent -> agent.getIsActive() && agent.getCanManageListings())
+                .orElse(false);
+    }
+
+    public boolean canManageAgencySettings(User user, Agency agency) {
+        return user.isAgencyAdmin()
+                && user.getOwnedAgency().isPresent()
+                && user.getOwnedAgency().get().getId().equals(agency.getId());
     }
 }

@@ -114,14 +114,13 @@ public class EmailTemplateService {
 
 	private String getRoleDisplayName(String role) {
 		switch (role) {
-		case "ROLE_AGENT":
-			return "Agenta";
-		case "ROLE_INVESTOR":
-			return "Investitora";
-		case "ROLE_AGENCY_ADMIN":
-			return "Administratora Agencije";
-		default:
-			return "Korisnika";
+            case "ROLE_AGENT":      return "Agenta";
+            case "ROLE_INVESTOR":   return "Investitora";
+            case "ROLE_AGENCY":     return "Administratora Agencije";  // agency account = admin of their agency
+            case "ROLE_CONTRACTOR": return "Izvođača";
+            case "ROLE_OWNER":      return "Vlasnika";
+            case "ROLE_USER":       return "Korisnika";
+            default:                return "Korisnika";
 		}
 	}
 

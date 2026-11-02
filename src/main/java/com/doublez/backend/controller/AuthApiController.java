@@ -10,6 +10,7 @@ import com.doublez.backend.dto.auth.LoginRequestDTO;
 import com.doublez.backend.dto.user.UserResponseDTO;
 import com.doublez.backend.entity.user.UserRole;
 import com.doublez.backend.exception.EmailExistsException;
+import com.doublez.backend.exception.IllegalOperationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -69,13 +70,12 @@ public class AuthApiController {
         this.trialService = trialService;
     }
 
-    // Add registration endpoint here
+    // Registration endpoint
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@Valid @RequestBody UserCreateDTO createDto) {
         try {
             logger.info("👤 Registration attempt for email: {}", createDto.getEmail());
 
-            // Check if trial is still available
             if (createDto.getRole() == UserRole.AGENCY && createDto.getAgency() != null) {
                 Map<String, Object> trialAvailability = trialService.getTrialAvailability();
                 if (!(Boolean) trialAvailability.get("trialAvailable")) {
@@ -93,6 +93,10 @@ public class AuthApiController {
             logger.warn("❌ Email already exists: {}", createDto.getEmail());
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("error", "Email already exists"));
+        } catch (IllegalOperationException e) {                     // NEW
+            logger.warn("❌ Registration rejected: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("error", e.getMessage()));
         } catch (IllegalArgumentException e) {
             logger.warn("❌ Invalid registration data: {}", e.getMessage());
             return ResponseEntity.badRequest()

@@ -1,11 +1,13 @@
 package com.doublez.backend.exception;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
@@ -137,5 +139,21 @@ public class GlobalExceptionHandler {
         if (ex instanceof FeatureNotImplementedException) return HttpStatus.NOT_IMPLEMENTED; // 🆕 501 status
         if (ex instanceof BusinessRuleException) return HttpStatus.BAD_REQUEST;             // 🆕 400 status
         return HttpStatus.INTERNAL_SERVER_ERROR;
+    }
+
+    @ExceptionHandler(PermissionException.class)
+    public ResponseEntity<?> handlePermissionException(PermissionException ex) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("error", "Forbidden");
+        body.put("message", ex.getMessage());
+        body.put("permission", ex.getPermission());
+        body.put("resource", ex.getResource());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
+    }
+
+    @ExceptionHandler(org.springframework.security.authorization.AuthorizationDeniedException.class)
+    public ResponseEntity<?> handleAuthorizationDenied(AuthorizationDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("error", "Forbidden", "message", "Access denied"));
     }
 }

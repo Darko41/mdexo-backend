@@ -456,7 +456,7 @@ public class RealEstateService {
 
     private boolean isAdminOrAgent(User user) {
         return user.getRoles().stream()
-                .anyMatch(role -> "ROLE_ADMIN".equals(role.getName()) || "ROLE_AGENCY_ADMIN".equals(role.getName()));
+                .anyMatch(role -> "ROLE_ADMIN".equals(role.getName()) || "ROLE_AGENCY".equals(role.getName()));
     }
 
 //    @Transactional
@@ -528,8 +528,8 @@ public class RealEstateService {
     @Transactional
     public void bulkUpdateStatus(List<Long> propertyIds, Boolean isActive, Boolean isFeatured) {
         User currentUser = userService.getAuthenticatedUser();
-        
-        if (!authService.hasRole("ADMIN") && !authService.hasRole("AGENCY_ADMIN")) {
+
+        if (!authService.hasRole("ADMIN")) {
             throw new IllegalOperationException("Only administrators can perform bulk updates");
         }
 

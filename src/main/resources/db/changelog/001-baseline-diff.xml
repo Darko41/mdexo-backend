@@ -427,9 +427,6 @@
         <insert tableName="roles">
             <column name="name" value="ROLE_ADMIN"/>
         </insert>
-        <insert tableName="roles">
-            <column name="name" value="ROLE_AGENCY_ADMIN"/>
-        </insert>
     </changeSet>
 
     <changeSet author="manual" id="add-default-user-limitations-015">

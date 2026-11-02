@@ -19,6 +19,22 @@ import com.doublez.backend.utils.RoleUtils;
 
 import jakarta.transaction.Transactional;
 
+
+/**
+ * ⚠️ WORK IN PROGRESS — NOT WIRED UP
+ *
+ * This class contains the design for trial-aware, tier-based real-estate
+ * limitations. It is not currently invoked by any controller or service.
+ *
+ * Known issues:
+ *  - References ROLE_AGENCY_ADMIN, which does not exist in the DB (should be ROLE_AGENCY)
+ *  - All callers are commented out (UsageController, RealEstateService)
+ *
+ * Before wiring up, decide:
+ *  - How should ROLE_AGENCY vs AgentRole interact?
+ *  - How does trial status influence effective limits?
+ *  - Should this be PermissionService or a separate LimitationService?
+ */
 @Service
 @Transactional
 public class RealEstateAuthorizationService {
@@ -95,7 +111,7 @@ public class RealEstateAuthorizationService {
         if (hasRole("ADMIN")) return true;
 
         // Agency admins and regular users can update their properties
-        if (hasAnyRole("AGENCY_ADMIN", "USER")) {
+        if (hasAnyRole("AGENCY", "USER")) {
             return isOwner(propertyId);
         }
 
